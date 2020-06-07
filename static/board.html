@@ -1,0 +1,81 @@
+<html>
+    <head>
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+
+        <link rel="stylesheet" href="board.css">
+
+        <title>board</title>
+        <script src="board.js"></script>
+    </head>
+    <body>
+
+    <div id="lpanel">
+
+        <div class="color" data-color="black" style="background:black;">
+        </div>
+        <div class="color" data-color="red" style="background:red;">
+        </div>
+        <div class="color" data-color="gold" style="background:gold;">
+        </div>
+        <div class="color" data-color="green" style="background:green;">
+        </div>
+        <div class="color" data-color="blueviolet" style="background:blueviolet;">
+        </div>
+        <div class="color" data-color="blue" style="background:blue;">
+        </div>
+        <div class="color" data-color="white" style="background:white;">
+        </div>
+        <div class="color erase" data-color="erase" style="background: radial-gradient(circle, rgba(237,234,235,1) 17%, rgba(63,104,152,1) 32%, rgba(187,196,211,1) 46%);">
+        </div>
+
+        <!--
+        <div style="margin:2px 2px 0px 2px;padding:0px;width:76px;height:76px;"></div>
+        <div style="margin:2px 2px 0px 2px;padding:0px;width:76px;height:76px;display:inline-table;"></div>
+        -->
+        <input id="size" type="number" style="height: 76px;font-size: 50px;width:76px;background-color: #bbb;">
+
+    </div>
+
+    <div id="tpanel">
+        <!--<input id="name" type="text" style="height: 100%;font-size: 50px;width:235px;background-color: #bbb;">
+            <div style="margin:2px 2px 0px 2px;padding:0px;width:76px;height:76px;display:inline-table;"></div>
+        -->
+
+        <button class="auto tbutton">sync</button>
+        <div class="hseparator"></div>
+
+        <!--
+        <div style="margin:2px 2px 0px 2px;padding:0px;width:76px;height:76px;display:inline-table;"></div>
+        <button class="sync" style="height: 100%;vertical-align: top;width: 80px;font-size: 30px;">sync</button>
+        -->
+
+        <button class="grid tbutton">grid</button>
+        <div class="hseparator"></div>
+
+        <button class="clear tbutton">clean</button>
+        <div class="hseparator"></div>
+
+        <button class="undo tbutton">undo</button>
+        <div class="hseparator"></div>
+
+        <button class="zoomin tbutton">zoom in</button>
+        <div class="hseparator"></div>
+
+        <button class="zoomout tbutton">zoom out</button>
+
+        <!-- <img class="kitten" style="width:0px;" src="/i/kitten.png?board"/> -->
+    </div>
+
+    <canvas id="board"></canvas>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event){
+            setTimeout(init,100);
+        });
+    </script>
+
+    </body>
+</html>

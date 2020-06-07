@@ -1,0 +1,29 @@
+body {
+margin:0px;padding:0px;overflow:hidden;
+background:#555;
+}
+
+#lpanel {
+position:absolute;top:80px;left:0px;margin:0px;padding:0px;border:1px solid gray;
+}
+
+#tpanel {
+position:absolute;top:0px;left:80px;margin:0px;padding:0px;border:1px solid gray;height:76px;
+}
+
+#board {
+margin:80px 20px 20px 80px;padding:0px;border:2px solid black;background-color:white;
+}
+
+div.color {
+margin:2px 2px 0px 2px;padding:0px;width:76px;height:76px;border-radius:35px;
+}
+
+button.tbutton {
+height: 100%;vertical-align: top;width: 80px;font-size: 25px;
+}
+
+div.hseparator {
+margin:2px 2px 0px 2px;padding:0px;width:38px;height:76px;display:inline-table;
+}
+
