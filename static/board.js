@@ -17,18 +17,17 @@ var WW = null;
 var WH = null;
 
 var G = rand5();
-var VP = [0,0,0.5];
+var VP = [-170,-170,0.5];
 var LP = null;
 var GS = 60;
 var D0 = null;
 var S0 = null;
 
 var chalkWidth = 10;
-var chalkColor = 'black';
+var chalkColor = '-';
 
 //
 var NAME = "";
-var AUTOSYNC = false;
 
 var SVER = -1;
 var SDATA = [];
@@ -213,6 +212,10 @@ function ping() {
                     };
                 };
                 isSyncing = false;
+                if (NAME=="debug") {
+                    LPANEL.style['background'] = '#3335';
+                    TPANEL.style['background'] = '#3335';
+                };
             };
         });
     };
@@ -229,7 +232,13 @@ function ping() {
     xhr.ontimeout = ontime(xhr);
     xhr.open('POST', '/board.php', true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
     isSyncing = true;
+    if (NAME=="debug") {
+        LPANEL.style['background'] = '#333';
+        TPANEL.style['background'] = '#333';
+    };
+
     xhr.send(msg);
     if (LDATA.length) {
         LVER--;
@@ -241,11 +250,10 @@ function init_dims() {
     WH = window.innerHeight;
     NAME = window.location.hash.slice(1,);
 
-    LPWidth  = document.getElementById('lpanel').offsetWidth;
-    TPHeight = document.getElementById('tpanel').offsetHeight;
+    LPHeight = LPANEL.offsetHeight;
 
-    BOARD.width  = WW-LPWidth-20-10;
-    BOARD.height = WH-TPHeight-20-10;
+    BOARD.width  = WW-40-4;
+    BOARD.height = WH-40-4;
 
     function check_dims(){
         /*
@@ -256,12 +264,15 @@ function init_dims() {
             document.getElementsByClassName('kitten')[0].src = "/i/kitten.png?board_"+NAME+'='+rand5();
         };
         */
-        if ((WW!=window.innerWidth)||(WH!=window.innerHeight)) {
+        if ((Math.abs(WW-window.innerWidth)>10)||(Math.abs(WH-window.innerHeight)>10)) {
+            debug('Changed WW :'+WW+' -> '+window.innerWidth);
+            debug('Changed WH :'+WH+' -> '+window.innerHeight);
+
             WW = window.innerWidth;
             WH = window.innerHeight;
 
-            BOARD.width  = WW-LPWidth-20-10;
-            BOARD.height = WH-TPHeight-20-10;
+            BOARD.width  = WW-40-4;
+            BOARD.height = WH-40-4;
             if (isDrawing) {
                 needRedraw = true;
             } else {
@@ -280,6 +291,7 @@ function init_dims() {
             } else {
                 redraw();
             };
+            ping();
         };
         if(SIZE!=null){chalkWidth = SIZE.value*1;};
         setTimeout(check_dims,1000);
@@ -288,6 +300,8 @@ function init_dims() {
 };
 
 function init_controls() {
+    var colors,el;
+
     // size
     SIZE = document.getElementById('size');
     SIZE.value = chalkWidth;
@@ -302,31 +316,41 @@ function init_controls() {
             setColor(e.target.dataset["color"]);
         });
     };
+
+    // text entry mode
+    el = document.getElementById('texting');
+    el.addEventListener('click'     , e => {switchTexting();});
+    el.addEventListener('touchstart', e => {switchTexting();});
+
     // undo
-    document.getElementsByClassName('undo')[0].addEventListener('click', e => {undo();});
-    document.getElementsByClassName('undo')[0].addEventListener('touchstart', e => {undo();});
+    el = document.getElementsByClassName('undo')[0];
+    el.addEventListener('click', e => {undo();});
+    el.addEventListener('touchstart', e => {undo();});
+
     // grid
-    document.getElementsByClassName('grid')[0].addEventListener('click', e => {switchGrid();});
-    document.getElementsByClassName('grid')[0].addEventListener('touchstart', e => {switchGrid();});
-    // erase
-    //document.getElementsByClassName('erase')[0].addEventListener('click'     , e => {setColor('erase');});
-    //document.getElementsByClassName('erase')[0].addEventListener('touchstart', e => {setColor('erase');});
+    el = document.getElementsByClassName('grid')[0];
+    el.addEventListener('click', e => {switchGrid();});
+    el.addEventListener('touchstart', e => {switchGrid();});
+
     // auto
-    document.getElementsByClassName('auto')[0].addEventListener('click'     , e => {switchAuto();});
-    document.getElementsByClassName('auto')[0].addEventListener('touchstart', e => {switchAuto();});
-    // sync
-    //document.getElementsByClassName('sync')[0].addEventListener('click'     , e => {ping();});
-    //document.getElementsByClassName('sync')[0].addEventListener('touchstart', e => {ping();});
+    el = document.getElementsByClassName('auto')[0];
+    el.addEventListener('click'     , e => {switchAuto();});
+    el.addEventListener('touchstart', e => {switchAuto();});
+
     // clear
-    document.getElementsByClassName('clear')[0].addEventListener('click'     , e => {clear();});
-    document.getElementsByClassName('clear')[0].addEventListener('touchstart', e => {clear();});
+    el = document.getElementsByClassName('clear')[0];
+    el.addEventListener('click'     , e => {clear();});
+    el.addEventListener('touchstart', e => {clear();});
 
     // zoom in
-    document.getElementsByClassName('zoomin')[0].addEventListener('click'     , e => {zoomin();});
-    document.getElementsByClassName('zoomin')[0].addEventListener('touchstart', e => {zoomin();});
+    el = document.getElementsByClassName('zoomin')[0];
+    el.addEventListener('click'     , e => {zoomin();});
+    el.addEventListener('touchstart', e => {zoomin();});
+
     // zoom out
-    document.getElementsByClassName('zoomout')[0].addEventListener('click'     , e => {zoomout();});
-    document.getElementsByClassName('zoomout')[0].addEventListener('touchstart', e => {zoomout();});
+    el = document.getElementsByClassName('zoomout')[0];
+    el.addEventListener('click'     , e => {zoomout();});
+    el.addEventListener('touchstart', e => {zoomout();});
 
 };
 
@@ -409,21 +433,28 @@ function init_events() {
         if (e.keyCode==16) { // shift
             isMoving = true;
             BOARD.style['cursor'] = 'grab';
-        };
-        if (e.keyCode==17) { // ctrl
+        } else if (e.keyCode==17) { // ctrl
             isZooming = true;
             BOARD.style['cursor'] = 'zoom-in';
+        } else {
+            //console.log('key down: ',e);
         };
     };
     document.body.onkeyup = function(e){
         //console.log(String.fromCharCode(e.keyCode)+" = "+e.keyCode);
         if (e.keyCode==16) { // shift
             isMoving = false;
-            BOARD.style['cursor'] = 'default';
-        };
-        if (e.keyCode==17) { // ctrl
+            BOARD.style['cursor'] = TEXTING?'text':'default';
+        } else if (e.keyCode==17) { // ctrl
             isZooming = false;
-            BOARD.style['cursor'] = 'default';
+            BOARD.style['cursor'] = TEXTING?'text':'default';
+        } else if (e.key=='Backspace') {
+            undo();
+        } else {
+            //console.log('key up: ',e);
+            if ((TEXTING)&&(TEXTPOS!=null)) {
+                createCharacter(e.key,TEXTPOS);
+            };
         };
     };
 
@@ -433,6 +464,9 @@ function init() {
     BOARD = document.getElementById('board');
     CTX = board.getContext('2d');
 
+    LPANEL = document.getElementById('lpanel');
+    TPANEL = document.getElementById('tpanel');
+
     init_dims();
     init_controls();
     init_events();
@@ -441,37 +475,49 @@ function init() {
     redraw();
     setColor('black');
     switchAuto();
+    switchPanels();
 };
 
-function setColor(color) {
+function rotatePalette() {
+    var palette = document.getElementById('palette');
+    var color = palette.querySelectorAll('.color')[0];
+    palette.removeChild(color);
+    palette.appendChild(color);
+};
+
+function setColor(color,sw) {
+    if (sw === undefined) sw = true;
+
     chalkColor = color;
-    var colors = document.getElementsByClassName('color');
-    for(var i=0;i<colors.length;i++){
-        if (colors[i].dataset['color']!=color) {
-            colors[i].style['border-color'] = 'none';
-            colors[i].style['border-style'] = 'none';
-            colors[i].style['border-width'] = '0px';
-        } else {
-            colors[i].style['border-color'] = 'white';
-            colors[i].style['border-style'] = 'solid';
-            colors[i].style['border-width'] = '1px';
-        };
-    };
+
+    while(document.getElementById('palette').children[0].dataset['color']!=chalkColor)
+        rotatePalette();
+
+    if (sw)
+        switchPanels();
 };
 
 function switchColor() {
-    var colors = document.getElementsByClassName('color');
-    var i=0;
-    while(colors[i].dataset['color']!=chalkColor) i++;
-    i+=1;
-    i=i % colors.length;
-    setColor(colors[i].dataset['color']);
+    rotatePalette();
+    setColor(document.getElementById('palette').children[0].dataset['color'],sw = false);
 };
 
+var PANELSON = true;
+function switchPanels() {
+    if (PANELSON) {
+        LPANEL.style.height = '80px';
+        TPANEL.style.top = '-100px';
+    } else {
+        LPANEL.style.height = LPHeight + 'px';
+        TPANEL.style.top = '0px';
+    };
+    PANELSON=!PANELSON;
+};
 
+var AUTOSYNC = false;
 function switchAuto() {
-    function autosync(){
-        if (isSyncing){
+    function autosync() {
+        if (isSyncing) {
             debug('Skipping sync: already syncing');
         } else {
             ping();
@@ -495,6 +541,26 @@ function switchGrid() {
     gridOn = !gridOn;
     redraw();
 };
+
+var TEXTING = false;
+var TEXTPOS = null;
+var TEXTPAR = null;
+function switchTexting() {
+    TEXTING = !TEXTING;
+    isMoving = false;
+    isZooming = false;
+    if (TEXTING) {
+        document.getElementById('texting').style['border'] = "2px solid red";
+        BOARD.style['cursor'] = 'text';
+    } else {
+        document.getElementById('texting').style['border'] = "2px solid #555";
+        BOARD.style['cursor'] = 'default';
+        TEXTPOS = null;
+        TEXTPAR = null;
+    };
+    redraw();
+};
+
 
 function clear(G) {
     function _clear(A){
@@ -529,6 +595,8 @@ function undo() {
         var lastG;
         var i,str,sk;
 
+        var minx=1e10,maxx=-1e10,miny=1e10,maxy=-1e10;
+
         if (A.length>0) {
             i = A.length-1;
             while((i>=0)&&(A[i]["D"]==2)) i--;
@@ -540,6 +608,19 @@ function undo() {
                         undoneSomething = true;
                         str = A[i];
                         str['D'] = 2;
+
+                        minx = Math.min(str['p'][0].X,minx);
+                        minx = Math.min(str['p'][1].X,minx);
+
+                        maxx = Math.max(str['p'][0].X,maxx);
+                        maxx = Math.max(str['p'][1].X,maxx);
+
+                        miny = Math.min(str['p'][0].Y,miny);
+                        miny = Math.min(str['p'][1].Y,miny);
+
+                        maxy = Math.max(str['p'][0].Y,maxy);
+                        maxy = Math.max(str['p'][1].Y,maxy);
+
                         if (A!=LDATA) {
                             str['v'] = LVER;
                             LDATA.push(str);
@@ -558,6 +639,11 @@ function undo() {
                             };
                         };
                     };
+                };
+
+                if ((lastG<0)&&(TEXTING)&&(TEXTPOS!=null)) {
+                    TEXTPOS.X = minx;
+                    TEXTPOS.Y-= (Math.floor((TEXTPOS.Y-maxy)/(chalkWidth*3*2)))*(chalkWidth*3*2);
                 };
             };
         };
@@ -640,25 +726,43 @@ function drawGrid() {
 function redraw() {
     BOARD.height = BOARD.height;
     drawGrid();
-    var L = SDATA.length;
-    for(var i=0;i<L;i++) {
+    var l = SDATA.length;
+    for(var i=0;i<l;i++) {
         drawStroke(SDATA[i]);
     };
-    L = LDATA.length;
-    for(var i=0;i<L;i++) {
+    l = LDATA.length;
+    for(var i=0;i<l;i++) {
         drawStroke(LDATA[i]);
     };
     needRedraw = false;
+
+    if ((TEXTING)&&(TEXTPOS!=null)) {
+        var tp = cunmap(TEXTPOS);
+        var w = chalkWidth*2*VP[2];
+        drawStroke({
+                 "p"  : [cmap({"X":tp.X,"Y":tp.Y})
+                        ,cmap({"X":tp.X+w,"Y":tp.Y})]
+                ,"s"  : [chalkWidth,'red']
+                ,"D"  : 0
+                ,"DL" : []
+        });
+    };
     debug('redraw');
 };
 
 function start(e) {
     cp = {"X":e.X,"Y":e.Y};
-    isDrawing = true;
-    G = rand5();
-    LP = cp
-    LLN = 0;
-    LTS = Date.now();
+    if ((TEXTING)&&(!isMoving)&&(!isZooming)) {
+        TEXTPOS = cmap(cp);
+        TEXTPAR = cmap(cp);
+        redraw();
+    } else {
+        isDrawing = true;
+        G = rand5();
+        LP = cp
+        LLN = 0;
+        LTS = Date.now();
+    };
 };
 
 function shiftVP(dx,dy) {
@@ -725,6 +829,40 @@ function erasing(p,str) {
     return (dst<((chalkWidth+str["s"][0])/2.0));
 };
 
+function createCharacter(char,pos) {
+    function _plotChar(char,bx,by) {
+        var A = ALPHABET[char].A;
+        var a,b,p = null;
+        for(var i=0;i<A.length;i++) {
+            a = p;
+            b = A[i];
+            if ((p==null)&&(A[i]!=null)&&((i==A.length-1)||((i<A.length-1)&&(A[i+1]==null))))
+                a = b;
+
+            if ((a!=null)&&(b!=null)) {
+                createStroke({"X":a[0]+bx , "Y":a[1]+by}
+                            ,{"X":b[0]+bx , "Y":b[1]+by});
+            };
+            p = A[i];
+        };
+        return ALPHABET[char].dx;
+    };
+
+    if (char==" ") {
+        pos.X += chalkWidth*3;
+    } else if (char=="Enter") {
+        pos.X = TEXTPAR.X;
+        pos.Y += chalkWidth*3*2;
+    } else if (char in ALPHABET) {
+        G = -rand5();
+        w = _plotChar(char,pos.X,pos.Y);
+        pos.X += w + chalkWidth;
+    } else {
+        pos.X += chalkWidth*3;
+    };
+    redraw();
+}
+
 function createStroke(p0,p1) {
     stroke = {
          "p"  : [p0,p1]
@@ -787,7 +925,6 @@ function drawStroke(str,noZoom) { // draw stroke on the canvas
         CTX.closePath();
     };
 };
-
 
 
 

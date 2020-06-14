@@ -1,13 +1,26 @@
 # chalkboard
 
 Multiplayer touch-friendly lightweight chalkboard.
-Should work just fine in both desktop and mobile Chrome. 
+Should work just fine in both desktop and mobile Chrome..
 
---
+## functionality:
 
-To run the app locally you will need **docker** installed.
-To start playing with it do 
-* `make run` (if you have **make**) **or** 
-* `docker build -t chalkboard .` , `docker run -p 5000:5000 chalkboard` 
+* shared drawing (refreshed with server polling, so not instant)
+* text typing, alphanumeric latin only and not working on mobile yet
+* named boards
+* read-only (write protected) boards
 
-and navigate you browser to *http://127.0.0.1:5000*
+### running locally:
+
+**you'll need to have docker installed.**
+
+* `make run` (if you have **make**) 
+**or**.
+* `docker build -t chalkboard .` 
+* `docker run -p 5000:5000 chalkboard`.
+* navigate to *http://127.0.0.1:5000*
+
+### in the net:
+
+* https://kiryukhin.info/board.html#about
+
