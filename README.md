@@ -15,12 +15,14 @@ Should work just fine in both desktop and mobile Chrome..
 **you'll need to have docker installed.**
 
 * `make run` (if you have **make**) 
-**or**.
+
+**or**
+
 * `docker build -t chalkboard .` 
 * `docker run -p 5000:5000 chalkboard`.
 * navigate to *http://127.0.0.1:5000*
 
-### in the net:
+### on the net:
 
 * https://kiryukhin.info/board.html#about
 
