@@ -12,7 +12,6 @@ var LNN = 0;
 
 var BOARD = null;
 var CTX = null;
-var SIZE = null;
 var WW = null;
 var WH = null;
 
@@ -293,18 +292,55 @@ function init_dims() {
             };
             ping();
         };
-        if(SIZE!=null){chalkWidth = SIZE.value*1;};
+
         setTimeout(check_dims,1000);
     };
     check_dims();
 };
 
+
+function updatePenWidth() {
+    PENWIDTH.style['left']   = (101-chalkWidth*VP[2])>>1;
+    PENWIDTH.style['top']    = (98-chalkWidth*VP[2])>>1;
+    PENWIDTH.style['width']  = (chalkWidth*VP[2])>>0;
+    PENWIDTH.style['height'] = (chalkWidth*VP[2])>>0;
+    PENWIDTH.style['borderRadius'] = ((chalkWidth*VP[2])>>0)+'px';
+    if (document.getElementById('palette').children[0].dataset['color']=='red') {
+        PENWIDTH.style.borderColor='black';
+    } else {
+        PENWIDTH.style.borderColor='red';
+    };
+};
+
+function setPen(delta) {
+    if (delta==undefined) delta = 5;
+
+    chalkWidth += delta;
+
+    if (chalkWidth>40) chalkWidth=5;
+    if (chalkWidth<5)  chalkWidth=40;
+
+    updatePenWidth();
+};
+
 function init_controls() {
     var colors,el;
 
-    // size
-    SIZE = document.getElementById('size');
-    SIZE.value = chalkWidth;
+    // penwidth
+    PENWIDTH.addEventListener('mousedown', e => {
+        setColor(document.getElementById('palette').children[0].dataset['color']);
+    });
+    PENWIDTH.addEventListener('touchstart', e => {
+        setColor(document.getElementById('palette').children[0].dataset['color']);
+    });
+    document.getElementById('setpen').addEventListener('mousedown', e => {
+        setPen();
+    });
+    document.getElementById('setpen').addEventListener('touchstart', e => {
+        setPen();
+    });
+    updatePenWidth();
+
 
     // colors
     colors = document.getElementsByClassName('color');
@@ -316,6 +352,7 @@ function init_controls() {
             setColor(e.target.dataset["color"]);
         });
     };
+
 
     // text entry mode
     el = document.getElementById('texting');
@@ -454,6 +491,10 @@ function init_events() {
             //console.log('key up: ',e);
             if ((TEXTING)&&(TEXTPOS!=null)) {
                 createCharacter(e.key,TEXTPOS);
+            } else if (e.key=='+' ) {
+                setPen(+5);
+            } else if (e.key=='-' ) {
+                setPen(-5);
             };
         };
     };
@@ -466,6 +507,7 @@ function init() {
 
     LPANEL = document.getElementById('lpanel');
     TPANEL = document.getElementById('tpanel');
+    PENWIDTH = document.getElementById('penwidth');
 
     init_dims();
     init_controls();
@@ -490,11 +532,16 @@ function setColor(color,sw) {
 
     chalkColor = color;
 
-    while(document.getElementById('palette').children[0].dataset['color']!=chalkColor)
+    var cc = document.getElementById('palette').children[0].dataset['color'];
+    while(document.getElementById('palette').children[0].dataset['color']!=chalkColor) {
         rotatePalette();
+        if (document.getElementById('palette').children[0].dataset['color']==cc) break;
+    };
 
     if (sw)
         switchPanels();
+
+    updatePenWidth();
 };
 
 function switchColor() {
@@ -680,6 +727,7 @@ function setZoom(zoom) {
     if (Math.abs(VP[2]-1.0) < 1e-8) {
         VP[2] = 1.0;
     };
+    updatePenWidth();
 };
 
 function _zoom(s,lp) {
@@ -833,6 +881,7 @@ function createCharacter(char,pos) {
     function _plotChar(char,bx,by) {
         var A = ALPHABET[char].A;
         var a,b,p = null;
+        var cscale = (chalkWidth/10);
         for(var i=0;i<A.length;i++) {
             a = p;
             b = A[i];
@@ -840,12 +889,12 @@ function createCharacter(char,pos) {
                 a = b;
 
             if ((a!=null)&&(b!=null)) {
-                createStroke({"X":a[0]+bx , "Y":a[1]+by}
-                            ,{"X":b[0]+bx , "Y":b[1]+by});
+                createStroke({"X":round(a[0]*cscale+bx) , "Y":round(a[1]*cscale+by)}
+                            ,{"X":round(b[0]*cscale+bx) , "Y":round(b[1]*cscale+by)});
             };
             p = A[i];
         };
-        return ALPHABET[char].dx;
+        return ALPHABET[char].dx*cscale;
     };
 
     if (char==" ") {

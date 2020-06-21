@@ -18,6 +18,16 @@ body {
     /*height: 80px;*/
 }
 
+#penwidth {
+    position:absolute;
+    top:0px;
+    left:0px;
+    width:0px;
+    height:0px;
+    border-radius: 10px;
+    border: 1px solid red;
+}
+
 #tpanel {
     position:absolute;
     top:0px;
@@ -58,6 +68,19 @@ div.erase {
     background: #777;
     border: 2px solid #555;
     border-radius: 20px;
+    text-align: center;
+    font-size: 67px;
+    color: white;
+}
+
+#setpen {
+    margin: 0px 2px 15px 2px;
+    padding: 0px;
+    width: 76px;
+    height: 76px;
+    background: #777;
+    border: 2px solid #555;
+    border-radius: 40px;
     text-align: center;
     font-size: 67px;
     color: white;
