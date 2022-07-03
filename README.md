@@ -1,12 +1,20 @@
 # chalkboard
 
-Multiplayer touch-friendly lightweight chalkboard.
+Mobile touch friendly lightweight chalkboard.
 Should work just fine in both desktop and mobile Chrome..
+
+![ChalkBoard Demo](demo/demo.gif)
+
 
 ## functionality:
 
-* shared drawing (refreshed with server polling, so not instant)
-* text typing, alphanumeric latin only and not working on mobile yet
+* basic figures available: lines, arrows, boxes, ellipses..
+* drawing modes: solid, dashed, dotted, "distorted" (supposed to mimic real world whiteboard drawings)
+* basic text typing (latin alphanumeric, all glyphs vector-rendered as you type them)
+* selecting, copypasting (works with system clipboard)
+* basic presenting: slides / viewpoint list handling and navigation
+* virtually infinite zoom
+* rudimentary online shared drawing sessions (refreshed with server polling, so not instant)
 * named boards
 * read-only (write protected) boards
 
@@ -22,7 +30,4 @@ Should work just fine in both desktop and mobile Chrome..
 * `docker run -p 5000:5000 chalkboard`.
 * navigate to *http://127.0.0.1:5000*
 
-### on the net:
-
-* https://kiryukhin.info/board.html#about
 
