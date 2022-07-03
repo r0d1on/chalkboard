@@ -1303,7 +1303,10 @@ var Menu = {
 };
 
 let BRUSH = {
-    COLORS : [
+    icon_size_inc :  [null,[41,20],[40,17],[42,15],[45,16],[44,19],[41,20],null,[40,24],[36,21],[35,17],[36,13],[40,11],[45,11],[48,13],[50,17],[49,20],[47,23],[40,24],null,[39,27],[36,26],[34,23],[32,20],[32,17],[32,14],[34,11],[36,9],[39,7],[42,7],[45,7],[48,9],[51,11],[52,14],[50,17],[52,20],[51,23],[48,26],[45,27],[42,28],[39,27],null,[12,50],[10,48],[12,45],[15,46],[15,49],[12,50],null,[32,35],[32,28],[25,28],null,[17,44],[32,28]]
+    ,icon_size_dec : [null,[19,40],[20,41],[20,43],[19,45],[17,45],[16,44],[15,43],[16,41],[17,40],[19,40],null,[20,36],[22,37],[24,40],[25,41],[25,44],[25,46],[23,48],[21,48],[19,49],[17,50],[14,49],[12,48],[11,47],[11,45],[10,43],[11,40],[12,39],[13,37],[15,36],[18,36],[20,36],null,[21,33],[24,35],[26,38],[28,41],[28,44],[28,47],[25,50],[23,52],[20,53],[17,53],[14,53],[11,51],[8,49],[8,46],[8,43],[8,40],[9,37],[12,34],[15,33],[18,32],[21,33],null,[49,11],[50,12],[51,13],[50,14],[49,15],[48,16],[46,16],[45,15],[45,13],[46,12],[47,11],[48,10],[49,11],null,[43,25],[43,18],[35,18],null,[27,34],[43,18]]
+    
+    ,COLORS : [
         ['#000A', '#000E', 'black'],
         ['#FFFA', '#FFFE', 'white'],
         ['#F00A', '#F00E', 'red'],
@@ -1360,6 +1363,8 @@ let BRUSH = {
     }
     
     ,init : function() {
+        
+        // color picker menu item
         // shows current color, size. sub:colors
         var [par,div] = MENU_main.add("root", "colors", null, "div");
         par.style['overflow'] = "hidden";
@@ -1387,6 +1392,24 @@ let BRUSH = {
         });
         
         BRUSH.update_size();
+        
+        // bruch size changer options menu items
+        var ctx = MENU_options.add("root"
+                        , "brush_size_inc"
+                        , ()=>{BRUSH.update_size(+5)}
+                        , "canvas"
+                        , "increase brush size")[1].getContext('2d');
+        
+        ctx.canvas.width = ctx.canvas.width
+        UI.draw_glyph(BRUSH.icon_size_inc, ctx, undefined, undefined);
+
+        ctx = MENU_options.add("root"
+                        , "brush_size_dec"
+                        , ()=>{BRUSH.update_size(-5)}
+                        , "canvas"
+                        , "decrease brush size")[1].getContext('2d');
+        ctx.canvas.width = ctx.canvas.width
+        UI.draw_glyph(BRUSH.icon_size_dec, ctx, undefined, undefined);
     }
     
 };
@@ -1936,6 +1959,9 @@ var BufferedDrawTool = {
             UI.reset_layer("overlay");
             this.draw(this.start_point, lp, UI.add_overlay_stroke);
             this.last_point = lp;
+        } else {
+            UI.reset_layer("overlay");
+            UI.add_overlay_stroke(lp, lp);
         };
     }
     
@@ -3385,8 +3411,6 @@ let SLIDER = {
 
 var MENU_main = null;
 var MENU_options = null;
-
-var lineTool;
 
 // initialising piece
 function init() {
