@@ -191,7 +191,7 @@ let BOARD = {
     ,buffer : [] // globally positioned strokes on buffer layer and accumulated stroke buffer
     ,add_buffer_stroke : function(lp0, lp1) {
         var ctx = UI.contexts[UI.LAYERS.indexOf("buffer")];
-        var color = BRUSH.COLORS[BRUSH.cid][0];
+        var color = BRUSH.get_color();
         var width = BRUSH.get_local_width();
         
         if (lp0!=null)
@@ -564,7 +564,7 @@ let UI = {
             UI.is_mobile = true;
             var lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf("buffer")], e);
             
-            if ((false)&&(UI.check_mobile_keys(lp,UI._last_point!=null))) {
+            if (false) { // &&(UI.check_mobile_keys(lp,UI._last_point!=null))
                 UI._last_point = null;
                 e.preventDefault();
                 return;
@@ -591,7 +591,7 @@ let UI = {
             UI.is_mobile = true;
             var lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf("buffer")], e);
             
-            if (UI.check_mobile_keys(lp,UI._last_point!=null)) {
+            if (false) { // UI.check_mobile_keys(lp,UI._last_point!=null)
                 UI._last_point = null;
                 e.preventDefault();
                 return;
@@ -612,7 +612,7 @@ let UI = {
             UI.is_mobile = true;
             var lp = UI._last_point;
 
-            if ((lp==null)||(UI.check_mobile_keys(lp))) {
+            if (false) { // (lp==null)||(UI.check_mobile_keys(lp))
                 UI._last_point = null;
                 e.preventDefault();
                 return;
@@ -672,7 +672,9 @@ let UI = {
                 };
             };
         });        
-                
+           
+        window.addEventListener("focus",()=>{console.log("focus")})
+        window.addEventListener("blur",()=>{console.log("blur")})
     }
     
     ,init : function() {
@@ -1032,10 +1034,12 @@ let UI = {
         ctx.closePath();
     }
     
-    ,add_overlay_stroke : function(lp0, lp1) { // temporary strokes in overlay layer
+    ,add_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
         var ctx = UI.contexts[UI.LAYERS.indexOf("overlay")];
-        var color = BRUSH.COLORS[BRUSH.cid][0];
-        var width = BRUSH.get_local_width();
+        const {
+             color:color = BRUSH.get_color()
+            ,width:width = BRUSH.get_local_width()
+        } = params||{};
         UI.draw_stroke(lp0, lp1, color, width, ctx);
     }
 
@@ -1307,14 +1311,14 @@ let BRUSH = {
     ,icon_size_dec : [null,[19,40],[20,41],[20,43],[19,45],[17,45],[16,44],[15,43],[16,41],[17,40],[19,40],null,[20,36],[22,37],[24,40],[25,41],[25,44],[25,46],[23,48],[21,48],[19,49],[17,50],[14,49],[12,48],[11,47],[11,45],[10,43],[11,40],[12,39],[13,37],[15,36],[18,36],[20,36],null,[21,33],[24,35],[26,38],[28,41],[28,44],[28,47],[25,50],[23,52],[20,53],[17,53],[14,53],[11,51],[8,49],[8,46],[8,43],[8,40],[9,37],[12,34],[15,33],[18,32],[21,33],null,[49,11],[50,12],[51,13],[50,14],[49,15],[48,16],[46,16],[45,15],[45,13],[46,12],[47,11],[48,10],[49,11],null,[43,25],[43,18],[35,18],null,[27,34],[43,18]]
     
     ,COLORS : [
-        ['#000A', '#000E', 'black'],
-        ['#FFFA', '#FFFE', 'white'],
-        ['#F00A', '#F00E', 'red'],
-        ['#FD0A', '#FD0E', 'gold'],
-        ['#080A', '#080E', 'green'],
-        ['#93EA', '#93EE', 'blueviolet'],
-        ['#00FA', '#00FE', 'blue'],
-        ['#469A', '#469E', '#469']
+        ['#000A',  'black'],
+        ['#FFFA',  'white'],
+        ['#F00A',  'red'],
+        ['#FD0A',  'gold'],
+        ['#080A',  'green'],
+        ['#93EA',  'blueviolet'],
+        ['#00FA',  'blue'],
+        ['#469A',  '#469']
     ]
     
     ,cid : 0
@@ -1326,7 +1330,7 @@ let BRUSH = {
     ,select_color : function(cid) {
         //console.log("color id selected: ",cid);
         BRUSH.cid = cid;
-        BRUSH.div.style['background-color'] = BRUSH.COLORS[cid][1];
+        BRUSH.div.style['background-color'] = BRUSH.get_color("E");
         MENU_main.hide("colors");
     }
     
@@ -1362,6 +1366,13 @@ let BRUSH = {
         return BRUSH_MODE.scaled ? BRUSH.size * UI.viewpoint.scale : BRUSH.size;
     }
     
+    ,get_color : function(alpha, cid) {
+        var cid = (cid===undefined)?BRUSH.cid:cid;
+        var color = BRUSH.COLORS[cid][0];
+        color = (alpha===undefined)?color:(color.slice(0,-1) + alpha);
+        return color;
+    }
+    
     ,init : function() {
         
         // color picker menu item
@@ -1384,7 +1395,7 @@ let BRUSH = {
         
         BRUSH.COLORS.map((color, i)=>{
             var [g,v] = MENU_main.add("colors", "color_" + i, BRUSH.oncolor, "div");
-            v.style['background-color'] = color[1];
+            v.style['background-color'] = BRUSH.get_color("E", i);
             v.style['border-radius'] = "40px";
             v.style['width'] = "100%";
             v.style['height'] = "100%";
@@ -1396,19 +1407,20 @@ let BRUSH = {
         // bruch size changer options menu items
         var ctx = MENU_options.add("root"
                         , "brush_size_inc"
-                        , ()=>{BRUSH.update_size(+5)}
+                        , ()=>{
+                            BRUSH.update_size(+5)
+                        }
                         , "canvas"
                         , "increase brush size")[1].getContext('2d');
-        
-        ctx.canvas.width = ctx.canvas.width
         UI.draw_glyph(BRUSH.icon_size_inc, ctx, undefined, undefined);
 
         ctx = MENU_options.add("root"
                         , "brush_size_dec"
-                        , ()=>{BRUSH.update_size(-5)}
+                        , ()=>{
+                            BRUSH.update_size(-5)
+                        }
                         , "canvas"
                         , "decrease brush size")[1].getContext('2d');
-        ctx.canvas.width = ctx.canvas.width
         UI.draw_glyph(BRUSH.icon_size_dec, ctx, undefined, undefined);
     }
     
@@ -1961,7 +1973,9 @@ var BufferedDrawTool = {
             this.last_point = lp;
         } else {
             UI.reset_layer("overlay");
-            UI.add_overlay_stroke(lp, lp);
+            UI.add_overlay_stroke(lp, lp, {
+                color : BRUSH.get_color("2")
+            });
         };
     }
     
@@ -3258,11 +3272,14 @@ let SAVE = {
 
 // SLIDER ITEMS
 let SLIDER = {
-     icon_prev : [null,[26,48],[14,30],[26,13],null,[28,47],[17,30],[28,13],null,[40,47],[28,30],[40,13],null,[42,47],[30,30],[42,13]]
-    ,icon_next : [null,[35,13],[46,30],[35,47],null,[33,13],[44,30],[33,47],null,[21,13],[33,30],[21,47],null,[19,13],[31,30],[19,47]]
-    ,icon_del : [null,[8,43],[8,48],[20,48],[20,43],[8,43],null,[8,12],[8,16],[20,16],[20,12],[8,12],null,[8,27],[8,32],[20,32],[20,27],[8,27],null,[36,35],[41,30],[36,25],null,[27,30],[41,30]]
-    ,icon_add : [null,[40,42],[40,47],[52,47],[52,42],[40,42],null,[40,14],[40,18],[52,18],[52,14],[40,14],null,[8,27],[8,32],[20,32],[20,27],[8,27],null,[36,35],[41,30],[36,25],null,[27,30],[41,30]]
+     icon_prev :  [null,[26,48],[14,30],[26,13],null,[28,47],[17,30],[28,13],null,[40,47],[28,30],[40,13],null,[42,47],[30,30],[42,13]]
+    ,icon_next :  [null,[35,13],[46,30],[35,47],null,[33,13],[44,30],[33,47],null,[21,13],[33,30],[21,47],null,[19,13],[31,30],[19,47]]
+    ,icon_del :   [null,[8,43],[8,48],[20,48],[20,43],[8,43],null,[8,12],[8,16],[20,16],[20,12],[8,12],null,[8,27],[8,32],[20,32],[20,27],[8,27],null,[36,35],[41,30],[36,25],null,[27,30],[41,30]]
+    ,icon_add :   [null,[40,42],[40,47],[52,47],[52,42],[40,42],null,[40,14],[40,18],[52,18],[52,14],[40,14],null,[8,27],[8,32],[20,32],[20,27],[8,27],null,[36,35],[41,30],[36,25],null,[27,30],[41,30]]
+    ,icon_focus : [null,[24,28],[24,32],[36,32],[36,28],[24,28],null,[25,17],[30,22],[35,17],null,[30,8],[30,22],null,[35,44],[30,39],[25,44],null,[30,54],[30,39],null,[12,35],[17,30],[12,25],null,[5,30],[17,30],null,[48,25],[43,30],[48,35],null,[55,30],[43,30]]
+    ,icon_home :  [null,[25,16],[30,21],[35,16],null,[30,7],[30,21],null,[35,43],[30,38],[25,43],null,[30,53],[30,38],null,[12,34],[17,29],[12,24],null,[5,29],[17,29],null,[48,24],[43,29],[48,34],null,[55,29],[43,29]]
     
+
     ,canvas_current : null
     
     ,slides : []
@@ -3344,10 +3361,6 @@ let SLIDER = {
     }
 
     ,slide_curr : function() {
-        if (SLIDER.current_ix!=null)
-            SLIDER.update();
-            return true;
-
         return true;
     }
     
@@ -3377,6 +3390,8 @@ let SLIDER = {
         };
         
         SLIDER.update();
+        
+        return true;        
     }
 
     ,slide_del : function() {
@@ -3386,8 +3401,22 @@ let SLIDER = {
             SLIDER.current_ix = null;
         
         SLIDER.update();
+        return true;
     }
     
+    ,slide_focus : function() {
+        if (SLIDER.current_ix!=null)
+            SLIDER.update();
+        return true;
+    }
+
+    ,slide_home : function() {
+        SLIDER.move_to([{X:0,Y:0},{X:UI.window_width,Y:UI.window_height}])
+        if (SLIDER.current_ix!=null)
+            SLIDER.current_ix = 0;
+            SLIDER.update();
+        return true;
+    }
 
     ,init : function() {
         var ctx = MENU_main.add("root", "slide_prev", SLIDER.slide_prev, "canvas", "")[1].getContext('2d');
@@ -3404,6 +3433,13 @@ let SLIDER = {
 
         ctx = MENU_main.add("slide_curr", "slide_del", SLIDER.slide_del, "canvas", "save locally")[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_del, ctx);
+
+        ctx = MENU_main.add("slide_curr", "slide_focus", SLIDER.slide_focus, "canvas", "focus on current slide")[1].getContext('2d');
+        UI.draw_glyph(SLIDER.icon_focus, ctx);
+
+        ctx = MENU_main.add("slide_curr", "slide_home", SLIDER.slide_home, "canvas", "focus on default viewpoint")[1].getContext('2d');
+        UI.draw_glyph(SLIDER.icon_home, ctx);
+
     }
     
 }
