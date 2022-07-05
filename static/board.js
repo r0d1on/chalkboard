@@ -635,8 +635,8 @@ let UI = {
         
         // keyboard listener
         document.addEventListener('keydown', e => {
-            UI.on_key_down(e.key);
-            if (((e.key=="+")||(e.key=="-"))&&(UI.keys['Control']))
+            const handled = UI.on_key_down(e.key);
+            if ((handled)||(((e.key=="+")||(e.key=="-"))&&(UI.keys['Control'])))
                 e.preventDefault();
         });
         document.addEventListener('keyup', e => {
@@ -810,6 +810,9 @@ let UI = {
         
         if (!handled)
             UI.on_key_down_default(key);
+        else
+            return true;
+        
     }
 
     ,on_key_up : function(key) {
@@ -1506,8 +1509,14 @@ let TOOLS = {
         var prev = TOOLS.current;
         
         TOOLS.previous.push(prev);
-        TOOLS.show(tool);
         
+        if (TOOLS.background!=null) {
+            if (!background)
+                TOOLS.previous.push(tool);
+        } else {
+            TOOLS.show(tool);
+        };
+
         if (tool.on_activated!==undefined)
             tool.on_activated();
         
@@ -1570,8 +1579,12 @@ let TOOLS = {
         };
 
         for (const tool_name in TOOLS.tools) {
-            if (TOOLS.tools[tool_name].activation_key == key) {
+            const tool = TOOLS.tools[tool_name];
+            if (tool.activation_key == key) {
                 TOOLS.activate(tool_name, true); // activate as a background tool
+                return true;
+            } else if ((tool.shortcut!==undefined)&&(UI.keys[tool.shortcut[0]])&&(tool.shortcut[1] == key)) {
+                TOOLS.activate(tool_name); // activate as a foreground
                 return true;
             };
         };
@@ -1877,11 +1890,12 @@ let TEXTER = {
 
 
 
-var BufferedDrawTool = {
+var DrawToolBase = {
 
-    BufferedDrawTool : function(name, cyclic) {
+    DrawToolBase : function(name, cyclic, shortcut) {
         this.name = name;
         this.cyclic = cyclic;
+        this.shortcut = shortcut;
         
         this.activated = false;
         this.start_point = null;
@@ -1894,7 +1908,7 @@ var BufferedDrawTool = {
         this.last_point = lp;
     }
 
-    ,draw : function(){throw 'BufferedDrawTool.draw should be defined';}
+    ,draw : function(){throw 'DrawToolBase.draw should be defined';}
 
     ,on_move : function(lp) {
         if (this.activated) {
@@ -1926,12 +1940,12 @@ var BufferedDrawTool = {
 }
 
 var PenTool = {
-    super : BufferedDrawTool
+    super : DrawToolBase
     
     ,icon : [null,[6,45],[13,53],[46,23],[39,15],[6,45],null,[43,11],[51,19],[55,8],[43,11],null,[12,47],[40,21],null,[13,53],[6,45],[39,15],null,[13,53],[46,23],[39,15],null,[43,11],[51,19],[55,8],[44,11],null,[47,15],[55,8],null,[6,45],[46,23],null,[13,53],[39,16]]
      
     ,PenTool : function() {
-        BufferedDrawTool.init.call(this, "pen", false);
+        DrawToolBase.init.call(this, "pen", false, ["Control", "p"]);
     }
     
     ,draw : function(sp, lp, func) {
@@ -1949,12 +1963,12 @@ var PenTool = {
 }
 
 var EraserTool = {
-    super : BufferedDrawTool
+    super : DrawToolBase
     
     ,icon : [null,[35,10],[24,26],[39,36],[50,20],[35,10],null,[15,40],[21,31],[36,42],null,[44,21],[36,16],[30,25],[38,30],[44,21],null,[39,21],[35,25],null,[50,20],[35,10],[24,26],[39,36],[50,20],null,[42,27],[32,20],null,[41,18],[34,29],null,[45,20],[37,31],null,[38,15],[30,26],null,[15,40],[24,46],null,[36,42],[33,46],[24,46],null,[18,36],[33,46],null,[25,34],[19,43],null,[29,37],[24,45],null,[33,40],[29,46],null,[5,51],[22,51],null,[35,51],[54,51],null,[5,51],[16,51],null,[54,51],[41,51]]
      
     ,EraserTool : function() {
-        BufferedDrawTool.init.call(this, "eraser", false);
+        DrawToolBase.init.call(this, "eraser", false, ["Control", "e"]);
     }
     
     ,touches : function(gp, stroke) {
@@ -1966,7 +1980,7 @@ var EraserTool = {
     }    
     
     ,on_start : function(lp) {
-        BufferedDrawTool.on_start.call(this, lp);
+        DrawToolBase.on_start.call(this, lp);
         BOARD.op_start();
     }    
     
@@ -1994,10 +2008,7 @@ var EraserTool = {
             UI.redraw();
         };
         
-        UI.add_overlay_stroke(lp, lp, {
-            color : "#9335"
-        });
-        
+        UI.add_overlay_stroke(lp, lp, {color : "#9335"});
     }
 
     ,on_stop : function(lp) {
@@ -2018,6 +2029,8 @@ var EraserTool = {
         
         BOARD.op_commit();
         UI.redraw();
+        
+        DrawToolBase.on_move.call(this, lp);
     }
 
     ,cancel : function() {
@@ -2025,12 +2038,671 @@ var EraserTool = {
     }
 }
 
+var SelectorTool = {
+    super : DrawToolBase
+
+    ,icon : [null,[6,12],[6,18],null,[7,24],[6,30],null,[6,36],[7,42],null,[7,49],[6,55],null,[12,54],[18,54],null,[25,54],[30,55],null,[36,55],[42,54],null,[48,54],[54,54],null,[54,48],[54,42],null,[54,36],[54,30],null,[54,24],[54,18],null,[54,12],[54,6],null,[48,6],[42,6],null,[36,5],[30,5],null,[25,6],[18,6],null,[12,6],[7,6],null,[54,46],[54,54],[48,54],null,[55,55],[54,46],null,[12,54],[6,55],[11,54],null,[6,55],[6,49],null,[6,54],[7,49],null,[7,6],[12,6],null,[6,12],[6,6],[6,12],null,[55,6],[55,12],null,[48,6],[54,5],[48,6]]
+    ,COLOR : "#F33A"
+    ,COLOR_COPYPASTE : "#3F3A"
+    ,WIDTH : 6
+    ,USE_SYSTEM_CLIPBOARD : true
+    ,NAME : "selector"
+    
+    ,SelectorTool : function() {
+        DrawToolBase.init.call(this, "selector", false, ["Control", "s"]);
+    }
+
+    ,mode : 0 // 0:selecting / 1:selected / 2:moving / 3:scale / 4:rotate
+    
+    ,original_strokes : {}
+    
+    ,selection : null
+    ,selection_center : null
+    ,selection_rect : null
+
+    ,init : function() {
+        var ctx = MENU_main.add("root", "delete", SelectorTool.DELETE.on_activated, "canvas", "delete selected[del]")[1].getContext('2d');
+        UI.draw_glyph(SelectorTool.DELETE.icon, ctx);
+
+        SelectorTool.DELETE.selector = this;
+
+        // default strokes paste override
+        UI.on_paste_strokes_default = (strokes)=>{
+            debug('selector:on_paste_strokes_default');
+            
+            TOOLS.activate(SelectorTool.NAME);
+            
+            this.last_point = {
+                 X : UI.window_width/2
+                ,Y : UI.window_height/2
+            };
+            
+            this.paste(strokes);
+            //UI.redraw();
+        };
+    }
+
+    ,_save_selected : function() {
+        var was = new Set();
+
+        this.original_strokes = {};
+        
+        this.selection.map((sl)=>{
+            var stroke = BOARD.strokes[sl.stroke_idx];
+            if (!was.has(stroke.stroke_id)) {
+                this.original_strokes[sl.stroke_idx] = deepcopy(stroke);
+                was.add(stroke.stroke_id);
+            };
+        });
+        
+    }
+
+    ,_replace_changed : function() {
+        var new_strokes = [];
+        var old_strokes = [];
+        for(var idx in this.original_strokes) {
+            var old_stroke = this.original_strokes[idx];
+            // capture changed strokes
+            if (!(BOARD.strokes[idx].erased>=0))
+                new_strokes.push(deepcopy(BOARD.strokes[idx]));
+            // return original strokes back
+            BOARD.strokes[idx] = old_stroke;
+            old_strokes.push(old_stroke);
+        };
+        
+        // delete original strokes
+        BOARD.undo_strokes(old_strokes);
+        BOARD.add_stroke({gp:[null, "erase"]});
+
+        // add new strokes
+        var offset = BOARD.strokes.length; 
+        BOARD.flush(new_strokes, false);            
+        
+        // remap selection to new strokes
+        var idmap = {};
+        var idxmap = {};
+        new_strokes.map((stroke, idx)=>{
+            idmap[old_strokes[idx].stroke_id] = stroke.stroke_id;
+            idxmap[old_strokes[idx].stroke_id] = offset + idx;
+        });
+        
+        this.selection = this.selection.reduce((a, sl, si)=>{
+            if (sl.stroke_id in idxmap) {
+                sl.stroke_idx = idxmap[sl.stroke_id];
+                sl.stroke_id = idmap[sl.stroke_id];
+                a.push(sl);
+            };
+            return a;
+        }, []);
+        
+        if (this.selection.length) {
+            this.get_selection_bounds();
+            this.draw_selected();
+        } else {
+            this.activated = false;
+            this.selection = null;
+        };
+        
+    }
+
+    ,draw_selecting : function(sp, lp) {
+        UI.reset_layer("overlay");
+
+        var ctx = UI.contexts[UI.LAYERS.indexOf("overlay")];
+        
+        var rect = UI.get_rect([sp, lp]);
+        
+        var figure = [
+            rect[0], {X:rect[1].X, Y:rect[0].Y},
+            rect[1], {X:rect[0].X, Y:rect[1].Y}
+        ];
+
+        figure = UI.figure_split(figure, true, 2*SelectorTool.WIDTH);
+        
+        figure.map((p,pi)=>{
+            if (pi%2==0)
+                return;
+            UI.draw_stroke(p, figure[(pi+1) % figure.length], SelectorTool.COLOR, SelectorTool.WIDTH, ctx);
+        });
+    }
+
+    ,draw_selected : function() {
+        var ctx = UI.contexts[UI.LAYERS.indexOf("overlay")];
+        UI.reset_layer("overlay");
+
+        var W = SelectorTool.WIDTH;
+        
+        // draw selected center
+        var lp = UI.global_to_local(this.selection_center);
+        UI.draw_stroke(lp, lp, SelectorTool.COLOR, W*2, ctx);
+        UI.draw_stroke(lp, lp, SelectorTool.COLOR_COPYPASTE, W, ctx);
+        
+        var rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
+        var figure = [
+            {X:rect[0].X-W, Y:rect[0].Y-W}, {X:rect[1].X+W, Y:rect[0].Y-W},
+                                            {X:rect[1].X+W, Y:rect[1].Y+W}, 
+            {X:rect[0].X-W, Y:rect[1].Y+W}
+        ];
+        
+        var d = W * 2;
+        var figures = [
+             [{X:figure[0].X,Y:figure[0].Y+d}, figure[0], {X:figure[0].X+d,Y:figure[0].Y}]
+            ,[{X:figure[1].X-d,Y:figure[1].Y}, figure[1], {X:figure[1].X,Y:figure[1].Y+d}]
+            ,[{X:figure[2].X,Y:figure[2].Y-d}, figure[2], {X:figure[2].X-d,Y:figure[2].Y}]
+            ,[{X:figure[3].X+d,Y:figure[3].Y}, figure[3], {X:figure[3].X,Y:figure[3].Y-d}]
+        ];
+        
+        // draw rect
+        figures.map((f,fi)=>{
+            f.map((p,pi)=>{
+                if (pi < f.length-1)
+                    UI.draw_stroke(
+                         p
+                        ,f[(pi+1) % f.length]
+                        ,SelectorTool.COLOR
+                        ,W
+                        ,ctx
+                    );
+            });
+        });
+
+        // draw ancor mode selectors
+        // rotator
+        lp = figure[1];
+        ctx.beginPath();
+        ctx.arc(lp.X, lp.Y, d/2, Math.PI, Math.PI/2);
+        ctx.stroke();
+        
+        // scaler
+        lp = figure[2];
+        ctx.beginPath();
+        ctx.rect(lp.X-d/2, lp.Y-d/2, d, d);
+        ctx.stroke();
+
+        // optimizer
+        lp = {
+             X: figure[1].X
+            ,Y:(figure[1].Y + figure[2].Y)/2
+        };
+        UI.draw_stroke({X:lp.X-d/2,Y:lp.Y-d/2},{X:lp.X+d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
+        UI.draw_stroke({X:lp.X+d/2,Y:lp.Y-d/2},{X:lp.X-d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
+        
+        // copy
+        lp = figure[0];
+        UI.draw_stroke({X:lp.X,Y:lp.Y},{X:lp.X-d,Y:lp.Y-d}  ,SelectorTool.COLOR_COPYPASTE, W, ctx);
+        UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X,Y:lp.Y-d},SelectorTool.COLOR_COPYPASTE, W, ctx);
+        UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X-d,Y:lp.Y},SelectorTool.COLOR_COPYPASTE, W, ctx);
+        
+        // paste
+        if (this.clipboard.length) {
+            lp = figure[3];
+            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
+            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y}, SelectorTool.COLOR_COPYPASTE, W, ctx);
+            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
+        };
+        
+        // draw over selected points
+    }
+    
+    
+    ,start_mode : function(mode) {
+        BOARD.op_start();
+        this._save_selected();
+        this.mode = mode;
+    }
+    
+    ,on_start : function(lp) {
+        DrawToolBase.on_start.call(this, lp);
+        
+        if (this.mode==0) { // selecting
+            return;
+        };
+        
+        if (this.mode==1) { // selected
+            var dst = Math.sqrt(dst2(lp, UI.global_to_local(this.selection_center)));
+            var W = SelectorTool.WIDTH;
+
+            if (UI.is_mobile)
+                dst /= 3;
+
+            if (dst < W) {
+                this.start_mode(2); // move mode
+                return;
+            };
+
+            var rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
+            var figure = [
+                {X:rect[0].X-W, Y:rect[0].Y-W}, // copy    
+                {X:rect[1].X+W, Y:rect[0].Y-W}, // rotate
+                {X:rect[1].X+W, Y:rect[1].Y+W}, // scale
+                {X:rect[0].X-W, Y:rect[1].Y+W}, // paste
+                
+                {X:rect[1].X+W, Y:(rect[0].Y+rect[1].Y)/2} // optimize
+            ];
+            
+            var anchor_i = null;
+            figure.map((p, pi)=>{
+                dst = Math.sqrt(dst2(lp, p));
+                
+                if (UI.is_mobile)
+                    dst /= 3;
+                
+                if (dst < W) {
+                    anchor_i = pi;
+                };
+            });
+            
+            if (anchor_i == null) {
+                this.mode = 0;
+                this.selection = null;
+                this.selection_center = null;
+                this.selection_rect = null;
+                UI.redraw();
+                return;
+            };
+            
+            if (anchor_i==0) { // copy
+                this.copy();
+                
+            } else if (anchor_i==1) {
+                this.start_mode(4); // rotate mode
+                
+            } else if (anchor_i==2) {
+                this.start_mode(3); // scale mode
+                
+            } else if (anchor_i==3) { // paste
+                if (SelectorTool.USE_SYSTM_CLIPBOARD) {
+                    navigator.clipboard.readText().then(text => {
+                        UI.on_paste(text, 'text/plain');
+                    });
+                } else {
+                    this.paste(this.clipboard);  
+                };
+                
+            } else if (anchor_i==4) { // optimize
+                BOARD.op_start();
+                this._save_selected();
+                this.optimize();
+                this._replace_changed();
+                BOARD.op_commit();
+                
+            }
+        };
+    }
+
+
+    ,move_scale : function(lp) {
+        if (this.activated) {
+            var lpc = UI.global_to_local(this.selection_center);
+            var cx = ( (lp.X - lpc.X) / (this.last_point.X - lpc.X) );
+            var cy = ( (lp.Y - lpc.Y) / (this.last_point.Y - lpc.Y) );
+                        
+            this.selection.map((sl)=>{
+                var pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
+                pnt.X -= this.selection_center.X;
+                pnt.Y -= this.selection_center.Y;
+                
+                pnt.X *= cx;
+                pnt.Y *= cy;
+                
+                pnt.X += this.selection_center.X;
+                pnt.Y += this.selection_center.Y;
+            });
+
+        };
+    }
+
+    ,move_rotate : function(lp) {
+        if (this.activated) {
+            var lcp = UI.global_to_local(this.selection_center);
+            var p0 = sub(this.last_point, lcp);
+            var p1 = sub(             lp, lcp);
+            
+            var a = (
+                 Math.atan(p0.X / p0.Y)
+                -Math.atan(p1.X / p1.Y)
+            );
+            
+            if (Math.abs(a) > 1) a = 0;
+            
+            this.selection.map((sl)=>{
+                var pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
+                pnt.X -= this.selection_center.X;
+                pnt.Y -= this.selection_center.Y;
+                
+                var rpnt = rotate(pnt, a);
+                pnt.X = rpnt.X;
+                pnt.Y = rpnt.Y;
+                
+                pnt.X += this.selection_center.X;
+                pnt.Y += this.selection_center.Y;
+            });
+
+        };
+    }
+
+    
+    ,_move_selection : function(dx, dy) {
+        this.selection.map((sl)=>{
+            var pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
+            pnt.X += dx;
+            pnt.Y += dy;
+        });
+        
+        this.selection_center.X += dx;
+        this.selection_center.Y += dy;
+        
+        this.selection_rect[0].X += dx;
+        this.selection_rect[1].X += dx;
+        this.selection_rect[0].Y += dy;
+        this.selection_rect[1].Y += dy;
+    }
+    
+    ,move_moving : function(lp) {
+        if (this.activated) {
+            var dx = -(UI.local_to_global(this.last_point).X - UI.local_to_global(lp).X);
+            var dy = -(UI.local_to_global(this.last_point).Y - UI.local_to_global(lp).Y);
+            this._move_selection(dx, dy);
+        };
+    }
+    
+    ,move_selecting : function(lp) {
+        if (this.activated) {
+            this.draw_selecting(this.start_point, lp);
+        };
+    }
+    
+    ,on_move : function(lp) {
+        if (this.mode==0) {
+            this.move_selecting(lp);
+        } else {
+            if (this.mode==2) { // moving
+                this.move_moving(lp);
+            } else if (this.mode==3) { // scaling
+                this.move_scale(lp);
+            } else if (this.mode==4) { // rotating
+                this.move_rotate(lp);
+            };
+            UI.redraw();
+        };
+        this.last_point = lp;
+    }
+
+    
+    ,get_selection_bounds : function() {
+        this.selection_rect = UI.get_rect(
+            this.selection.map((sl)=>{
+                return BOARD.strokes[sl.stroke_idx].gp[sl.point_idx]
+            })
+        );
+        
+        this.selection_center = {X:0, Y:0};
+        this.selection_center.X = ( this.selection_rect[1].X + this.selection_rect[0].X ) / 2;
+        this.selection_center.Y = ( this.selection_rect[1].Y + this.selection_rect[0].Y ) / 2;        
+    }
+    
+    ,stop_selecting : function(lp) {
+        UI.reset_layer("overlay");
+        var sp = this.start_point;
+        
+        this.selection = BOARD.get_strokes(UI.get_rect([sp, lp]).map((p)=>{
+            return UI.local_to_global(p)
+        }), true);
+                
+        if (this.selection.length>0) {
+            this.get_selection_bounds();
+            this.draw_selected();
+            this.mode = 1;
+        };
+    }
+
+    ,stop_mode : function(mode) {
+        this._replace_changed();
+        this.mode = 1;
+        BOARD.op_commit();
+    }
+    
+    ,on_stop : function(lp) {
+        if (this.mode==0) { // stopped selecting
+            this.stop_selecting(lp);
+
+        } else if (this.mode==1) { // this mode is transient, should not happen
+        } else {
+            this.stop_mode(this.mode); // stopped moving
+            
+        };
+        
+        this.activated = false;
+    }
+
+
+    ,clipboard : []
+    ,copy : function() {
+        var copied = new Set();
+        this.clipboard = this.selection.reduce((a, sl)=>{
+            var stroke = BOARD.strokes[sl.stroke_idx];
+            if (!copied.has(stroke.stroke_id)) {
+                copied.add(stroke.stroke_id);
+                var c_stroke = deepcopy(stroke);
+                c_stroke.gp[0] = UI.global_to_local(c_stroke.gp[0]);
+                c_stroke.gp[1] = UI.global_to_local(c_stroke.gp[1]);
+                c_stroke.width *= UI.viewpoint.scale;
+                a.push(c_stroke);
+            };
+            return a;
+        }, []);
+     
+        if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
+            window.navigator.clipboard.writeText(
+                JSON.stringify({
+                    "strokes" : this.clipboard
+                })
+            ).then(console.log('copied to system clipboard'))
+        };
+     
+        this.draw_selected();
+    }
+    ,paste : function(clipboard) {
+        
+        var cx = 0;
+        var cy = 0;
+        clipboard.map((stroke)=>{
+            cx += stroke.gp[0].X + stroke.gp[1].X;
+            cy += stroke.gp[0].Y + stroke.gp[1].Y;
+        });
+        cx /= clipboard.length * 2;
+        cy /= clipboard.length * 2;
+        
+        
+        BOARD.buffer = [];
+        clipboard.map((stroke)=>{
+            stroke.gp[0] = UI.local_to_global({
+                X : stroke.gp[0].X - cx + this.last_point.X
+               ,Y : stroke.gp[0].Y - cy + this.last_point.Y 
+            });
+            stroke.gp[1] = UI.local_to_global({
+                X : stroke.gp[1].X - cx + this.last_point.X
+               ,Y : stroke.gp[1].Y - cy + this.last_point.Y 
+            });
+            stroke.width /= UI.viewpoint.scale;
+            BOARD.buffer.push(stroke);
+        });
+        BOARD.flush_commit();
+        
+        this.selection = [];
+        for(var i=0; i<BOARD.strokes.length; i++) {
+            for(var pi=0; pi<2; pi++) {
+                if (BOARD.strokes[i].commit_id==BOARD.commit_id) {
+                    this.selection.push({
+                         stroke_idx : i
+                        ,stroke_id : BOARD.strokes[i].stroke_id
+                        ,point_idx : pi
+                    });
+                };
+            };
+        };
+        
+        this.get_selection_bounds();
+        this.draw_selected();
+
+        this.clipboard = [];
+        this.mode = 1;
+    }
+
+    ,optimize : function() {
+        
+        // merge nearby points
+        var squeezed = 0;
+        for(var i=0; i<this.selection.length; i++) {
+            var s0 = this.selection[i];
+            var p0 = BOARD.strokes[s0.stroke_idx].gp[s0.point_idx];
+            var lp0 = UI.global_to_local(p0);
+            
+            // TODO: n**2 -> O(logN) with kd
+            for(var j=i+1; j<this.selection.length; j++) {
+                var s1 = this.selection[j];
+                var lp1 = UI.global_to_local(BOARD.strokes[s1.stroke_idx].gp[s1.point_idx]);
+                var to = (BOARD.strokes[s0.stroke_idx].width + BOARD.strokes[s1.stroke_idx].width)/2.0;
+                var d = dst2(lp0, lp1);
+                if (( d < to ) && ( d > 0 )) { 
+                    BOARD.strokes[s1.stroke_idx].gp[s1.point_idx] = copy(p0);
+                    squeezed += 1;
+                };
+            };
+        };
+        console.log("Squeezed: ",squeezed);
+        
+        
+        // delete dots - strokes of length 0
+        var deleted = this.selection.reduce((a, s0)=>{
+            var ix = s0.stroke_idx;
+            var stroke = BOARD.strokes[ix];
+            var d = dst2(stroke.gp[0], stroke.gp[1]);
+            if ((d==0)&&(!(stroke.erased>0))&&(!(stroke.erased===null))) {
+                a.push(stroke);
+                stroke.erased=null;
+            };
+            return a;
+        }, []);
+        
+        if (deleted.length>0) {
+            deleted.map((stroke)=>{delete stroke.erased;});
+            BOARD.undo_strokes(deleted);
+        };
+        console.log("Deleted: ", deleted.length);
+        
+        // 
+        if (UI.keys["Shift"]) { // round up opt
+            var rounded = 0;
+            this.selection.map((s0)=>{
+                var ix = s0.stroke_idx;
+                if (BOARD.strokes[ix].erased>0)
+                    return;
+
+                BOARD.strokes[ix].gp.map((p)=>{
+                    if (Math.round(p.X)!=p.X) {
+                        p.X = Math.round(p.X);
+                        rounded++;
+                    };
+                    if (Math.round(p.Y)!=p.Y) {
+                        p.Y = Math.round(p.Y);
+                        rounded++;
+                    };
+                });
+                
+            });
+            console.log("Rounded: ", rounded);
+        };
+    }
+    
+    ,on_key_down : function(key) {
+        var keymap = {
+            "ArrowUp"    : [0,-1],
+            "ArrowDown"  : [0,+1],
+            "ArrowLeft"  : [-1,0],
+            "ArrowRight" : [+1,0]
+        };
+        
+        if (key=='Escape') {
+            this.activated = false;
+            this.mode = 0;
+            UI.redraw();
+        };
+
+        if (this.mode==1) {
+
+            if ((UI.keys["Control"])&&(key=='c')) {
+                this.copy();
+                
+            } else if ((UI.keys["Control"])&&(key=='v')) {
+                if (!SelectorTool.USE_SYSTEM_CLIPBOARD) {
+                    this.paste(this.clipboard);
+                }
+                
+            } else if (key in keymap) {
+                var dxdy = keymap[key];
+                var scale = (UI.keys["Control"])?1:5;
+                scale = (UI.keys["Shift"])?30:scale;
+                scale = scale / UI.viewpoint.scale;
+                this._move_selection(dxdy[0]*scale, dxdy[1]*scale);
+            };
+            
+            UI.redraw();
+        };
+
+        return false;
+    }
+
+    ,on_paste_strokes : function(strokes) {
+        if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
+            debug('selector:on_paste_strokes');
+            this.paste(strokes);
+            return true;
+        };
+    }
+    
+    ,after_redraw : function() {
+        if ((this.mode==1)||(this.mode==2)) {
+            this.draw_selected();
+        };
+    }
+
+    ,DELETE : { // background tool
+         icon : [null,[24,55],[21,54],[17,53],null,[43,53],[41,54],[38,55],[34,55],[29,55],[24,55],null,[25,27],[21,27],[16,27],[14,26],[16,24],[19,23],[23,23],[29,23],[34,23],[39,23],[43,24],[45,24],[42,27],[37,27],[32,27],[28,27],[25,27],null,[24,16],[20,16],[16,15],[14,15],[16,13],[19,12],[23,12],[28,11],[33,11],[38,12],[41,12],[44,13],[40,16],[36,16],[32,16],[27,16],[24,16],null,[14,26],[17,53],null,[45,24],[43,53],null,[21,54],[21,27],null,[24,55],[25,27],null,[29,55],[30,28],null,[34,55],[35,28],null,[42,27],[38,55],null,[16,27],[17,53],null,[21,27],[24,55],null,[28,27],[29,55],null,[37,27],[38,55],null,[45,24],[43,53],null,[19,12],[39,14],null,[22,7],[23,12],[22,7],[37,7],null,[22,7],[30,5],[37,7],[38,12],[37,7],null,[23,12],[38,12],null,[14,26],[19,23],null,[23,23],[29,23],null,[31,22],[39,23],[45,24]]
+
+        ,name : "delete"
+        
+        ,selector : null
+        
+        ,activation_key : "Delete"
+        
+        ,on_activated : function() {
+            if (this.selector.mode==1) {
+                
+                BOARD.op_start();
+                
+                this.selector.selection.map((sl)=>{
+                    BOARD.strokes[sl.stroke_idx].erased = BOARD.stroke_id;
+                });
+                
+                this.selector._replace_changed();
+                
+                BOARD.op_commit();
+                this.selector.mode = 0;
+                
+                UI.redraw();
+            };
+        }
+    }
+
+}
+
 
 var DistortableDrawTool = {
-    super : BufferedDrawTool
+    super : DrawToolBase
 
-    ,DistortableDrawTool : function(name, cyclic) {
-        BufferedDrawTool.init.call(this, name, cyclic);
+    ,DistortableDrawTool : function(name, cyclic, shortcut) {
+        DrawToolBase.init.call(this, name, cyclic, shortcut);
         this.distorted = 0;
         this.mode = 0;
         this.options = {
@@ -2120,7 +2792,7 @@ var LineTool = {
     ,icon : [null,[8,51],[49,11],null,[8,53],[51,13]]
 
     ,LineTool : function() {
-        DistortableDrawTool.init.call(this, "line", false);
+        DistortableDrawTool.init.call(this, "line", false, ["Control", "l"]);
         
         this.arrows = 0;
         this.options["arrows"] = {
@@ -2196,7 +2868,7 @@ var BoxTool = {
     ,icon : [null,[13,12],[13,17],[13,22],[12,26],[12,30],[12,34],[13,38],[13,43],[13,48],[17,48],[21,48],[25,48],[30,47],[35,47],[39,48],[43,48],[48,48],[47,43],[47,39],[48,34],[48,30],[48,26],[47,22],[47,17],[47,12],[43,12],[39,13],[34,13],[30,12],[25,12],[21,12],[17,12],[13,12]]
 
     ,BoxTool : function() {
-        DistortableDrawTool.init.call(this, "box", true);
+        DistortableDrawTool.init.call(this, "box", true, ["Control", "b"]);
     }
 
     ,draw : function(sp, lp, func) {
@@ -2220,7 +2892,7 @@ var CircleTool = {
     ,icon : [null,[23,52],[19,50],[16,49],[14,46],[11,43],[9,40],[7,37],[7,33],[6,29],[7,26],[7,23],[9,19],[11,16],[14,14],[16,11],[20,10],[23,7],[26,7],[30,6],[34,7],[37,8],[40,9],[44,11],[46,13],[48,16],[51,19],[52,23],[53,27],[53,29],[53,34],[52,37],[51,40],[49,43],[47,46],[43,49],[40,50],[37,52],[33,53],[30,53],[26,53],[23,52]]
 
     ,CircleTool : function() {
-        DistortableDrawTool.init.call(this, "circle", true);
+        DistortableDrawTool.init.call(this, "circle", true, ["Control", "c"]);
     }
 
     ,draw : function(cp, lp, func) {
@@ -2289,665 +2961,6 @@ var CircleTool = {
 
 }
 
-
-let SELECTOR = {
-     icon : [null,[6,12],[6,18],null,[7,24],[6,30],null,[6,36],[7,42],null,[7,49],[6,55],null,[12,54],[18,54],null,[25,54],[30,55],null,[36,55],[42,54],null,[48,54],[54,54],null,[54,48],[54,42],null,[54,36],[54,30],null,[54,24],[54,18],null,[54,12],[54,6],null,[48,6],[42,6],null,[36,5],[30,5],null,[25,6],[18,6],null,[12,6],[7,6],null,[54,46],[54,54],[48,54],null,[55,55],[54,46],null,[12,54],[6,55],[11,54],null,[6,55],[6,49],null,[6,54],[7,49],null,[7,6],[12,6],null,[6,12],[6,6],[6,12],null,[55,6],[55,12],null,[48,6],[54,5],[48,6]]
-    ,name : "selector"
-    
-    ,COLOR : "#F33A"
-    ,COLOR_COPYPASTE : "#3F3A"
-    ,WIDTH : 6
-    ,USE_SYSTEM_CLIPBOARD : true
-   
-    ,activated : false
-    ,start_point : null
-    ,last_point : null
-    
-    ,splits : 0
-    ,mode : 0 // 0:selecting / 1:selected / 2:moving / 3:scale / 4:rotate
-    
-    ,original_strokes : {}
-    
-    ,selection : null
-    ,selection_center : null
-    ,selection_rect : null
-
-    ,init : function() {
-        var ctx = MENU_main.add("root", "delete", SELECTOR.DELETE.on_activated, "canvas", "delete selected[del]")[1].getContext('2d');
-        UI.draw_glyph(SELECTOR.DELETE.icon, ctx);
-
-        // default strokes paste override
-        UI.on_paste_strokes_default = (strokes)=>{
-            debug('selector:on_paste_strokes_default');
-            
-            TOOLS.activate(SELECTOR.name);
-            if (TOOLS.background!=null) {
-                TOOLS.previous.push(SELECTOR);
-            };
-            
-            SELECTOR.last_point = {
-                 X : UI.window_width/2
-                ,Y : UI.window_height/2
-            };
-            
-            SELECTOR.paste(strokes);
-            //UI.redraw();
-        };
-    }
-
-    ,_save_selected : function() {
-        var was = new Set();
-
-        SELECTOR.original_strokes = {};
-        
-        SELECTOR.selection.map((sl)=>{
-            var stroke = BOARD.strokes[sl.stroke_idx];
-            if (!was.has(stroke.stroke_id)) {
-                SELECTOR.original_strokes[sl.stroke_idx] = deepcopy(stroke);
-                was.add(stroke.stroke_id);
-            };
-        });
-        
-    }
-
-    ,_replace_changed : function() {
-        var new_strokes = [];
-        var old_strokes = [];
-        for(var idx in SELECTOR.original_strokes) {
-            var old_stroke = SELECTOR.original_strokes[idx];
-            // capture changed strokes
-            if (!(BOARD.strokes[idx].erased>=0))
-                new_strokes.push(deepcopy(BOARD.strokes[idx]));
-            // return original strokes back
-            BOARD.strokes[idx] = old_stroke;
-            old_strokes.push(old_stroke);
-        };
-        
-        // delete original strokes
-        BOARD.undo_strokes(old_strokes);
-        BOARD.add_stroke({gp:[null, "erase"]});
-
-        // add new strokes
-        var offset = BOARD.strokes.length; 
-        BOARD.flush(new_strokes, false);            
-        
-        // remap selection to new strokes
-        var idmap = {};
-        var idxmap = {};
-        new_strokes.map((stroke, idx)=>{
-            idmap[old_strokes[idx].stroke_id] = stroke.stroke_id;
-            idxmap[old_strokes[idx].stroke_id] = offset + idx;
-        });
-        
-        SELECTOR.selection = SELECTOR.selection.reduce((a, sl, si)=>{
-            if (sl.stroke_id in idxmap) {
-                sl.stroke_idx = idxmap[sl.stroke_id];
-                sl.stroke_id = idmap[sl.stroke_id];
-                a.push(sl);
-            };
-            return a;
-        }, []);
-        
-        if (SELECTOR.selection.length) {
-            SELECTOR.get_selection_bounds();
-            SELECTOR.draw_selected();
-        } else {
-            SELECTOR.activated = false;
-            SELECTOR.selection = null;
-        };
-        
-    }
-
-    ,draw_selecting : function(sp, lp) {
-        UI.reset_layer("overlay");
-
-        var ctx = UI.contexts[UI.LAYERS.indexOf("overlay")];
-        
-        var rect = UI.get_rect([sp, lp]);
-        
-        var figure = [
-            rect[0], {X:rect[1].X, Y:rect[0].Y},
-            rect[1], {X:rect[0].X, Y:rect[1].Y}
-        ];
-
-        figure = UI.figure_split(figure, true, 2*SELECTOR.WIDTH);
-        
-        figure.map((p,pi)=>{
-            if (pi%2==0)
-                return;
-            UI.draw_stroke(p, figure[(pi+1) % figure.length], SELECTOR.COLOR, SELECTOR.WIDTH, ctx);
-        });
-    }
-
-    ,draw_selected : function() {
-        var ctx = UI.contexts[UI.LAYERS.indexOf("overlay")];
-        UI.reset_layer("overlay");
-
-        var W = SELECTOR.WIDTH;
-        
-        // draw selected center
-        var lp = UI.global_to_local(SELECTOR.selection_center);
-        UI.draw_stroke(lp, lp, SELECTOR.COLOR, W*2, ctx);
-        UI.draw_stroke(lp, lp, SELECTOR.COLOR_COPYPASTE, W, ctx);
-        
-        var rect = SELECTOR.selection_rect.map((p)=>{return UI.global_to_local(p);});
-        var figure = [
-            {X:rect[0].X-W, Y:rect[0].Y-W}, {X:rect[1].X+W, Y:rect[0].Y-W},
-                                            {X:rect[1].X+W, Y:rect[1].Y+W}, 
-            {X:rect[0].X-W, Y:rect[1].Y+W}
-        ];
-        
-        var d = W * 2;
-        var figures = [
-             [{X:figure[0].X,Y:figure[0].Y+d}, figure[0], {X:figure[0].X+d,Y:figure[0].Y}]
-            ,[{X:figure[1].X-d,Y:figure[1].Y}, figure[1], {X:figure[1].X,Y:figure[1].Y+d}]
-            ,[{X:figure[2].X,Y:figure[2].Y-d}, figure[2], {X:figure[2].X-d,Y:figure[2].Y}]
-            ,[{X:figure[3].X+d,Y:figure[3].Y}, figure[3], {X:figure[3].X,Y:figure[3].Y-d}]
-        ];
-        
-        // draw rect
-        figures.map((f,fi)=>{
-            f.map((p,pi)=>{
-                if (pi < f.length-1)
-                    UI.draw_stroke(
-                         p
-                        ,f[(pi+1) % f.length]
-                        ,SELECTOR.COLOR
-                        ,W
-                        ,ctx
-                    );
-            });
-        });
-
-        // draw ancor mode selectors
-        // rotator
-        lp = figure[1];
-        ctx.beginPath();
-        ctx.arc(lp.X, lp.Y, d/2, Math.PI, Math.PI/2);
-        ctx.stroke();
-        
-        // scaler
-        lp = figure[2];
-        ctx.beginPath();
-        ctx.rect(lp.X-d/2, lp.Y-d/2, d, d);
-        ctx.stroke();
-
-        // optimizer
-        lp = {
-             X: figure[1].X
-            ,Y:(figure[1].Y + figure[2].Y)/2
-        };
-        UI.draw_stroke({X:lp.X-d/2,Y:lp.Y-d/2},{X:lp.X+d/2,Y:lp.Y+d/2}, SELECTOR.COLOR_COPYPASTE, W, ctx);
-        UI.draw_stroke({X:lp.X+d/2,Y:lp.Y-d/2},{X:lp.X-d/2,Y:lp.Y+d/2}, SELECTOR.COLOR_COPYPASTE, W, ctx);
-        
-        // copy
-        lp = figure[0];
-        UI.draw_stroke({X:lp.X,Y:lp.Y},{X:lp.X-d,Y:lp.Y-d}  ,SELECTOR.COLOR_COPYPASTE, W, ctx);
-        UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X,Y:lp.Y-d},SELECTOR.COLOR_COPYPASTE, W, ctx);
-        UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X-d,Y:lp.Y},SELECTOR.COLOR_COPYPASTE, W, ctx);
-        
-        // paste
-        if (SELECTOR.clipboard.length) {
-            lp = figure[3];
-            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y+d}, SELECTOR.COLOR_COPYPASTE, W, ctx);
-            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y}, SELECTOR.COLOR_COPYPASTE, W, ctx);
-            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X,Y:lp.Y+d}, SELECTOR.COLOR_COPYPASTE, W, ctx);
-        };
-        
-        // draw over selected points
-    }
-    
-    
-    ,start_mode : function(mode) {
-        BOARD.op_start();
-        SELECTOR._save_selected();
-        SELECTOR.mode = mode;
-    }
-    
-    ,on_start : function(lp) {
-        SELECTOR.activated = true;
-        SELECTOR.start_point = lp;
-        SELECTOR.last_point = lp;
-        
-        if (SELECTOR.mode==0) { // selecting
-            return;
-        };
-        
-        if (SELECTOR.mode==1) { // selected
-            var dst = Math.sqrt(dst2(lp, UI.global_to_local(SELECTOR.selection_center)));
-            var W = SELECTOR.WIDTH;
-
-            if (UI.is_mobile)
-                dst /= 3;
-
-            if (dst < W) {
-                SELECTOR.start_mode(2); // move mode
-                return;
-            };
-
-            var rect = SELECTOR.selection_rect.map((p)=>{return UI.global_to_local(p);});
-            var figure = [
-                {X:rect[0].X-W, Y:rect[0].Y-W}, // copy    
-                {X:rect[1].X+W, Y:rect[0].Y-W}, // rotate
-                {X:rect[1].X+W, Y:rect[1].Y+W}, // scale
-                {X:rect[0].X-W, Y:rect[1].Y+W}, // paste
-                
-                {X:rect[1].X+W, Y:(rect[0].Y+rect[1].Y)/2} // optimize
-            ];
-            
-            var anchor_i = null;
-            figure.map((p, pi)=>{
-                dst = Math.sqrt(dst2(lp, p));
-                
-                if (UI.is_mobile)
-                    dst /= 3;
-                
-                if (dst < W) {
-                    anchor_i = pi;
-                };
-            });
-            
-            if (anchor_i == null) {
-                SELECTOR.mode = 0;
-                SELECTOR.selection = null;
-                SELECTOR.selection_center = null;
-                SELECTOR.selection_rect = null;
-                UI.redraw();
-                return;
-            };
-            
-            if (anchor_i==0) { // copy
-                SELECTOR.copy();
-                
-            } else if (anchor_i==1) {
-                SELECTOR.start_mode(4); // rotate mode
-                
-            } else if (anchor_i==2) {
-                SELECTOR.start_mode(3); // scale mode
-                
-            } else if (anchor_i==3) { // paste
-                if (SELECTOR.USE_SYSTM_CLIPBOARD) {
-                    navigator.clipboard.readText().then(text => {
-                        UI.on_paste(text, 'text/plain');
-                    });
-                } else {
-                    SELECTOR.paste(SELECTOR.clipboard);  
-                };
-                
-            } else if (anchor_i==4) { // optimize
-                BOARD.op_start();
-                SELECTOR._save_selected();
-                SELECTOR.optimize();
-                SELECTOR._replace_changed();
-                BOARD.op_commit();
-            }
-        };
-    }
-
-
-    ,move_scale : function(lp) {
-        if (SELECTOR.activated) {
-            var lpc = UI.global_to_local(SELECTOR.selection_center);
-            var cx = ( (lp.X - lpc.X) / (SELECTOR.last_point.X - lpc.X) );
-            var cy = ( (lp.Y - lpc.Y) / (SELECTOR.last_point.Y - lpc.Y) );
-                        
-            SELECTOR.selection.map((sl)=>{
-                var pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
-                pnt.X -= SELECTOR.selection_center.X;
-                pnt.Y -= SELECTOR.selection_center.Y;
-                
-                pnt.X *= cx;
-                pnt.Y *= cy;
-                
-                pnt.X += SELECTOR.selection_center.X;
-                pnt.Y += SELECTOR.selection_center.Y;
-            });
-
-        };
-    }
-
-    ,move_rotate : function(lp) {
-        if (SELECTOR.activated) {
-            var lcp = UI.global_to_local(SELECTOR.selection_center);
-            var p0 = sub(SELECTOR.last_point, lcp);
-            var p1 = sub(                 lp, lcp);
-            
-            var a = (
-                 Math.atan(p0.X / p0.Y)
-                -Math.atan(p1.X / p1.Y)
-            );
-            
-            if (Math.abs(a) > 1) a = 0;
-            
-            SELECTOR.selection.map((sl)=>{
-                var pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
-                pnt.X -= SELECTOR.selection_center.X;
-                pnt.Y -= SELECTOR.selection_center.Y;
-                
-                var rpnt = rotate(pnt, a);
-                pnt.X = rpnt.X;
-                pnt.Y = rpnt.Y;
-                
-                pnt.X += SELECTOR.selection_center.X;
-                pnt.Y += SELECTOR.selection_center.Y;
-            });
-
-        };
-    }
-
-    
-    ,_move_selection : function(dx, dy) {
-        SELECTOR.selection.map((sl)=>{
-            var pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
-            pnt.X += dx;
-            pnt.Y += dy;
-        });
-        
-        SELECTOR.selection_center.X += dx;
-        SELECTOR.selection_center.Y += dy;
-        
-        SELECTOR.selection_rect[0].X += dx;
-        SELECTOR.selection_rect[1].X += dx;
-        SELECTOR.selection_rect[0].Y += dy;
-        SELECTOR.selection_rect[1].Y += dy;
-    }
-    
-    ,move_moving : function(lp) {
-        if (SELECTOR.activated) {
-            var dx = -(UI.local_to_global(SELECTOR.last_point).X - UI.local_to_global(lp).X);
-            var dy = -(UI.local_to_global(SELECTOR.last_point).Y - UI.local_to_global(lp).Y);
-            SELECTOR._move_selection(dx, dy);
-        };
-    }
-    
-    ,move_selecting : function(lp) {
-        if (SELECTOR.activated) {
-            SELECTOR.draw_selecting(SELECTOR.start_point, lp);
-        };
-    }
-    
-    ,on_move : function(lp) {
-        if (SELECTOR.mode==0) {
-            SELECTOR.move_selecting(lp);
-        } else {
-            if (SELECTOR.mode==2) { // moving
-                SELECTOR.move_moving(lp);
-            } else if (SELECTOR.mode==3) { // scaling
-                SELECTOR.move_scale(lp);
-            } else if (SELECTOR.mode==4) { // rotating
-                SELECTOR.move_rotate(lp);
-            };
-            UI.redraw();
-        };
-        SELECTOR.last_point = lp;
-    }
-
-    
-    ,get_selection_bounds : function() {
-        SELECTOR.selection_rect = UI.get_rect(
-            SELECTOR.selection.map((sl)=>{
-                return BOARD.strokes[sl.stroke_idx].gp[sl.point_idx]
-            })
-        );
-        
-        SELECTOR.selection_center = {X:0, Y:0};
-        SELECTOR.selection_center.X = ( SELECTOR.selection_rect[1].X + SELECTOR.selection_rect[0].X ) / 2;
-        SELECTOR.selection_center.Y = ( SELECTOR.selection_rect[1].Y + SELECTOR.selection_rect[0].Y ) / 2;        
-    }
-    
-    ,stop_selecting : function(lp) {
-        UI.reset_layer("overlay");
-        var sp = SELECTOR.start_point;
-        
-        SELECTOR.selection = BOARD.get_strokes(UI.get_rect([sp, lp]).map((p)=>{
-            return UI.local_to_global(p)
-        }), true);
-                
-        if (SELECTOR.selection.length>0) {
-            SELECTOR.get_selection_bounds();
-            SELECTOR.draw_selected();
-            SELECTOR.mode = 1;
-        };
-    }
-
-    ,stop_mode : function(mode) {
-        SELECTOR._replace_changed();
-        SELECTOR.mode = 1;
-        BOARD.op_commit();
-    }
-    
-    ,on_stop : function(lp) {
-        if (SELECTOR.mode==0) { // stopped selecting
-            SELECTOR.stop_selecting(lp);
-
-        } else if (SELECTOR.mode==1) { // this mode is transient, should not happen
-        } else {
-            SELECTOR.stop_mode(SELECTOR.mode); // stopped moving
-            
-        };
-        
-        SELECTOR.activated = false;
-    }
-
-
-    ,clipboard : []
-    ,copy : function() {
-        var copied = new Set();
-        SELECTOR.clipboard = SELECTOR.selection.reduce((a, sl)=>{
-            var stroke = BOARD.strokes[sl.stroke_idx];
-            if (!copied.has(stroke.stroke_id)) {
-                copied.add(stroke.stroke_id);
-                var c_stroke = deepcopy(stroke);
-                c_stroke.gp[0] = UI.global_to_local(c_stroke.gp[0]);
-                c_stroke.gp[1] = UI.global_to_local(c_stroke.gp[1]);
-                c_stroke.width *= UI.viewpoint.scale;
-                a.push(c_stroke);
-            };
-            return a;
-        }, []);
-     
-        if (SELECTOR.USE_SYSTEM_CLIPBOARD) {
-            window.navigator.clipboard.writeText(
-                JSON.stringify({
-                    "strokes" : SELECTOR.clipboard
-                })
-            ).then(console.log('copied to system clipboard'))
-        };
-     
-        SELECTOR.draw_selected();
-    }
-    ,paste : function(clipboard) {
-        
-        var cx = 0;
-        var cy = 0;
-        clipboard.map((stroke)=>{
-            cx += stroke.gp[0].X + stroke.gp[1].X;
-            cy += stroke.gp[0].Y + stroke.gp[1].Y;
-        });
-        cx /= clipboard.length * 2;
-        cy /= clipboard.length * 2;
-        
-        
-        BOARD.buffer = [];
-        clipboard.map((stroke)=>{
-            stroke.gp[0] = UI.local_to_global({
-                X : stroke.gp[0].X - cx + SELECTOR.last_point.X
-               ,Y : stroke.gp[0].Y - cy + SELECTOR.last_point.Y 
-            });
-            stroke.gp[1] = UI.local_to_global({
-                X : stroke.gp[1].X - cx + SELECTOR.last_point.X
-               ,Y : stroke.gp[1].Y - cy + SELECTOR.last_point.Y 
-            });
-            stroke.width /= UI.viewpoint.scale;
-            BOARD.buffer.push(stroke);
-        });
-        BOARD.flush_commit();
-        
-        SELECTOR.selection = [];
-        for(var i=0; i<BOARD.strokes.length; i++) {
-            for(var pi=0; pi<2; pi++) {
-                if (BOARD.strokes[i].commit_id==BOARD.commit_id) {
-                    SELECTOR.selection.push({
-                         stroke_idx : i
-                        ,stroke_id : BOARD.strokes[i].stroke_id
-                        ,point_idx : pi
-                    });
-                };
-            };
-        };
-        
-        SELECTOR.get_selection_bounds();
-        SELECTOR.draw_selected();
-
-        SELECTOR.clipboard = [];
-        SELECTOR.mode = 1;
-    }
-
-    ,optimize : function() {
-        
-        // merge nearby points
-        var squeezed = 0;
-        for(var i=0; i<SELECTOR.selection.length; i++) {
-            var s0 = SELECTOR.selection[i];
-            var p0 = BOARD.strokes[s0.stroke_idx].gp[s0.point_idx];
-            var lp0 = UI.global_to_local(p0);
-            
-            // TODO: n**2 -> O(logN) with kd
-            for(var j=i+1; j<SELECTOR.selection.length; j++) {
-                var s1 = SELECTOR.selection[j];
-                var lp1 = UI.global_to_local(BOARD.strokes[s1.stroke_idx].gp[s1.point_idx]);
-                var to = (BOARD.strokes[s0.stroke_idx].width + BOARD.strokes[s1.stroke_idx].width)/2.0;
-                var d = dst2(lp0, lp1);
-                if (( d < to ) && ( d > 0 )) { 
-                    BOARD.strokes[s1.stroke_idx].gp[s1.point_idx] = copy(p0);
-                    squeezed += 1;
-                };
-            };
-        };
-        console.log("Squeezed: ",squeezed);
-        
-        
-        // delete dots - strokes of length 0
-        var deleted = SELECTOR.selection.reduce((a, s0)=>{
-            var ix = s0.stroke_idx;
-            var stroke = BOARD.strokes[ix];
-            var d = dst2(stroke.gp[0], stroke.gp[1]);
-            if ((d==0)&&(!(stroke.erased>0))&&(!(stroke.erased===null))) {
-                a.push(stroke);
-                stroke.erased=null;
-            };
-            return a;
-        }, []);
-        
-        if (deleted.length>0) {
-            deleted.map((stroke)=>{delete stroke.erased;});
-            BOARD.undo_strokes(deleted);
-        };
-        console.log("Deleted: ", deleted.length);
-        
-        // 
-        if (UI.keys["Shift"]) { // round up opt
-            var rounded = 0;
-            SELECTOR.selection.map((s0)=>{
-                var ix = s0.stroke_idx;
-                if (BOARD.strokes[ix].erased>0)
-                    return;
-
-                BOARD.strokes[ix].gp.map((p)=>{
-                    if (Math.round(p.X)!=p.X) {
-                        p.X = Math.round(p.X);
-                        rounded++;
-                    };
-                    if (Math.round(p.Y)!=p.Y) {
-                        p.Y = Math.round(p.Y);
-                        rounded++;
-                    };
-                });
-                
-            });
-            console.log("Rounded: ", rounded);
-        };
-    }
-    
-    ,on_key_down : function(key) {
-        var keymap = {
-            "ArrowUp"    : [0,-1],
-            "ArrowDown"  : [0,+1],
-            "ArrowLeft"  : [-1,0],
-            "ArrowRight" : [+1,0]
-        };
-        
-        if (key=='Escape') {
-            SELECTOR.activated = false;
-            SELECTOR.mode = 0;
-            UI.redraw();
-        };
-
-        if (SELECTOR.mode==1) {
-
-            if ((UI.keys["Control"])&&(key=='c')) {
-                SELECTOR.copy();
-                
-            } else if ((UI.keys["Control"])&&(key=='v')) {
-                if (!SELECTOR.USE_SYSTEM_CLIPBOARD) {
-                    SELECTOR.paste(SELECTOR.clipboard);
-                }
-                
-            } else if (key in keymap) {
-                var dxdy = keymap[key];
-                var scale = (UI.keys["Control"])?1:5;
-                scale = (UI.keys["Shift"])?30:scale;
-                scale = scale / UI.viewpoint.scale;
-                SELECTOR._move_selection(dxdy[0]*scale, dxdy[1]*scale);
-            };
-            
-            UI.redraw();
-        };
-
-        return false;
-    }
-
-    ,on_paste_strokes : function(strokes) {
-        if (SELECTOR.USE_SYSTEM_CLIPBOARD) {
-            debug('selector:on_paste_strokes');
-            SELECTOR.paste(strokes);
-            return true;
-        };
-    }
-    
-    ,after_redraw : function() {
-        if ((SELECTOR.mode==1)||(SELECTOR.mode==2)) {
-            SELECTOR.draw_selected();
-        };
-    }
-
-    ,DELETE : { // background tool
-         icon : [null,[24,55],[21,54],[17,53],null,[43,53],[41,54],[38,55],[34,55],[29,55],[24,55],null,[25,27],[21,27],[16,27],[14,26],[16,24],[19,23],[23,23],[29,23],[34,23],[39,23],[43,24],[45,24],[42,27],[37,27],[32,27],[28,27],[25,27],null,[24,16],[20,16],[16,15],[14,15],[16,13],[19,12],[23,12],[28,11],[33,11],[38,12],[41,12],[44,13],[40,16],[36,16],[32,16],[27,16],[24,16],null,[14,26],[17,53],null,[45,24],[43,53],null,[21,54],[21,27],null,[24,55],[25,27],null,[29,55],[30,28],null,[34,55],[35,28],null,[42,27],[38,55],null,[16,27],[17,53],null,[21,27],[24,55],null,[28,27],[29,55],null,[37,27],[38,55],null,[45,24],[43,53],null,[19,12],[39,14],null,[22,7],[23,12],[22,7],[37,7],null,[22,7],[30,5],[37,7],[38,12],[37,7],null,[23,12],[38,12],null,[14,26],[19,23],null,[23,23],[29,23],null,[31,22],[39,23],[45,24]]
-
-        ,name : "delete"
-        
-        ,activation_key : "Delete"
-        
-        ,on_activated : function() {
-            if (SELECTOR.mode==1) {
-                
-                BOARD.op_start();
-                
-                SELECTOR.selection.map((sl)=>{
-                    BOARD.strokes[sl.stroke_idx].erased = BOARD.stroke_id;
-                });
-                
-                SELECTOR._replace_changed();
-                
-                BOARD.op_commit();
-                SELECTOR.mode = 0;
-                
-                UI.redraw();
-            };
-        }
-    }
-
-}
 
 
 // SETUP CONTAINER
@@ -3464,17 +3477,18 @@ function init() {
     TOOLS.init();
     TOOLS.add_tool(PAN_ZOOM, false); // "Control" pan & zoom tool handler
     TOOLS.add_tool(UNDO, false); // "Backspace" undo handler 
-    TOOLS.add_tool(SELECTOR.DELETE, false); // "Delete" deleter handler 
+    TOOLS.add_tool(SelectorTool.DELETE, false); // "Delete" deleter handler 
 
-    TOOLS.add_tool(_new(PenTool, []), true, "pen");
-    TOOLS.add_tool(_new(EraserTool, []), true, "eraser");
+    TOOLS.add_tool(_new(PenTool, []), true, "[p]en");
+    TOOLS.add_tool(_new(EraserTool, []), true, "[e]raser");
     TOOLS.add_tool(TEXTER, true, "text");
 
-    TOOLS.add_tool(_new(BoxTool, []), true, "rectangle");
-    TOOLS.add_tool(_new(CircleTool, []), true, "ellipse");
-    TOOLS.add_tool(_new(LineTool, []), true, "line, arrow");
+    TOOLS.add_tool(_new(BoxTool, []), true, "[b]ox");
+    TOOLS.add_tool(_new(CircleTool, []), true, "[c]ircle/ellipse");
+    TOOLS.add_tool(_new(LineTool, []), true, "[l]ine, arrow");
     
-    TOOLS.add_tool(SELECTOR, true, "select - scale, rotate, copy, paste");
+    let selector = _new(SelectorTool, []);
+    TOOLS.add_tool(selector, true, "[s]elect - scale, rotate, copy, paste");
     
     TOOLS.activate("pen");
     
@@ -3486,9 +3500,8 @@ function init() {
     var ctx = MENU_main.add("root", "undo", UNDO.on_activated, "canvas", "undo [backspace]")[1].getContext('2d');
     UI.draw_glyph(UNDO.icon, ctx);
     
-    
-    // SELECTOR.DELETE + default paste
-    SELECTOR.init();
+    // selector.DELETE + default paste
+    selector.init();
     
     // SAVE
     SAVE.init();
