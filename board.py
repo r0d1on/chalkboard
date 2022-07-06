@@ -133,7 +133,7 @@ if __name__ == '__main__':
             bind_ip = sys.argv[sys.argv.index('--bind')+1]
 
     if debug:
-        app.run(debug = True)
+        app.run(host=bind_ip, port=port, threaded=False, debug = True)
     else:
-        app.run(host=bind_ip, port=port)
+        app.run(host=bind_ip, port=port, threaded=False)
 
