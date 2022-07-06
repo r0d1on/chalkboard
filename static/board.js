@@ -16,6 +16,57 @@ function angle(a, b) {return ((a.X*b.X+a.Y*b.Y)/(Math.sqrt((a.X*a.X+a.Y*a.Y)*(b.
 function rotate(p, phi) {return {X:p.X*Math.cos(phi)-p.Y*Math.sin(phi),Y:p.X*Math.sin(phi)+p.Y*Math.cos(phi)}};
 
 
+let TOASTS = {};
+function toast(topic, text, lifespan) {
+
+    function drop(topic) {
+        document.body.removeChild(TOASTS[topic]["div"]);
+        clearTimeout(TOASTS[topic]["timeout"]);
+        delete TOASTS[topic];
+    };
+
+    function blur(topic) {
+        function handler() {
+            const tst = TOASTS[topic];
+            if (tst===undefined)
+                return;
+            
+            if (tst["age"] >= tst["lifespan"]) {
+                drop(topic);
+            } else {
+                tst["age"] += lifespan/10;
+                tst["div"].style.opacity = 1.0 - tst["age"]/tst["lifespan"];
+                tst["timeout"] = setTimeout(blur(topic),lifespan/10);
+            };
+        };
+        return handler;
+    };
+
+    if (topic in TOASTS)
+        drop(topic);
+
+    const e = document.createElement("div")
+    e.innerHTML = text;
+    e.style.position = "absolute";
+    e.style['background-color'] = "#3333";
+    e.style['padding'] = "10px";
+    e.style["border"] = "1px solid black";
+    e.style['border-radius'] = "15px";
+    e.style['pointer-events'] = "none";
+        
+    document.body.appendChild(e);
+    e.style.top = "" + ((UI.window_height - e.clientHeight)>>1) + "px";
+    e.style.left = "" + ((UI.window_width - e.clientWidth)>>1) + "px";
+
+    TOASTS[topic] = {
+         "div" : e
+        ,"lifespan" : lifespan
+        ,"age" : 0
+        ,"timeout" : setTimeout(blur(topic),lifespan/10)
+    };
+};
+
+
 function copy(o){return Object.assign({},o)}
 
 function deepcopy(o){
@@ -509,25 +560,42 @@ let UI = {
     
     ,keys : {"Control":false, "Shift":false, "Alt":false}
     
-    ,shift_viewpoint : function(dx, dy) {
-        UI.viewpoint.dx += dx;
-        UI.viewpoint.dy += dy;
+    ,viewpoint_set : function(dx, dy, scale, maketoast) {
+        maketoast = (maketoast===undefined)?true:maketoast;
+        UI.viewpoint.dx = dx;
+        UI.viewpoint.dy = dy;
+        UI.viewpoint.scale = scale;
         UI.redraw();
+        
+        if (maketoast) {
+            const zoom_prc = Math.round(1000*((UI.viewpoint.scale>=1)?UI.viewpoint.scale:-1/UI.viewpoint.scale))/10;
+            toast("viewpoint","( "+Math.round(UI.viewpoint.dx)+" , "+Math.round(UI.viewpoint.dy)+") :: <b>"+zoom_prc+"%</b>", 700);
+        };
+    }    
+    
+    ,viewpoint_shift : function(dx, dy, maketoast) {
+        maketoast = (maketoast===undefined)?true:maketoast;
+        UI.viewpoint_set(UI.viewpoint.dx + dx, UI.viewpoint.dy + dy, UI.viewpoint.scale, maketoast);
     }
     
-    ,zoom_viewpoint: function(scale, center) {
+    ,viewpoint_zoom: function(scale, center) {
         var p0 = UI.local_to_global(center);
         //console.log(center,p0);
         
         UI.viewpoint.scale *= scale;
+        
+        const zoom_prc = Math.round(1000*((UI.viewpoint.scale>=1)?UI.viewpoint.scale:-1/UI.viewpoint.scale))/10;
+        toast("viewpoint","ZOOM: <b>" + zoom_prc + "%</b>", 700);
+        
         var p1 = UI.local_to_global(center);
         
         var dx = (p0.X - p1.X);
         var dy = (p0.Y - p1.Y);
         //console.log(dx, dy);
         
-        UI.shift_viewpoint(dx, dy);
+        UI.viewpoint_shift(dx, dy, false);
     }
+    
     
     ,reset_layer : function(layer_name) {
         var canvas = UI.layers[UI.LAYERS.indexOf(layer_name)]
@@ -778,9 +846,9 @@ let UI = {
 
     ,on_wheel_default : function(delta) {
         if (UI.keys["Shift"])
-            UI.shift_viewpoint(Math.sign(delta)*60.0/UI.viewpoint.scale, 0);
+            UI.viewpoint_shift(Math.sign(delta)*60.0/UI.viewpoint.scale, 0);
         else
-            UI.shift_viewpoint(0, Math.sign(delta)*60.0/UI.viewpoint.scale);
+            UI.viewpoint_shift(0, Math.sign(delta)*60.0/UI.viewpoint.scale);
     }
 
 
@@ -1678,14 +1746,14 @@ let PAN_ZOOM = { // background tool
     
     ,on_move : function(lp) {
         if (PAN_ZOOM.moving) {
-            UI.shift_viewpoint(
+            UI.viewpoint_shift(
                  (PAN_ZOOM.last_point.X - lp.X) / UI.viewpoint.scale
                 ,(PAN_ZOOM.last_point.Y - lp.Y) / UI.viewpoint.scale
             );
         };
         
         if ((lp.D!=undefined)&&(PAN_ZOOM.last_point.D!=undefined))
-            UI.zoom_viewpoint(lp.D / PAN_ZOOM.last_point.D, PAN_ZOOM.last_point);
+            UI.viewpoint_zoom(lp.D / PAN_ZOOM.last_point.D, PAN_ZOOM.last_point);
         
         PAN_ZOOM.last_point = lp;
         return true;
@@ -1703,7 +1771,7 @@ let PAN_ZOOM = { // background tool
             scale = 1.0 / scale;
         
         if (PAN_ZOOM.last_point!=null)
-            UI.zoom_viewpoint(scale, PAN_ZOOM.last_point);
+            UI.viewpoint_zoom(scale, PAN_ZOOM.last_point);
         
         return true;
     }
@@ -3356,22 +3424,21 @@ let SLIDER = {
             clearTimeout(SLIDER._timer);
         
         function interpolate(p0, p1, step, steps, time) {
-            var d = [
+            const d = [
                  p1[0].X - p0[0].X, p1[0].Y - p0[0].Y
                 ,p1[1].X - p0[1].X, p1[1].Y - p0[1].Y
             ];
+            const k = step / steps;
 
-            UI.viewpoint.dx = p0[0].X + d[0]*step/steps;
-            UI.viewpoint.dy = p0[0].Y + d[1]*step/steps;
-            UI.viewpoint.scale = LDX / ((p0[1].X + d[2]*step/steps) - UI.viewpoint.dx);
-            UI.redraw();
+            UI.viewpoint_set(
+                 p0[0].X + d[0] * k
+                ,p0[0].Y + d[1] * k
+                ,LDX / ((p0[1].X + d[2] * k) - UI.viewpoint.dx)
+            );
 
             if (step==steps) {
                 SLIDER._timer = null;
-                UI.viewpoint.dx = p1[0].X;
-                UI.viewpoint.dy = p1[0].Y;
-                UI.viewpoint.scale = LDX / (p1[1].X - p1[0].X);
-                UI.redraw();
+                UI.viewpoint_set(p1[0].X, p1[0].Y, LDX / (p1[1].X - p1[0].X));
                 
             } else {
                 SLIDER._timer = setTimeout(((p0, p1, step, steps, time)=>{
@@ -3527,4 +3594,5 @@ function init() {
     
     UI.redraw();
 };
+
 
