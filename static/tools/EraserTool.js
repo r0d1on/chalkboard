@@ -12,7 +12,6 @@ import {BRUSH} from '../ui/BRUSH.js';
 import {DrawToolBase} from './Base.js';
 
 
-
 var EraserTool = _class("EraserTool", {
     super : DrawToolBase
     

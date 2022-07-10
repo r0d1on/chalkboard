@@ -7,10 +7,34 @@ import {BRUSH} from '../ui/BRUSH.js';
 
 import {BOARD} from '../ui/BOARD.js';
 
-var DrawToolBase = _class("DrawToolBase", {
 
-    DrawToolBase : function(name, cyclic, shortcut) {
-        this.name = name;
+var ToolBase = _class("ToolBase", {
+    
+    ToolBase : function(name) {
+        this.name = name
+    }
+    
+    ,on_activated : function(){
+        console.log(this.name,' - activated');
+    }
+    
+    ,on_deactivated : function() {
+        console.log(this.name,' - deactivated');
+    }
+    
+    ,after_redraw : function() {}
+
+    ,on_wheel : function() {}
+    
+})
+
+
+var DrawToolBase = _class("DrawToolBase", {
+    super : ToolBase
+
+    ,DrawToolBase : function(name, cyclic, shortcut) {
+        ToolBase.init.call(this, name);
+
         this.cyclic = cyclic;
         this.shortcut = shortcut;
         
@@ -146,4 +170,4 @@ var DistortableDrawTool = _class("DistortableDrawTool", {
 })
 
 
-export {DrawToolBase, DistortableDrawTool};
+export {ToolBase, DrawToolBase, DistortableDrawTool};

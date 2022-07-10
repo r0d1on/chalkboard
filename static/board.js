@@ -25,8 +25,8 @@ import {BoxTool} from './tools/BoxTool.js';
 import {CircleTool} from './tools/CircleTool.js';
 
 // background tools
-import {PAN_ZOOM} from './tools/PAN_ZOOM.js';
-import {UNDO} from './tools/UNDO.js';
+import {PanZoomTool} from './tools/PanZoomTool.js';
+import {UndoTool} from './tools/UndoTool.js';
 
 // menu actions
 import {SAVE} from './actions/SAVE.js';
@@ -90,9 +90,12 @@ function init() {
     
     // drawing tools menu item
     TOOLS.init(MENU_main, MENU_options);
-    TOOLS.add_tool(PAN_ZOOM, false); // "Control" pan & zoom tool handler
-    TOOLS.add_tool(UNDO, false); // "Backspace" undo handler 
-    TOOLS.add_tool(SelectorTool.DELETE, false); // "Delete" deleter handler 
+    // background tools
+    TOOLS.add_tool(_new(PanZoomTool, []), false); // "Control" pan & zoom tool handler
+    let undo = _new(UndoTool, []);
+    TOOLS.add_tool(undo, false); // "Backspace" undo handler 
+    TOOLS.add_tool(SelectorTool.DELETE, false); // "Delete" deleter handler
+    // foreground tools
     TOOLS.add_tool(_new(PenTool, []), true, "[p]en");
     TOOLS.add_tool(_new(EraserTool, []), true, "[e]raser");
     TOOLS.add_tool(_new(TexterTool, [MENU_main]), true, "text [i]nput");
@@ -109,8 +112,8 @@ function init() {
     SETUP.add_item(GRID_MODE, "grid on/off");
 
     // undo menu item
-    var ctx = MENU_main.add("root", "undo", UNDO.on_activated, "canvas", "undo [backspace]")[1].getContext('2d');
-    UI.draw_glyph(UNDO.icon, ctx);
+    var ctx = MENU_main.add("root", "undo", undo.on_activated, "canvas", "undo [backspace]")[1].getContext('2d');
+    UI.draw_glyph(undo.icon, ctx);
     
     // delete menu item (selector.DELETE + default paste)
     selector.init(MENU_main);

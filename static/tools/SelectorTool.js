@@ -589,7 +589,9 @@ var SelectorTool = _class("SelectorTool", {
     }
     
     ,on_key_down : function(key) {
-        var keymap = {
+        let handled = false;
+        
+        let keymap = {
             "ArrowUp"    : [0,-1],
             "ArrowDown"  : [0,+1],
             "ArrowLeft"  : [-1,0],
@@ -599,31 +601,38 @@ var SelectorTool = _class("SelectorTool", {
         if (key=='Escape') {
             this.activated = false;
             this.mode = 0;
-            UI.redraw();
+            handled = true;
+
         };
 
         if (this.mode==1) {
 
             if ((UI.keys["Control"])&&(key=='c')) {
                 this.copy();
+                handled = true;
                 
             } else if ((UI.keys["Control"])&&(key=='v')) {
                 if (!SelectorTool.USE_SYSTEM_CLIPBOARD) {
                     this.paste(this.clipboard);
+                    handled = true;
                 }
                 
             } else if (key in keymap) {
-                var dxdy = keymap[key];
-                var scale = (UI.keys["Control"])?1:5;
+                let dxdy = keymap[key];
+                let scale = (UI.keys["Control"])?1:5;
                 scale = (UI.keys["Shift"])?30:scale;
                 scale = scale / UI.viewpoint.scale;
-                this._move_selection(dxdy[0]*scale, dxdy[1]*scale);
+                this._move_selection( dxdy[0] * scale, dxdy[1] * scale );
+                handled = true;
+                
             };
             
-            UI.redraw();
         };
 
-        return false;
+        if (handled)
+            UI.redraw();
+
+        return handled;
     }
 
     ,on_paste_strokes : function(strokes) {
@@ -661,7 +670,7 @@ var SelectorTool = _class("SelectorTool", {
                 SelectorTool.DELETE.selector._replace_changed();
                 
                 BOARD.op_commit();
-
+                
                 SelectorTool.DELETE.selector.mode = 0;
                 
                 UI.redraw();
