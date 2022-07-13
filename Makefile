@@ -1,10 +1,19 @@
+.DEFAULT_GOAL := run
+
+.PHONY: help lint build run
+
 help:
 	@echo ''
 	@echo 'Usage: make run'
 	@echo 'Targets:'
 	@echo '  run    	build docker image and run it'
 	@echo ''
-build:
+
+lint: 
+	./dkr_build.sh eslint
+	docker run -it --rm -v $(CURDIR):/chalkboard eslint ./static/*.js
+
+build: lint
 	# build
 	docker build -t chalkboard .
 
