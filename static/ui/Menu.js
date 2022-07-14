@@ -1,13 +1,13 @@
-"use strict";
+'use strict';
 
 import {_class} from '../base/objects.js';
 
-var Menu = _class("Menu", {
+let Menu = _class('Menu', {
 
-     SIZE : 60
+    SIZE : 60
     ,LONG_CLICK_DELAY : 1000
-    ,COLOR0 : "#666D"
-    ,COLOR1 : "#555D"
+    ,COLOR0 : '#666D'
+    ,COLOR1 : '#555D'
 
     ,Menu : function(root_name, root_div_id, top) {
         this.id = root_div_id;
@@ -16,12 +16,12 @@ var Menu = _class("Menu", {
         this.top = (top===undefined)?true:top;
         
         if (this.top) {
-            this.container.style['top'] = "0px";
+            this.container.style['top'] = '0px';
             this.container.style['bottom'] = undefined;
         } else {
             this.container.style['top'] = undefined;
-            this.container.style['bottom'] = "0px";
-        };
+            this.container.style['bottom'] = '0px';
+        }
         
         this.tree = {};
         this.tree[root_name] = this._new_item(null, this.container, null, 0, 0);
@@ -29,7 +29,7 @@ var Menu = _class("Menu", {
 
     ,_new_item : function(dom, rdom, pid, top, left) {
         return {
-             dom : dom
+            dom : dom
             ,rdom : rdom
             ,sub : []
             ,pid : pid
@@ -44,7 +44,7 @@ var Menu = _class("Menu", {
             return;
 
         if (id != 'root') 
-            this.tree[id].rdom.style['display'] = "none";
+            this.tree[id].rdom.style['display'] = 'none';
 
         this.tree[id].sub.map((sid)=>{
             if (sid != x) this.hide(sid);
@@ -55,84 +55,85 @@ var Menu = _class("Menu", {
     }
     
     ,show : function(id) {
-        this.tree[id].rdom.style['display'] = "block";
+        this.tree[id].rdom.style['display'] = 'block';
     }
     
     ,onpush : function(id) {
-        var that = this;
-        function handler(e) {
+        let that = this;
+        function handler() {
             that.tree[id]._push = (new Date()).valueOf();
-        };
+        }
         return handler;
     }
     
     ,onclick : function(id, onclk) {
-        var that = this;
-        return (e) => {
-            var long = ((new Date()).valueOf() - that.tree[id]._push) > Menu.LONG_CLICK_DELAY;
+        let that = this;
+        function handler(e) {
+            let long = ((new Date()).valueOf() - that.tree[id]._push) > Menu.LONG_CLICK_DELAY;
             
             //console.log("menu:", id);
             
             if ( ( onclk != undefined ) && ( onclk != null ) && ( !onclk(e, id, long) ) ) {
                 //console.log(id, e, " - cancelled");
-                return
-            };
+                return;
+            }
             
             if (that.tree[id].sub.length > 0) {
                 that.hide(that.tree[id].pid, id);
-                if (that.tree[id].rdom.style['display']=="none") {
+                if (that.tree[id].rdom.style['display']=='none') {
                     that.show(id);
                 } else {
                     that.hide(id);
-                };
+                }
             } else {
-                that.hide("root");
-            };
-        };
+                that.hide('root');
+            }
+        }
+        return handler;
     }
 
     
     ,get_menu_block : function(type, id) {
-        var elem = document.createElement(type);
+        let elem = document.createElement(type);
         elem.id = id;
         elem.style['width'] = Menu.SIZE;
         elem.style['height'] = Menu.SIZE;
-        if (type=="canvas") {
+        if (type=='canvas') {
             elem.width = Menu.SIZE;
             elem.height = Menu.SIZE;
-        };
+        }
         return elem;
     }
     
     ,add : function(pid, id, onclick, inner_type, title) {
-        var parent = this.tree[pid];
+        let parent = this.tree[pid];
 
-        var elem = document.createElement("div");
+        let elem = document.createElement('div');
         elem.id = id;
         elem.style['position'] = 'absolute';
         elem.style['width'] = Menu.SIZE + 'px';
         elem.style['height'] = Menu.SIZE + 'px';
         elem.style['background-color'] = Menu.COLOR0;
-        elem.addEventListener("click", this.onclick(id, onclick));
-        elem.addEventListener("mousedown", this.onpush(id));
-        elem.title = title||"";
+        elem.addEventListener('click', this.onclick(id, onclick));
+        elem.addEventListener('mousedown', this.onpush(id));
+        elem.title = title||'';
 
-        var sub_elem = null;
+        let sub_elem = null;
         if (inner_type != undefined) {
-            sub_elem = this.get_menu_block(inner_type, id + "_g");
+            sub_elem = this.get_menu_block(inner_type, id + '_g');
             elem.appendChild(sub_elem);
-        };
+        }
 
-        var row = document.createElement("div");
+        let row = document.createElement('div');
         row.id = id + '_row';
         row.style['position'] = 'absolute';
         row.style['display'] = 'none';
 
-        var top = parent.top;
-        var left = parent.left;
+        let top = parent.top;
+        let left = parent.left;
         
-        var top_prop = (this.top)?'top':'bottom';
-        var bot_prop = (!this.top)?'top':'bottom';
+        let top_prop = (this.top)?'top':'bottom';
+        let bot_prop = (!this.top)?'top':'bottom';
 
         if (parent.horizontal) {
             left += parent.sub.length;
@@ -148,7 +149,7 @@ var Menu = _class("Menu", {
             elem.style['left'] = '0px';
             row.style[top_prop]   = Menu.SIZE * top + 'px';
             row.style['left']  = Menu.SIZE * left + 'px';
-        };
+        }
 
         this.tree[id] = this._new_item(elem, row, pid, top, left);
         
@@ -160,20 +161,20 @@ var Menu = _class("Menu", {
                 parent.dom.style['border-'+bot_prop] = '3px solid black';
             } else {
                 parent.dom.style['border-right'] = '3px solid black';
-            };
-        };
+            }
+        }
         
         this.tree['root'].rdom.appendChild(row);
         
         return [elem, sub_elem];
-     }
+    }
     
     ,drop : function(id) {
         this.tree['root'].rdom.removeChild(this.tree[id].dom);
         this.tree['root'].rdom.removeChild(this.tree[id].rdom);
         
-        var subelems = this.tree['root'].sub;
-        var index = subelems.indexOf("input");
+        let subelems = this.tree['root'].sub;
+        let index = subelems.indexOf('input');
         subelems.splice(index, 1);
     }
 

@@ -1,14 +1,18 @@
-"use strict";
+'use strict';
+
+function has(obj, prop) {
+    return Object.prototype.hasOwnProperty.call(obj, prop);
+}
 
 function copy(o) {
-    return Object.assign({}, o)
+    return Object.assign({}, o);
 }
 
 function deepcopy(o) {
     if (typeof(o) in {'number':1, 'string':1}) {
         return o;
     } else if (Array.isArray(o)) {
-        return o.map((oi)=>{return deepcopy(oi);})
+        return o.map((oi)=>{return deepcopy(oi);});
     } else if (o==null) {
         return null;
     } else if (typeof(o)=='object') {
@@ -16,7 +20,7 @@ function deepcopy(o) {
         for(const k in o) 
             co[k] = deepcopy(o[k]);
         return co;
-    };
+    }
 }
 
 function getConstructor(T) {
@@ -26,16 +30,16 @@ function getConstructor(T) {
         _T = T[T.__classname];
     } else {
         for(const prop in T) {
-            if ( (typeof(T[prop]) == 'function') && (T.hasOwnProperty(prop)) ) {
+            if ( (typeof(T[prop]) == 'function') && (has(T, prop)) ) {
                 if ( window[T[prop].name]==T )
                     _T = T[prop];
-            };
-        };
-    };
+            }
+        }
+    }
     
     if (_T == null) {
-        throw "@constructor not found for object :" + JSON.stringify(T)
-    };
+        throw '@constructor not found for object :' + JSON.stringify(T);
+    }
     return _T;
 }
 
@@ -47,8 +51,8 @@ function allMethodNames(T) {
             if (!(T[prop] == _T)) {
                 methodsNames.push(prop);
             }
-        };
-    };
+        }
+    }
     return methodsNames;
 } 
 
@@ -56,33 +60,32 @@ function allFieldNames(T) {
     let fieldNames = [];
     for(const prop in T) {
         if (typeof(T[prop]) != 'function') {
-            if ((prop!="super")&&(prop!="mixins")) {
+            if ((prop!='super')&&(prop!='mixins')) {
                 fieldNames.push(prop);
             }
-        };
-    };
+        }
+    }
     return fieldNames;
 }
 
 function _class(name, def) {
     def.__classname = name;
-    return def
+    return def;
 }
 
 function _new(T, params, dry) {
     params = (params===undefined)?[]:params;
     
-    let _S = null;
     let _T = getConstructor(T);
     
     let at = null;
     
-    if (!_T.hasOwnProperty("__@__")) {
+    if (!has(_T, '__@__')) {
         // T was not parsed before
         at  = {
-             "statics" : allFieldNames(T)
-            ,"super" : T["super"]
-            ,"mixins" : T["mixins"]||[]
+            'statics' : allFieldNames(T)
+            ,'super' : T['super']
+            ,'mixins' : T['mixins']||[]
         };
         
         // links to super
@@ -91,7 +94,7 @@ function _new(T, params, dry) {
             _T.prototype = _new(at.super, [], true);
             // so that new _T() will be of a _T type for introspection
             _T.prototype.constructor = _T;
-        };
+        }
 
         // mixin methods
         at.mixins.map((M)=>{
@@ -108,19 +111,18 @@ function _new(T, params, dry) {
         // own constructor
         T.init = _T;
         
-        _T["__@__"] = at;
+        _T['__@__'] = at;
         
     } else {
-        at = _T["__@__"];
-    };
+        at = _T['__@__'];
+    }
     
     // create instance of the object with constructor call
-    var obj = null;
+    let obj = null;
 
     obj = Object.create(_T.prototype);
     
-    if (dry) {
-    } else {
+    if (!dry) {
 
         // mixin methods
         at.mixins.map((M)=>{
@@ -133,14 +135,14 @@ function _new(T, params, dry) {
         // inject getters setters for class-level variables
         at.statics.map((prop)=>{
             Object.defineProperty(obj, prop, {
-                 // probably throw some here
-                 // as class var should be addressed through Class.var explicitly
-                  get: function() { 
+                // probably throw some here
+                // as class var should be addressed through Class.var explicitly
+                get: function() { 
                     return T[prop]; 
-                  }
-                 ,set: function(value) { 
-                    return T[prop] = value; 
-                  }
+                }
+                ,set: function(value) { 
+                    T[prop] = value; 
+                }
             });
         });
         
@@ -154,7 +156,7 @@ function _new(T, params, dry) {
         
         // run own constructor
         _T.apply(obj, params);
-    };
+    }
     
     return obj;
 }

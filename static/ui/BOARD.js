@@ -1,4 +1,6 @@
-"use strict";
+'use strict';
+
+import {dst2} from '../util/geometry.js';
 
 import {UI} from './UI.js';
 import {BRUSH} from './BRUSH.js';
@@ -9,15 +11,15 @@ let BOARD = {
 
     ,buffer : [] // globally positioned strokes on buffer layer and accumulated stroke buffer
     ,add_buffer_stroke : function(lp0, lp1) {
-        var ctx = UI.contexts[UI.LAYERS.indexOf("buffer")];
-        var color = BRUSH.get_color();
-        var width = BRUSH.get_local_width();
+        let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
+        let color = BRUSH.get_color();
+        let width = BRUSH.get_local_width();
         
         if (lp0!=null)
             UI.draw_stroke(lp0, lp1, color, width, ctx);
         
         BOARD.buffer.push({
-             gp : [UI.local_to_global(lp0), UI.local_to_global(lp1)]
+            gp : [UI.local_to_global(lp0), UI.local_to_global(lp1)]
             ,color : color
             ,width : width / UI.viewpoint.scale
         });
@@ -40,16 +42,16 @@ let BOARD = {
 
     ,flush : function(buffer, clear) {
         clear = (clear===undefined)?true:clear;
-        var ctx = UI.contexts[UI.LAYERS.indexOf("board")];
-        var maxw = -1e10;
+        let ctx = UI.contexts[UI.LAYERS.indexOf('board')];
+        let maxw = -1e10;
         
-        var brect = UI.get_rect(buffer.reduce((a, stroke)=>{
-            var lp0, lp1;
+        let brect = UI.get_rect(buffer.reduce((a, stroke)=>{
+            let lp0, lp1;
             if (stroke.gp[0]!=null) {
                 lp0 = UI.global_to_local(stroke.gp[0], UI.viewpoint);
                 lp1 = UI.global_to_local(stroke.gp[1], UI.viewpoint);
                 UI.draw_stroke(lp0, lp1, stroke.color, stroke.width * UI.viewpoint.scale, ctx);
-            };
+            }
             BOARD.add_stroke(stroke);
             
             maxw = Math.max(stroke.width, maxw) * UI.viewpoint.scale;
@@ -58,11 +60,11 @@ let BOARD = {
             return a;
         }, []));
 
-        ctx = UI.contexts[UI.LAYERS.indexOf("buffer")];
+        ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
         ctx.clearRect(brect[0].X-maxw
-                    , brect[0].Y-maxw
-                    , brect[1].X-brect[0].X+2*maxw
-                    , brect[1].Y-brect[0].Y+2*maxw
+            , brect[0].Y-maxw
+            , brect[1].X-brect[0].X+2*maxw
+            , brect[1].Y-brect[0].Y+2*maxw
         );
         
         if (clear)
@@ -87,8 +89,8 @@ let BOARD = {
         
         return strokes.reduce((a,stroke)=>{
 
-            if ((stroke.gp[0]==null)&&(stroke.gp[1]=="erase")) {
-                var erased = BOARD.strokes.reduce((a,s)=>{
+            if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase')) {
+                let erased = BOARD.strokes.reduce((a,s)=>{
                     if (s.erased==stroke.stroke_id)
                         a.push(s);
                     return a;
@@ -98,13 +100,13 @@ let BOARD = {
                 erased.map((s)=>{
                     a.push(s);
                 });
-            };
+            }
             
             if ((stroke.erased!=undefined)&&(stroke.erased>0)) {
                 stroke.erased = -stroke.erased;
             } else {
                 stroke.erased = BOARD.stroke_id;
-            };
+            }
 
             stroke.version = BOARD.version;
 
@@ -115,28 +117,29 @@ let BOARD = {
     
     ,rollback : function() {
         
-        var last_commit = 0;
+        let last_commit = 0;
 
         BOARD.op_start();
         
-        var last_strokes = BOARD.strokes.reduce((a, stroke)=>{
-            var active = (stroke.gp[1]!="undo");
+        let last_strokes = BOARD.strokes.reduce((a, stroke)=>{
+            let active = (stroke.gp[1]!='undo');
             active = (active)&&((stroke.erased===undefined)||(stroke.erased<0));
             if ((stroke.commit_id>last_commit)&&(active)) {
                 a = [];
                 last_commit = stroke.commit_id;
-            };
+            }
             if (stroke.commit_id == last_commit) {
                 a.push(stroke);
-            };
+            }
             return a;
         }, []);
         
-        var changed = BOARD.undo_strokes(last_strokes);
-        BOARD.add_stroke({gp:[null, "undo"]});
+        let changed = BOARD.undo_strokes(last_strokes);
+        BOARD.add_stroke({gp:[null, 'undo']});
 
         BOARD.op_commit();
         
+        UI.redraw();        
         
         return UI.get_rect(changed.reduce((a, stroke)=>{
             a.push(stroke.gp[0], stroke.gp[1]);
@@ -147,7 +150,7 @@ let BOARD = {
 
     ,op_start : function() {
         if (BOARD.locked)
-            throw "board is locked"
+            throw 'board is locked';
         BOARD.version += 1;
         BOARD.commit_id += 1;
         BOARD.locked = true;
@@ -155,7 +158,7 @@ let BOARD = {
     
     ,op_commit : function() {
         if (!BOARD.locked)
-            throw "board is not locked"
+            throw 'board is not locked';
         BOARD.locked = false;
     }
     
@@ -163,11 +166,11 @@ let BOARD = {
     ,get_strokes : function(rect, points) {
         points = (points===undefined)?false:points;
         
-        var pnt = null;
-        var ret = [];
+        let pnt = null;
+        let ret = [];
         
-        for(var i=0; i<BOARD.strokes.length; i++) {
-            for(var pi=0; pi<2; pi++) {
+        for(let i=0; i<BOARD.strokes.length; i++) {
+            for(let pi=0; pi<2; pi++) {
                 pnt = BOARD.strokes[i].gp[pi];
                 if (pnt==null)
                     continue;
@@ -177,15 +180,15 @@ let BOARD = {
                     
                 if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
                     ret.push({
-                         stroke_idx : i
+                        stroke_idx : i
                         ,stroke_id : BOARD.strokes[i].stroke_id
                         ,point_idx : pi
                     });
                     if (!(points))
-                        break
-                };
-            };
-        };
+                        break;
+                }
+            }
+        }
         
         return ret;
     }
@@ -196,27 +199,28 @@ let BOARD = {
         ddy = (ddy===undefined)?60:ddy;
 
         function linearize(glyph) {
-            var g = glyph.reduce((a, cur)=>{
-                var prev = a.pop();
+            let g = glyph.reduce((a, cur)=>{
+                let prev = a.pop();
                 
                 if (prev==null) {
                     a.push(null);
                     a.push(cur);
                     
                 } else if (Array.isArray(prev)) {
-                    for (var pi=0; pi<2; pi++) 
-                        for (var ci=0; ci<2; ci++) {
+                    let pi;
+                    for (pi=0; pi<2; pi++) 
+                        for (let ci=0; ci<2; ci++) {
                             if (dst2(prev[pi], cur[ci])==0) {
                                 a.push(prev[1-pi], prev[pi], cur[1-ci]);
                                 pi=9;
                                 break;
-                            };
-                        };
+                            }
+                        }
                     if (pi==2) {
                         a.push(prev[0], prev[1]);
                         a.push(null);
                         a.push(cur);
-                    };
+                    }
                     
                 } else {
                     if (dst2(prev, cur[0])==0) {
@@ -225,57 +229,54 @@ let BOARD = {
                         a.push(prev, cur[0]);
                     } else {
                         a.push(prev, null, cur);
-                    };
-                };
+                    }
+                }
                 
                 return a;
             },[null]);
             
-            var prev = g.pop();
+            let prev = g.pop();
             if (Array.isArray(prev)) {
                 g.push(prev[0],prev[1]);
             } else {
                 g.push(prev);
-            };
+            }
             
             return g;
-        };
+        }
 
-        var row = 0;
-        var result = [];
-        var blanks = 2;
+        let row = 0;
+        let result = [];
+        let blanks = 2;
                               
-        while(true) {
-            var glyph = BOARD.get_strokes([
-                 {X:(col+0)*ddx, Y:(row+0)*ddy}
+        while(blanks>0) {
+            let glyph = BOARD.get_strokes([
+                {X:(col+0)*ddx, Y:(row+0)*ddy}
                 ,{X:(col+1)*ddx, Y:(row+1)*ddy}
             ]);
             
             if ((glyph.length==0)) {
-                if ((--blanks)==0)
-                    return result;
-                else {
-                    row += 1;
-                    continue;
-                }
+                row += 1;
+                blanks -= 1;
+                continue;
             } else {
                 blanks = 2;
-            };
+            }
 
             glyph = glyph.map((gs)=>{
                 return BOARD.strokes[gs.stroke_idx].gp.map((p)=>{
-                    return {X:p.X-(col+0)*ddx, Y:p.Y-(row+0)*ddy}
+                    return {X:p.X-(col+0)*ddx, Y:p.Y-(row+0)*ddy};
                 });
             });
 
-            var rect = UI.get_rect(glyph.reduce((a, ps)=>{
+            let rect = UI.get_rect(glyph.reduce((a, ps)=>{
                 a.push(ps[0], ps[1]);
                 return a;
             }, []));
 
             glyph = glyph.map((ps)=>{
                 return ps.map((p)=>{
-                    return {X:p.X, Y:p.Y}
+                    return {X:p.X, Y:p.Y};
                 });
             });            
 
@@ -290,14 +291,14 @@ let BOARD = {
                 if (p==null) {
                     return p;
                 } else {
-                    return [p.X, p.Y]
-                };
+                    return [p.X, p.Y];
+                }
             });
             
             result.push([glyph, rect]);
 
             row += 1;
-        };
+        }
         return result;
     }
 
