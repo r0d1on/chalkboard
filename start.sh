@@ -1,2 +1,2 @@
 #!/bin/bash
-python board.py
+exec python board.py
