@@ -2,7 +2,7 @@
 
 import {_class} from '../base/objects.js';
 
-import {DrawToolBase} from './Base.js';
+import {ToolBase, DrawToolBase} from './Base.js';
 
 import {UI} from '../ui/UI.js';
 
@@ -26,6 +26,11 @@ let PanZoomTool = _class('PanZoomTool', { // background tool
         return true;
     }
     
+    ,on_activated : function() {
+        let lp = UI._last_point;
+        ToolBase.on_activated.call(this);
+        DrawToolBase.on_start.call(this, lp);
+    }
     
     ,on_move : function(lp) {
         if (this.activated) {
@@ -46,6 +51,12 @@ let PanZoomTool = _class('PanZoomTool', { // background tool
         this.activated = false;
         this.last_point = lp;        
         return true;
+    }
+
+    ,on_dectivated : function() {
+        let lp = UI._last_point;
+        DrawToolBase.on_stop.call(this, lp);
+        ToolBase.on_deactivated.call(this);
     }
 
     ,on_wheel : function(delta) {

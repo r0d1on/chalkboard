@@ -67,7 +67,7 @@ let UI = {
     ,GRID : 30.0
     ,LAYERS : ['background', 'board', 'buffer', 'overlay']
     
-    ,last_point : null
+    ,_last_point : null
     
     ,is_mobile : false
     ,view_mode : undefined
