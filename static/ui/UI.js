@@ -229,7 +229,7 @@ let UI = {
         
         // mouse wheel listener
         buffer_canvas.addEventListener('wheel', e => {
-            UI.on_wheel(e.deltaY);
+            UI.on_wheel(e.deltaY, e.deltaX);
             e.preventDefault();
         });
         
@@ -373,11 +373,15 @@ let UI = {
             console.log('received strokes:', strokes);
     }
 
-    ,on_wheel_default : function(delta) {
-        if (UI.keys['Shift'])
-            UI.viewpoint_shift(Math.sign(delta)*60.0/UI.viewpoint.scale, 0);
-        else
-            UI.viewpoint_shift(0, Math.sign(delta)*60.0/UI.viewpoint.scale);
+    ,on_wheel_default : function(delta, deltaX) {
+        deltaX = deltaX || 0;
+        if (UI.keys['Shift']) {
+            UI.viewpoint_shift(delta / UI.viewpoint.scale, 0);
+            UI.viewpoint_shift(0, deltaX / UI.viewpoint.scale);
+        } else {
+            UI.viewpoint_shift(0, delta / UI.viewpoint.scale);
+            UI.viewpoint_shift(deltaX / UI.viewpoint.scale, 0);
+        };
     }
 
 
@@ -426,13 +430,13 @@ let UI = {
             UI.keys[key] = false;
     }
     
-    ,on_wheel : function(delta) {
+    ,on_wheel : function(delta, deltaX) {
         let handled = UI._event_handlers['on_wheel'].reduce((handled, handler)=>{
-            return handled||handler(delta);
+            return handled||handler(delta, deltaX);
         }, false);
         
-        if (!handled) 
-            UI.on_wheel_default(delta);        
+        if (!handled)
+            UI.on_wheel_default(delta, deltaX);
     }
     
 

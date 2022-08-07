@@ -60,7 +60,7 @@ let PanZoomTool = _class('PanZoomTool', { // background tool
     }
 
     ,on_wheel : function(delta) {
-        let scale = 1.2;
+        let scale = 1.2 ** (Math.abs(delta) / 60);
         
         if (delta > 0)
             scale = 1.0 / scale;
