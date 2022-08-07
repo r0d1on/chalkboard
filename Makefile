@@ -13,6 +13,11 @@ lint:
 	./dkr_build.sh eslint
 	docker run -it --rm -v $(CURDIR):/chalkboard eslint ./static/*.js ./static/**/*.js
 
+lintfix: 
+	./dkr_build.sh eslint
+	docker run -it --rm -v $(CURDIR):/chalkboard eslint --fix ./static/*.js ./static/**/*.js
+
+
 build: lint
 	# build
 	docker build -t chalkboard .
