@@ -381,7 +381,7 @@ let UI = {
         } else {
             UI.viewpoint_shift(0, delta / UI.viewpoint.scale);
             UI.viewpoint_shift(deltaX / UI.viewpoint.scale, 0);
-        };
+        }
     }
 
 
