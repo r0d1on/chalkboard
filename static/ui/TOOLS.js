@@ -131,6 +131,7 @@ let TOOLS = {
         UI.addEventListener('on_move', TOOLS.on_move);
         UI.addEventListener('on_stop', TOOLS.on_stop);
         UI.addEventListener('on_paste_strokes', TOOLS.on_paste_strokes);
+        UI.addEventListener('on_blur', TOOLS.on_blur);
     }
     
     ,add_tool : function(tool, visible, title) {
@@ -236,6 +237,12 @@ let TOOLS = {
         }
         return false;
     }    
+    
+    ,on_blur : function() {
+        if (TOOLS.background!=null) {
+            TOOLS.deactivate_backtool();
+        }
+    }
     
 };
 

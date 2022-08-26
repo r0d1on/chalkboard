@@ -272,9 +272,16 @@ let UI = {
                 }
             }
         });        
-           
-        window.addEventListener('focus',()=>{console.log('focus');});
-        window.addEventListener('blur',()=>{console.log('blur');});
+        
+        // window focus listener
+        window.addEventListener('focus', ()=>{
+            UI.on_focus();
+        });
+        
+        // window blur listener
+        window.addEventListener('blur', ()=>{
+            UI.on_blur();
+        });
     }
     
     ,init : function() {
@@ -317,6 +324,9 @@ let UI = {
         ,'on_wheel' : []
         
         ,'on_paste_strokes' : []
+
+        ,'on_focus' : []
+        ,'on_blur' : []
     }
     
     ,addEventListener : function(event_type, event_handler) {
@@ -476,6 +486,17 @@ let UI = {
             UI.on_paste_strokes_default(strokes);        
     }
     
+    ,on_focus : function() {
+        UI._event_handlers['on_focus'].reduce((handled, handler)=>{
+            return handled||handler();
+        }, false);
+    }
+    
+    ,on_blur : function() {
+        UI._event_handlers['on_blur'].reduce((handled, handler)=>{
+            return handled||handler();
+        }, false);
+    }
     
     // Stroke handling
     ,global_to_local : function(point, viewpoint) {
