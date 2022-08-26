@@ -101,6 +101,9 @@ let TexterTool = _class('TexterTool', {
             
         } else if (key=='Control') {
             return false;
+
+        } else if (key=='Shift') {
+            return false;
         
         } else if ((key=='+')&&(UI.keys['Control'])) {
             return false;
@@ -167,7 +170,7 @@ let TexterTool = _class('TexterTool', {
             e.stopPropagation();
         });
         
-        inp.addEventListener('input',(e)=>{
+        inp.addEventListener('input', (e)=>{
             this.on_key_down(e.data);
             e.target.value = '';
             e.preventDefault();
