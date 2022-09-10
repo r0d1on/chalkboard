@@ -7,7 +7,7 @@ import {Menu} from './Menu.js';
 let BRUSH = {
     icon_size_inc :  [null,[41,20],[40,17],[42,15],[45,16],[44,19],[41,20],null,[40,24],[36,21],[35,17],[36,13],[40,11],[45,11],[48,13],[50,17],[49,20],[47,23],[40,24],null,[39,27],[36,26],[34,23],[32,20],[32,17],[32,14],[34,11],[36,9],[39,7],[42,7],[45,7],[48,9],[51,11],[52,14],[50,17],[52,20],[51,23],[48,26],[45,27],[42,28],[39,27],null,[12,50],[10,48],[12,45],[15,46],[15,49],[12,50],null,[32,35],[32,28],[25,28],null,[17,44],[32,28]]
     ,icon_size_dec : [null,[19,40],[20,41],[20,43],[19,45],[17,45],[16,44],[15,43],[16,41],[17,40],[19,40],null,[20,36],[22,37],[24,40],[25,41],[25,44],[25,46],[23,48],[21,48],[19,49],[17,50],[14,49],[12,48],[11,47],[11,45],[10,43],[11,40],[12,39],[13,37],[15,36],[18,36],[20,36],null,[21,33],[24,35],[26,38],[28,41],[28,44],[28,47],[25,50],[23,52],[20,53],[17,53],[14,53],[11,51],[8,49],[8,46],[8,43],[8,40],[9,37],[12,34],[15,33],[18,32],[21,33],null,[49,11],[50,12],[51,13],[50,14],[49,15],[48,16],[46,16],[45,15],[45,13],[46,12],[47,11],[48,10],[49,11],null,[43,25],[43,18],[35,18],null,[27,34],[43,18]]
-    
+
     ,COLORS : [
         ['#000A',  'black'],
         ['#FFFA',  'white'],
@@ -18,7 +18,7 @@ let BRUSH = {
         ['#00FA',  'blue'],
         ['#469A',  '#469']
     ]
-    
+
     ,cid : 0
     ,size : 5
 
@@ -26,25 +26,25 @@ let BRUSH = {
     ,wdiv: null
     ,MENU_main : null
     ,MENU_options : null
-    
+
     ,select_color : function(cid) {
         //console.log("color id selected: ",cid);
         BRUSH.cid = cid;
         BRUSH.div.style['background-color'] = BRUSH.get_color('E');
         this.MENU_main.hide('colors');
     }
-    
+
     ,oncolor : function(e, id, long) { // eslint-disable-line no-unused-vars
         let cid = id.split('_')[1]*1;
         BRUSH.select_color(cid);
     }
-    
+
     ,update_size : function (delta) {
         if (delta==undefined) delta = 0;
         BRUSH.size += delta;
         if (BRUSH.size>40) BRUSH.size=5;
         if (BRUSH.size<5)  BRUSH.size=40;
-        
+
         let wdiv = BRUSH.wdiv;
         let size = BRUSH.get_local_width();
         wdiv.style['left']   = ((Menu.SIZE-size)>>1)+'px';
@@ -61,39 +61,39 @@ let BRUSH = {
         if (delta!=0)
             UI.redraw();
     }
-    
+
     ,get_local_width : function() {
         return BRUSH.MODE.scaled ? BRUSH.size * UI.viewpoint.scale : BRUSH.size;
     }
-    
+
     ,get_color : function(alpha, cid) {
         cid = (cid===undefined)?BRUSH.cid:cid;
         let color = BRUSH.COLORS[cid][0];
         color = (alpha===undefined)?color:(color.slice(0,-1) + alpha);
         return color;
     }
-    
+
     ,init : function(MENU_main, MENU_options) {
         this.MENU_main = MENU_main;
         this.MENU_options = MENU_options;
-        
-        // color picker menu item, shows current color, size. 
+
+        // color picker menu item, shows current color, size.
         let [par,div] = this.MENU_main.add('root', 'colors', null, 'div');
         par.style['overflow'] = 'hidden';
-        
+
         div.style['background-color'] = 'black';
         div.style['border-radius'] = '40px';
         div.style['width'] = '100%';
         div.style['height'] = '100%';
         BRUSH.div = div;
-        
+
         let wdiv = document.createElement('div');
         wdiv.id = div.id + '_s';
         wdiv.style['position'] = 'relative';
         wdiv.style['border'] = '1px solid';
         div.appendChild(wdiv);
         BRUSH.wdiv = wdiv;
-        
+
         BRUSH.COLORS.map((color, i)=>{
             let [g,v] = this.MENU_main.add('colors', 'color_' + i, BRUSH.oncolor, 'div');
             v.style['background-color'] = BRUSH.get_color('E', i);
@@ -102,9 +102,9 @@ let BRUSH = {
             v.style['height'] = '100%';
             g.style['background-color'] = '#666D';
         });
-        
+
         BRUSH.update_size();
-        
+
         // bruch size changer options menu items
         let ctx = this.MENU_options.add('root'
             , 'brush_size_inc'
@@ -124,7 +124,7 @@ let BRUSH = {
             , 'decrease brush size')[1].getContext('2d');
         UI.draw_glyph(BRUSH.icon_size_dec, ctx, undefined, undefined);
     }
-    
+
     ,MODE : {
         icons : {
             true : [null,[22,36],[27,31],[22,26],null,[11,26],[6,31],[11,36],null,[6,31],[27,31],null,[48,36],[53,31],[48,26],null,[37,26],[31,31],[36,36],null,[31,31],[53,31]]
@@ -133,9 +133,9 @@ let BRUSH = {
         ,name : 'brush_mode'
 
         ,canvas : null
-        
+
         ,scaled : false
-        
+
         ,click : function() {
             BRUSH.MODE.scaled = !BRUSH.MODE.scaled;
             BRUSH.MODE.canvas.width = BRUSH.MODE.canvas.width+1-1;
@@ -143,7 +143,7 @@ let BRUSH = {
             UI.draw_glyph(BRUSH.MODE.icons[BRUSH.MODE.scaled], ctx);
             BRUSH.update_size();
         }
-        
+
         ,init : function(canvas) {
             BRUSH.MODE.canvas = canvas;
             BRUSH.MODE.click();

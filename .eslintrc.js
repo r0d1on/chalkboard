@@ -27,6 +27,9 @@ module.exports = {
         ],
         "no-var" : [
             "error"
+        ],
+        "no-trailing-spaces" : [
+            "error"
         ]
     }
 }

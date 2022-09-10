@@ -9,9 +9,9 @@ let GRID_MODE = {
     ,name : 'grid_mode'
 
     ,canvas : null
-    
+
     ,grid_active : false
-    
+
     ,click : function() {
         GRID_MODE.grid_active = !GRID_MODE.grid_active;
         GRID_MODE.canvas.width = GRID_MODE.canvas.width+1-1;
@@ -19,7 +19,7 @@ let GRID_MODE = {
         UI.draw_glyph(GRID_MODE.icon, ctx, undefined, (GRID_MODE.grid_active?undefined:'#555'));
         UI.redraw();
     }
-    
+
     ,init : function(canvas) {
         GRID_MODE.canvas = canvas;
         GRID_MODE.click();

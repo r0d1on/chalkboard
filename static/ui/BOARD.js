@@ -14,19 +14,19 @@ let BOARD = {
         let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
         let color = BRUSH.get_color();
         let width = BRUSH.get_local_width();
-        
+
         if (lp0!=null)
             UI.draw_stroke(lp0, lp1, color, width, ctx);
-        
+
         BOARD.buffer.push({
             gp : [UI.local_to_global(lp0), UI.local_to_global(lp1)]
             ,color : color
             ,width : width / UI.viewpoint.scale
         });
     }
-    
+
     ,version : 0
-    
+
     ,commit_id : 0
     ,stroke_id : 0
     ,strokes : [] // globally positioned strokes on board layer (committed ones)
@@ -36,7 +36,7 @@ let BOARD = {
         stroke.version = BOARD.version;
         stroke.commit_id = BOARD.commit_id;
         stroke.stroke_id = BOARD.stroke_id++;
-        
+
         BOARD.strokes.push(stroke);
     }
 
@@ -44,7 +44,7 @@ let BOARD = {
         clear = (clear===undefined)?true:clear;
         let ctx = UI.contexts[UI.LAYERS.indexOf('board')];
         let maxw = -1e10;
-        
+
         let brect = UI.get_rect(buffer.reduce((a, stroke)=>{
             let lp0, lp1;
             if (stroke.gp[0]!=null) {
@@ -53,9 +53,9 @@ let BOARD = {
                 UI.draw_stroke(lp0, lp1, stroke.color, stroke.width * UI.viewpoint.scale, ctx);
             }
             BOARD.add_stroke(stroke);
-            
+
             maxw = Math.max(stroke.width, maxw) * UI.viewpoint.scale;
-            
+
             a.push(lp0, lp1);
             return a;
         }, []));
@@ -66,18 +66,18 @@ let BOARD = {
             , brect[1].X-brect[0].X+2*maxw
             , brect[1].Y-brect[0].Y+2*maxw
         );
-        
+
         if (clear)
             buffer.splice(0, buffer.length);
-        
+
         return brect;
     }
 
     ,flush_commit : function() {
-        
+
         if (BOARD.buffer.length==0)
             return false;
-        
+
         BOARD.op_start();
         BOARD.flush(BOARD.buffer);
         BOARD.op_commit();
@@ -86,7 +86,7 @@ let BOARD = {
     }
 
     ,undo_strokes : function(strokes) {
-        
+
         return strokes.reduce((a,stroke)=>{
 
             if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase')) {
@@ -95,13 +95,13 @@ let BOARD = {
                         a.push(s);
                     return a;
                 },[]);
-                
+
                 erased = BOARD.undo_strokes(erased);
                 erased.map((s)=>{
                     a.push(s);
                 });
             }
-            
+
             if ((stroke.erased!=undefined)&&(stroke.erased>0)) {
                 stroke.erased = -stroke.erased;
             } else {
@@ -114,13 +114,13 @@ let BOARD = {
             return a;
         }, []);
     }
-    
+
     ,rollback : function() {
-        
+
         let last_commit = 0;
 
         BOARD.op_start();
-        
+
         let last_strokes = BOARD.strokes.reduce((a, stroke)=>{
             let active = (stroke.gp[1]!='undo');
             active = (active)&&((stroke.erased===undefined)||(stroke.erased<0));
@@ -133,19 +133,19 @@ let BOARD = {
             }
             return a;
         }, []);
-        
+
         let changed = BOARD.undo_strokes(last_strokes);
         BOARD.add_stroke({gp:[null, 'undo']});
 
         BOARD.op_commit();
-        
-        UI.redraw();        
-        
+
+        UI.redraw();
+
         return UI.get_rect(changed.reduce((a, stroke)=>{
             a.push(stroke.gp[0], stroke.gp[1]);
             return a;
         }, [] ));
-        
+
     }
 
     ,op_start : function() {
@@ -155,29 +155,29 @@ let BOARD = {
         BOARD.commit_id += 1;
         BOARD.locked = true;
     }
-    
+
     ,op_commit : function() {
         if (!BOARD.locked)
             throw 'board is not locked';
         BOARD.locked = false;
     }
-    
+
 
     ,get_strokes : function(rect, points) {
         points = (points===undefined)?false:points;
-        
+
         let pnt = null;
         let ret = [];
-        
+
         for(let i=0; i<BOARD.strokes.length; i++) {
             for(let pi=0; pi<2; pi++) {
                 pnt = BOARD.strokes[i].gp[pi];
                 if (pnt==null)
                     continue;
-                    
+
                 if (BOARD.strokes[i].erased>0)
                     continue;
-                    
+
                 if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
                     ret.push({
                         stroke_idx : i
@@ -189,7 +189,7 @@ let BOARD = {
                 }
             }
         }
-        
+
         return ret;
     }
 
@@ -201,14 +201,14 @@ let BOARD = {
         function linearize(glyph) {
             let g = glyph.reduce((a, cur)=>{
                 let prev = a.pop();
-                
+
                 if (prev==null) {
                     a.push(null);
                     a.push(cur);
-                    
+
                 } else if (Array.isArray(prev)) {
                     let pi;
-                    for (pi=0; pi<2; pi++) 
+                    for (pi=0; pi<2; pi++)
                         for (let ci=0; ci<2; ci++) {
                             if (dst2(prev[pi], cur[ci])==0) {
                                 a.push(prev[1-pi], prev[pi], cur[1-ci]);
@@ -221,7 +221,7 @@ let BOARD = {
                         a.push(null);
                         a.push(cur);
                     }
-                    
+
                 } else {
                     if (dst2(prev, cur[0])==0) {
                         a.push(prev, cur[1]);
@@ -231,30 +231,30 @@ let BOARD = {
                         a.push(prev, null, cur);
                     }
                 }
-                
+
                 return a;
             },[null]);
-            
+
             let prev = g.pop();
             if (Array.isArray(prev)) {
                 g.push(prev[0],prev[1]);
             } else {
                 g.push(prev);
             }
-            
+
             return g;
         }
 
         let row = 0;
         let result = [];
         let blanks = 2;
-                              
+
         while(blanks>0) {
             let glyph = BOARD.get_strokes([
                 {X:(col+0)*ddx, Y:(row+0)*ddy}
                 ,{X:(col+1)*ddx, Y:(row+1)*ddy}
             ]);
-            
+
             if ((glyph.length==0)) {
                 row += 1;
                 blanks -= 1;
@@ -278,7 +278,7 @@ let BOARD = {
                 return ps.map((p)=>{
                     return {X:p.X, Y:p.Y};
                 });
-            });            
+            });
 
             rect[0].X -= col*ddx;
             rect[1].X -= col*ddx;
@@ -286,7 +286,7 @@ let BOARD = {
             rect[1].Y -= row*ddy;
 
             glyph = linearize(glyph);
-            
+
             glyph = glyph.map((p)=>{
                 if (p==null) {
                     return p;
@@ -294,7 +294,7 @@ let BOARD = {
                     return [p.X, p.Y];
                 }
             });
-            
+
             result.push([glyph, rect]);
 
             row += 1;

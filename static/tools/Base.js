@@ -9,23 +9,23 @@ import {BRUSH} from '../ui/BRUSH.js';
 
 
 let ToolBase = _class('ToolBase', {
-    
+
     ToolBase : function(name) {
         this.name = name;
     }
-    
+
     ,on_activated : function(){
         console.log(this.name,' - activated');
     }
-    
+
     ,on_deactivated : function() {
         console.log(this.name,' - deactivated');
     }
-    
+
     ,after_redraw : function() {}
 
     ,on_wheel : function() {}
-    
+
 });
 
 
@@ -37,7 +37,7 @@ let DrawToolBase = _class('DrawToolBase', {
 
         this.cyclic = cyclic;
         this.shortcut = shortcut;
-        
+
         this.activated = false;
         this.start_point = null;
         this.last_point = null;
@@ -63,11 +63,11 @@ let DrawToolBase = _class('DrawToolBase', {
             });
         }
     }
-    
+
     ,on_stop : function(lp) {
         if (this.activated) {
             UI.reset_layer('overlay');
-            this.draw(this.start_point, lp, BOARD.add_buffer_stroke);        
+            this.draw(this.start_point, lp, BOARD.add_buffer_stroke);
             BOARD.flush_commit();
         }
         this.activated = false;
@@ -78,7 +78,7 @@ let DrawToolBase = _class('DrawToolBase', {
         UI.reset_layer('overlay');
         this.activated = false;
     }
-    
+
 });
 
 
@@ -116,10 +116,10 @@ let DistortableDrawTool = _class('DistortableDrawTool', {
             }
         };
     }
-    
+
     ,_pre_render : function(figure) {
         let w = BRUSH.get_local_width();
-        
+
         if (this.mode == 0) {
             // no splitting - use sraight lines
         } else if (this.mode == 1) {
@@ -127,11 +127,11 @@ let DistortableDrawTool = _class('DistortableDrawTool', {
         } else if (this.mode == 2) {
             figure = UI.figure_split(figure, this.cyclic, w);
         }
-        
+
         if (this.distorted > 0) {
             figure = UI.figure_distort(figure, this.distorted, this.cyclic);
         }
-            
+
         return figure;
     }
 
@@ -149,9 +149,9 @@ let DistortableDrawTool = _class('DistortableDrawTool', {
             }
         });
     }
-    
+
     ,on_key_down : function(key) {
-        if (!this.activated) 
+        if (!this.activated)
             return false;
 
         if (key=='Shift') {
@@ -159,13 +159,13 @@ let DistortableDrawTool = _class('DistortableDrawTool', {
             this.on_move(this.last_point);
             return true;
         }
-        
+
         if (key=='Control') {
             this.options.mode.handler();
             this.on_move(this.last_point);
             return true;
         }
-        
+
         return false;
     }
 

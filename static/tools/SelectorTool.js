@@ -21,15 +21,15 @@ let SelectorTool = _class('SelectorTool', {
     ,WIDTH : 6
     ,USE_SYSTEM_CLIPBOARD : true
     ,NAME : 'selector'
-    
+
     ,SelectorTool : function() {
         DrawToolBase.init.call(this, SelectorTool.NAME, false, ['Control', 's']);
     }
 
     ,mode : 0 // 0:selecting / 1:selected / 2:moving / 3:scale / 4:rotate
-    
+
     ,original_strokes : {}
-    
+
     ,selection : null
     ,selection_center : null
     ,selection_rect : null
@@ -43,14 +43,14 @@ let SelectorTool = _class('SelectorTool', {
         // default strokes paste override
         UI.on_paste_strokes_default = (strokes)=>{
             console.log('selector:on_paste_strokes_default');
-            
+
             TOOLS.activate(SelectorTool.NAME);
-            
+
             this.last_point = {
                 X : UI.window_width/2
                 ,Y : UI.window_height/2
             };
-            
+
             this.paste(strokes);
             //UI.redraw();
         };
@@ -60,7 +60,7 @@ let SelectorTool = _class('SelectorTool', {
         let was = new Set();
 
         this.original_strokes = {};
-        
+
         this.selection.map((sl)=>{
             let stroke = BOARD.strokes[sl.stroke_idx];
             if (!was.has(stroke.stroke_id)) {
@@ -68,7 +68,7 @@ let SelectorTool = _class('SelectorTool', {
                 was.add(stroke.stroke_id);
             }
         });
-        
+
     }
 
     ,_replace_changed : function() {
@@ -83,15 +83,15 @@ let SelectorTool = _class('SelectorTool', {
             BOARD.strokes[idx] = old_stroke;
             old_strokes.push(old_stroke);
         }
-        
+
         // delete original strokes
         BOARD.undo_strokes(old_strokes);
         BOARD.add_stroke({gp:[null, 'erase']});
 
         // add new strokes
-        let offset = BOARD.strokes.length; 
-        BOARD.flush(new_strokes, false);            
-        
+        let offset = BOARD.strokes.length;
+        BOARD.flush(new_strokes, false);
+
         // remap selection to new strokes
         let idmap = {};
         let idxmap = {};
@@ -99,7 +99,7 @@ let SelectorTool = _class('SelectorTool', {
             idmap[old_strokes[idx].stroke_id] = stroke.stroke_id;
             idxmap[old_strokes[idx].stroke_id] = offset + idx;
         });
-        
+
         this.selection = this.selection.reduce((a, sl)=>{
             if (sl.stroke_id in idxmap) {
                 sl.stroke_idx = idxmap[sl.stroke_id];
@@ -108,7 +108,7 @@ let SelectorTool = _class('SelectorTool', {
             }
             return a;
         }, []);
-        
+
         if (this.selection.length) {
             this.get_selection_bounds();
             this.draw_selected();
@@ -116,23 +116,23 @@ let SelectorTool = _class('SelectorTool', {
             this.activated = false;
             this.selection = null;
         }
-        
+
     }
 
     ,draw_selecting : function(sp, lp) {
         UI.reset_layer('overlay');
 
         let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
-        
+
         let rect = UI.get_rect([sp, lp]);
-        
+
         let figure = [
             rect[0], {X:rect[1].X, Y:rect[0].Y},
             rect[1], {X:rect[0].X, Y:rect[1].Y}
         ];
 
         figure = UI.figure_split(figure, true, 2*SelectorTool.WIDTH);
-        
+
         figure.map((p,pi)=>{
             if (pi%2==0)
                 return;
@@ -145,19 +145,19 @@ let SelectorTool = _class('SelectorTool', {
         UI.reset_layer('overlay');
 
         let W = SelectorTool.WIDTH;
-        
+
         // draw selected center
         let lp = UI.global_to_local(this.selection_center);
         UI.draw_stroke(lp, lp, SelectorTool.COLOR, W*2, ctx);
         UI.draw_stroke(lp, lp, SelectorTool.COLOR_COPYPASTE, W, ctx);
-        
+
         let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
         let figure = [
             {X:rect[0].X-W, Y:rect[0].Y-W}, {X:rect[1].X+W, Y:rect[0].Y-W},
-            {X:rect[1].X+W, Y:rect[1].Y+W}, 
+            {X:rect[1].X+W, Y:rect[1].Y+W},
             {X:rect[0].X-W, Y:rect[1].Y+W}
         ];
-        
+
         let d = W * 2;
         let figures = [
             [{X:figure[0].X,Y:figure[0].Y+d}, figure[0], {X:figure[0].X+d,Y:figure[0].Y}]
@@ -165,7 +165,7 @@ let SelectorTool = _class('SelectorTool', {
             ,[{X:figure[2].X,Y:figure[2].Y-d}, figure[2], {X:figure[2].X-d,Y:figure[2].Y}]
             ,[{X:figure[3].X+d,Y:figure[3].Y}, figure[3], {X:figure[3].X,Y:figure[3].Y-d}]
         ];
-        
+
         // draw rect
         figures.map((f)=>{
             f.map((p,pi)=>{
@@ -186,7 +186,7 @@ let SelectorTool = _class('SelectorTool', {
         ctx.beginPath();
         ctx.arc(lp.X, lp.Y, d/2, Math.PI, Math.PI/2);
         ctx.stroke();
-        
+
         // scaler
         lp = figure[2];
         ctx.beginPath();
@@ -200,13 +200,13 @@ let SelectorTool = _class('SelectorTool', {
         };
         UI.draw_stroke({X:lp.X-d/2,Y:lp.Y-d/2},{X:lp.X+d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
         UI.draw_stroke({X:lp.X+d/2,Y:lp.Y-d/2},{X:lp.X-d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
-        
+
         // copy
         lp = figure[0];
         UI.draw_stroke({X:lp.X,Y:lp.Y},{X:lp.X-d,Y:lp.Y-d}  ,SelectorTool.COLOR_COPYPASTE, W, ctx);
         UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X,Y:lp.Y-d},SelectorTool.COLOR_COPYPASTE, W, ctx);
         UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X-d,Y:lp.Y},SelectorTool.COLOR_COPYPASTE, W, ctx);
-        
+
         // paste
         if (this.clipboard.length) {
             lp = figure[3];
@@ -214,24 +214,24 @@ let SelectorTool = _class('SelectorTool', {
             UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y}, SelectorTool.COLOR_COPYPASTE, W, ctx);
             UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
         }
-        
+
         // draw over selected points
     }
-    
-    
+
+
     ,start_mode : function(mode) {
         BOARD.op_start();
         this._save_selected();
         this.mode = mode;
     }
-    
+
     ,on_start : function(lp) {
         DrawToolBase.on_start.call(this, lp);
-        
+
         if (this.mode==0) { // selecting
             return;
         }
-        
+
         if (this.mode==1) { // selected
             let dst = Math.sqrt(dst2(lp, UI.global_to_local(this.selection_center)));
             let W = SelectorTool.WIDTH;
@@ -246,26 +246,26 @@ let SelectorTool = _class('SelectorTool', {
 
             let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
             let figure = [
-                {X:rect[0].X-W, Y:rect[0].Y-W}, // copy    
+                {X:rect[0].X-W, Y:rect[0].Y-W}, // copy
                 {X:rect[1].X+W, Y:rect[0].Y-W}, // rotate
                 {X:rect[1].X+W, Y:rect[1].Y+W}, // scale
                 {X:rect[0].X-W, Y:rect[1].Y+W}, // paste
-                
+
                 {X:rect[1].X+W, Y:(rect[0].Y+rect[1].Y)/2} // optimize
             ];
-            
+
             let anchor_i = null;
             figure.map((p, pi)=>{
                 dst = Math.sqrt(dst2(lp, p));
-                
+
                 if (UI.is_mobile)
                     dst /= 3;
-                
+
                 if (dst < W) {
                     anchor_i = pi;
                 }
             });
-            
+
             if (anchor_i == null) {
                 this.mode = 0;
                 this.selection = null;
@@ -274,32 +274,32 @@ let SelectorTool = _class('SelectorTool', {
                 UI.redraw();
                 return;
             }
-            
+
             if (anchor_i==0) { // copy
                 this.copy();
-                
+
             } else if (anchor_i==1) {
                 this.start_mode(4); // rotate mode
-                
+
             } else if (anchor_i==2) {
                 this.start_mode(3); // scale mode
-                
+
             } else if (anchor_i==3) { // paste
                 if (SelectorTool.USE_SYSTM_CLIPBOARD) {
                     navigator.clipboard.readText().then(text => {
                         UI.on_paste(text, 'text/plain');
                     });
                 } else {
-                    this.paste(this.clipboard);  
+                    this.paste(this.clipboard);
                 }
-                
+
             } else if (anchor_i==4) { // optimize
                 BOARD.op_start();
                 this._save_selected();
                 this.optimize();
                 this._replace_changed();
                 BOARD.op_commit();
-                
+
             }
         }
     }
@@ -310,15 +310,15 @@ let SelectorTool = _class('SelectorTool', {
             let lpc = UI.global_to_local(this.selection_center);
             let cx = ( (lp.X - lpc.X) / (this.last_point.X - lpc.X) );
             let cy = ( (lp.Y - lpc.Y) / (this.last_point.Y - lpc.Y) );
-                        
+
             this.selection.map((sl)=>{
                 let pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
                 pnt.X -= this.selection_center.X;
                 pnt.Y -= this.selection_center.Y;
-                
+
                 pnt.X *= cx;
                 pnt.Y *= cy;
-                
+
                 pnt.X += this.selection_center.X;
                 pnt.Y += this.selection_center.Y;
             });
@@ -331,23 +331,23 @@ let SelectorTool = _class('SelectorTool', {
             let lcp = UI.global_to_local(this.selection_center);
             let p0 = sub(this.last_point, lcp);
             let p1 = sub(             lp, lcp);
-            
+
             let a = (
                 Math.atan(p0.X / p0.Y)
                 -Math.atan(p1.X / p1.Y)
             );
-            
+
             if (Math.abs(a) > 1) a = 0;
-            
+
             this.selection.map((sl)=>{
                 let pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
                 pnt.X -= this.selection_center.X;
                 pnt.Y -= this.selection_center.Y;
-                
+
                 let rpnt = rotate(pnt, a);
                 pnt.X = rpnt.X;
                 pnt.Y = rpnt.Y;
-                
+
                 pnt.X += this.selection_center.X;
                 pnt.Y += this.selection_center.Y;
             });
@@ -355,23 +355,23 @@ let SelectorTool = _class('SelectorTool', {
         }
     }
 
-    
+
     ,_move_selection : function(dx, dy) {
         this.selection.map((sl)=>{
             let pnt = BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
             pnt.X += dx;
             pnt.Y += dy;
         });
-        
+
         this.selection_center.X += dx;
         this.selection_center.Y += dy;
-        
+
         this.selection_rect[0].X += dx;
         this.selection_rect[1].X += dx;
         this.selection_rect[0].Y += dy;
         this.selection_rect[1].Y += dy;
     }
-    
+
     ,move_moving : function(lp) {
         if (this.activated) {
             let dx = -(UI.local_to_global(this.last_point).X - UI.local_to_global(lp).X);
@@ -379,13 +379,13 @@ let SelectorTool = _class('SelectorTool', {
             this._move_selection(dx, dy);
         }
     }
-    
+
     ,move_selecting : function(lp) {
         if (this.activated) {
             this.draw_selecting(this.start_point, lp);
         }
     }
-    
+
     ,on_move : function(lp) {
         if (this.mode==0) {
             this.move_selecting(lp);
@@ -402,27 +402,27 @@ let SelectorTool = _class('SelectorTool', {
         this.last_point = lp;
     }
 
-    
+
     ,get_selection_bounds : function() {
         this.selection_rect = UI.get_rect(
             this.selection.map((sl)=>{
                 return BOARD.strokes[sl.stroke_idx].gp[sl.point_idx];
             })
         );
-        
+
         this.selection_center = {X:0, Y:0};
         this.selection_center.X = ( this.selection_rect[1].X + this.selection_rect[0].X ) / 2;
-        this.selection_center.Y = ( this.selection_rect[1].Y + this.selection_rect[0].Y ) / 2;        
+        this.selection_center.Y = ( this.selection_rect[1].Y + this.selection_rect[0].Y ) / 2;
     }
-    
+
     ,stop_selecting : function(lp) {
         UI.reset_layer('overlay');
         let sp = this.start_point;
-        
+
         this.selection = BOARD.get_strokes(UI.get_rect([sp, lp]).map((p)=>{
             return UI.local_to_global(p);
         }), true);
-                
+
         if (this.selection.length>0) {
             this.get_selection_bounds();
             this.draw_selected();
@@ -435,7 +435,7 @@ let SelectorTool = _class('SelectorTool', {
         this.mode = 1;
         BOARD.op_commit();
     }
-    
+
     ,on_stop : function(lp) {
         if (this.mode==0) { // stopped selecting
             this.stop_selecting(lp);
@@ -443,9 +443,9 @@ let SelectorTool = _class('SelectorTool', {
         } else if (this.mode==1) { // this mode is transient, should not happen
         } else {
             this.stop_mode(this.mode); // stopped moving
-            
+
         }
-        
+
         this.activated = false;
     }
 
@@ -465,7 +465,7 @@ let SelectorTool = _class('SelectorTool', {
             }
             return a;
         }, []);
-     
+
         if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
             window.navigator.clipboard.writeText(
                 JSON.stringify({
@@ -473,11 +473,11 @@ let SelectorTool = _class('SelectorTool', {
                 })
             ).then(console.log('copied to system clipboard'));
         }
-     
+
         this.draw_selected();
     }
     ,paste : function(clipboard) {
-        
+
         let cx = 0;
         let cy = 0;
         clipboard.map((stroke)=>{
@@ -486,23 +486,23 @@ let SelectorTool = _class('SelectorTool', {
         });
         cx /= clipboard.length * 2;
         cy /= clipboard.length * 2;
-        
-        
+
+
         BOARD.buffer = [];
         clipboard.map((stroke)=>{
             stroke.gp[0] = UI.local_to_global({
                 X : stroke.gp[0].X - cx + this.last_point.X
-                ,Y : stroke.gp[0].Y - cy + this.last_point.Y 
+                ,Y : stroke.gp[0].Y - cy + this.last_point.Y
             });
             stroke.gp[1] = UI.local_to_global({
                 X : stroke.gp[1].X - cx + this.last_point.X
-                ,Y : stroke.gp[1].Y - cy + this.last_point.Y 
+                ,Y : stroke.gp[1].Y - cy + this.last_point.Y
             });
             stroke.width /= UI.viewpoint.scale;
             BOARD.buffer.push(stroke);
         });
         BOARD.flush_commit();
-        
+
         this.selection = [];
         for(let i=0; i<BOARD.strokes.length; i++) {
             for(let pi=0; pi<2; pi++) {
@@ -515,7 +515,7 @@ let SelectorTool = _class('SelectorTool', {
                 }
             }
         }
-        
+
         this.get_selection_bounds();
         this.draw_selected();
 
@@ -524,29 +524,29 @@ let SelectorTool = _class('SelectorTool', {
     }
 
     ,optimize : function() {
-        
+
         // merge nearby points
         let squeezed = 0;
         for(let i=0; i<this.selection.length; i++) {
             let s0 = this.selection[i];
             let p0 = BOARD.strokes[s0.stroke_idx].gp[s0.point_idx];
             let lp0 = UI.global_to_local(p0);
-            
+
             // TODO: n**2 -> O(logN) with kd
             for(let j=i+1; j<this.selection.length; j++) {
                 let s1 = this.selection[j];
                 let lp1 = UI.global_to_local(BOARD.strokes[s1.stroke_idx].gp[s1.point_idx]);
                 let to = (BOARD.strokes[s0.stroke_idx].width + BOARD.strokes[s1.stroke_idx].width)/2.0;
                 let d = dst2(lp0, lp1);
-                if (( d < to ) && ( d > 0 )) { 
+                if (( d < to ) && ( d > 0 )) {
                     BOARD.strokes[s1.stroke_idx].gp[s1.point_idx] = copy(p0);
                     squeezed += 1;
                 }
             }
         }
         console.log('Squeezed: ',squeezed);
-        
-        
+
+
         // delete dots - strokes of length 0
         let deleted = this.selection.reduce((a, s0)=>{
             let ix = s0.stroke_idx;
@@ -558,14 +558,14 @@ let SelectorTool = _class('SelectorTool', {
             }
             return a;
         }, []);
-        
+
         if (deleted.length>0) {
             deleted.map((stroke)=>{delete stroke.erased;});
             BOARD.undo_strokes(deleted);
         }
         console.log('Deleted: ', deleted.length);
-        
-        // 
+
+        //
         if (UI.keys['Shift']) { // round up opt
             let rounded = 0;
             this.selection.map((s0)=>{
@@ -583,22 +583,22 @@ let SelectorTool = _class('SelectorTool', {
                         rounded++;
                     }
                 });
-                
+
             });
             console.log('Rounded: ', rounded);
         }
     }
-    
+
     ,on_key_down : function(key) {
         let handled = false;
-        
+
         let keymap = {
             'ArrowUp'    : [0,-1],
             'ArrowDown'  : [0,+1],
             'ArrowLeft'  : [-1,0],
             'ArrowRight' : [+1,0]
         };
-        
+
         if (key=='Escape') {
             this.activated = false;
             this.mode = 0;
@@ -611,13 +611,13 @@ let SelectorTool = _class('SelectorTool', {
             if ((UI.keys['Control'])&&(key=='c')) {
                 this.copy();
                 handled = true;
-                
+
             } else if ((UI.keys['Control'])&&(key=='v')) {
                 if (!SelectorTool.USE_SYSTEM_CLIPBOARD) {
                     this.paste(this.clipboard);
                     handled = true;
                 }
-                
+
             } else if (key in keymap) {
                 let dxdy = keymap[key];
                 let scale = (UI.keys['Control'])?1:5;
@@ -625,9 +625,9 @@ let SelectorTool = _class('SelectorTool', {
                 scale = scale / UI.viewpoint.scale;
                 this._move_selection( dxdy[0] * scale, dxdy[1] * scale );
                 handled = true;
-                
+
             }
-            
+
         }
 
         if (handled)
@@ -643,7 +643,7 @@ let SelectorTool = _class('SelectorTool', {
             return true;
         }
     }
-    
+
     ,after_redraw : function() {
         if ((this.mode==1)||(this.mode==2)) {
             this.draw_selected();
@@ -654,26 +654,26 @@ let SelectorTool = _class('SelectorTool', {
         icon : [null,[24,55],[21,54],[17,53],null,[43,53],[41,54],[38,55],[34,55],[29,55],[24,55],null,[25,27],[21,27],[16,27],[14,26],[16,24],[19,23],[23,23],[29,23],[34,23],[39,23],[43,24],[45,24],[42,27],[37,27],[32,27],[28,27],[25,27],null,[24,16],[20,16],[16,15],[14,15],[16,13],[19,12],[23,12],[28,11],[33,11],[38,12],[41,12],[44,13],[40,16],[36,16],[32,16],[27,16],[24,16],null,[14,26],[17,53],null,[45,24],[43,53],null,[21,54],[21,27],null,[24,55],[25,27],null,[29,55],[30,28],null,[34,55],[35,28],null,[42,27],[38,55],null,[16,27],[17,53],null,[21,27],[24,55],null,[28,27],[29,55],null,[37,27],[38,55],null,[45,24],[43,53],null,[19,12],[39,14],null,[22,7],[23,12],[22,7],[37,7],null,[22,7],[30,5],[37,7],[38,12],[37,7],null,[23,12],[38,12],null,[14,26],[19,23],null,[23,23],[29,23],null,[31,22],[39,23],[45,24]]
 
         ,name : 'delete'
-        
+
         ,selector : null
-        
+
         ,activation_key : 'Delete'
-        
+
         ,on_activated : function() {
             if (SelectorTool.DELETE.selector.mode==1) {
-                
+
                 BOARD.op_start();
-                
+
                 SelectorTool.DELETE.selector.selection.map((sl)=>{
                     BOARD.strokes[sl.stroke_idx].erased = BOARD.stroke_id;
                 });
-                
+
                 SelectorTool.DELETE.selector._replace_changed();
-                
+
                 BOARD.op_commit();
-                
+
                 SelectorTool.DELETE.selector.mode = 0;
-                
+
                 UI.redraw();
             }
         }

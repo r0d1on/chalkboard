@@ -1,12 +1,12 @@
 'use strict';
 
 function dst2(a, b) {
-    return (a.X - b.X)*(a.X - b.X) + (a.Y - b.Y)*(a.Y - b.Y); 
+    return (a.X - b.X)*(a.X - b.X) + (a.Y - b.Y)*(a.Y - b.Y);
 }
 
 function dst2seg2(p, a, b) {
     const len2 = dst2(a, b);
-    if (len2 == 0) 
+    if (len2 == 0)
         return dst2(p, a);
     let t = ((p.X - a.X) * (b.X - a.X) + (p.Y - a.Y) * (b.Y - a.Y)) / len2;
     t = Math.max(0, Math.min(1, t));
@@ -14,14 +14,14 @@ function dst2seg2(p, a, b) {
         Y: a.Y + t * (b.Y - a.Y) });
 }
 
-function dst2seg(p, a, b) { 
-    return Math.sqrt(dst2seg2(p, a, b)); 
+function dst2seg(p, a, b) {
+    return Math.sqrt(dst2seg2(p, a, b));
 }
 
 function sub(a, b) {
-    return { 
-        X : a.X - b.X, 
-        Y : a.Y - b.Y 
+    return {
+        X : a.X - b.X,
+        Y : a.Y - b.Y
     };
 }
 

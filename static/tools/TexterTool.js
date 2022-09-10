@@ -16,9 +16,9 @@ let ALPHABET = {'0':{'A':[null,[9,-54],[8,-53],[6,-50],[5,-47],[4,-44],[3,-42],[
 
 let TexterTool = _class('TexterTool', {
     super : DrawToolBase
-     
+
     ,icon : [null,[52,21],[53,8],[8,8],[9,21],null,[44,15],[16,15],[9,21],null,[52,21],[44,15],null,[36,53],[36,15],null,[25,15],[24,53],[36,53],null,[9,8],[10,19],null,[10,18],[16,13],[44,14],[50,18],[50,9],[10,9],null,[12,10],[12,15],[14,13],[45,13],[49,15],null,[49,16],[49,10],[12,10],[12,13],null,[28,15],[26,51],[34,52],[33,16],null,[34,18],[28,17],[28,50],[32,49],[32,16],[30,16],null,[31,17],[31,50],[31,15]]
-    
+
     ,cursor : null // global cursor position
     ,paragraph : null // global paragraph position
 
@@ -28,18 +28,18 @@ let TexterTool = _class('TexterTool', {
         DrawToolBase.init.call(this, 'texter', false, ['Control', 'i']);
         this.MENU_main = MENU_main;
     }
-    
+
     ,put_char : function(key, bx, by, scale, draw_fun) {
         scale = (scale===undefined)?(BRUSH.get_local_width()/10) : scale;
         draw_fun = (draw_fun===undefined)?BOARD.add_buffer_stroke:draw_fun;
 
         let A = ALPHABET[key].A;
         let a,b,p = null;
-        
+
         for(let i=0; i<A.length; i++) {
             a = p;
             b = A[i];
-            
+
             if ((p==null)&&(A[i]!=null)&&((i==A.length-1)||((i<A.length-1)&&(A[i+1]==null))))
                 a = b;
 
@@ -49,71 +49,71 @@ let TexterTool = _class('TexterTool', {
                     ,{'X':b[0] * scale + bx, 'Y':b[1] * scale + by}
                 );
             }
-            
+
             p = A[i];
         }
         return ALPHABET[key].dx * scale;
     }
-    
+
     ,draw_cursor : function(lp, params) {
         if (params==undefined)
             UI.reset_layer('overlay');
 
         if (lp==null)
             return;
-            
+
         let w = 2.2 * BRUSH.get_local_width();
-        
+
         let figure = [
             {'X':lp.X  , 'Y':lp.Y}
             ,{'X':lp.X+w, 'Y':lp.Y-2.6*w}
             ,{'X':lp.X  , 'Y':lp.Y-2.6*w}
             ,{'X':lp.X+w, 'Y':lp.Y}
         ];
-        
+
         figure.map((p, pi)=>{
             UI.add_overlay_stroke(p, figure[(pi+1)%figure.length], params);
         });
     }
-    
+
     ,on_start : function(lp) {
         this.cursor = UI.local_to_global({X:lp.X, Y:lp.Y});
         this.paragraph = UI.local_to_global({X:lp.X, Y:lp.Y});
         this.draw_cursor(lp);
     }
-    
+
     ,on_move : function(lp) {
         this.draw_cursor(UI.global_to_local(this.cursor));
         this.draw_cursor(lp, {color:BRUSH.get_color('2')});
     }
-    
+
     ,on_stop : function(lp) { // eslint-disable-line no-unused-vars
     }
 
     ,on_key_down : function(key) {
-        if (this.cursor==null) 
+        if (this.cursor==null)
             return;
-        
+
         let lcursor = UI.global_to_local(this.cursor);
-        
+
         if (key==' ') {
             lcursor.X += 3.0 * BRUSH.get_local_width();
-            
+
         } else if (key=='Control') {
             return false;
 
         } else if (key=='Shift') {
             return false;
-        
+
         } else if ((key=='+')&&(UI.keys['Control'])) {
             return false;
-        
+
         } else if ((key=='-')&&(UI.keys['Control'])) {
             return false;
-        
+
         } else if (UI.keys['Control']) {
             return false;
-        
+
         } else if (key=='Backspace') {
             let rect = BOARD.rollback(); // returns global rect of cancelled strokes
             rect = rect.map((p)=>{
@@ -122,7 +122,7 @@ let TexterTool = _class('TexterTool', {
             let mx = 3 * 2 * BRUSH.get_local_width();
             lcursor.X = rect[0].X;
             lcursor.Y-= (Math.floor( (lcursor.Y - rect[1].Y) / mx )) * mx;
-            
+
         } else if (key=='Enter') {
             let lparagraph = UI.global_to_local(this.paragraph);
             lcursor.X = lparagraph.X;
@@ -134,30 +134,30 @@ let TexterTool = _class('TexterTool', {
 
         } else {
             lcursor.X += 3 * BRUSH.get_local_width();
-            
+
         }
-        
+
         this.cursor = UI.local_to_global(lcursor);
-        
+
         BOARD.flush_commit();
-        
+
         this.draw_cursor(lcursor);
         return true;
     }
-    
+
     ,on_key_up : function(key) {
         if (key=='Control') {
             return false;
         }
         return true;
     }
-    
+
     ,on_activated : function() {
         if (!UI.is_mobile)
             return;
-        
+
         let inp = this.MENU_main.add('root', 'input', null, 'input')[1];
-        
+
         inp.style['width'] = (Menu.SIZE-9) + 'px';
         inp.style['height'] = (Menu.SIZE-8) + 'px';
         inp.addEventListener('keydown',(e)=>{
@@ -169,30 +169,30 @@ let TexterTool = _class('TexterTool', {
             e.preventDefault();
             e.stopPropagation();
         });
-        
+
         inp.addEventListener('input', (e)=>{
             this.on_key_down(e.data);
             e.target.value = '';
             e.preventDefault();
             e.stopPropagation();
         });
-        
+
         inp.focus();
     }
-    
+
     ,on_deactivated : function() {
         UI.reset_layer('overlay');
-        
+
         if (!UI.is_mobile)
-            return;        
-            
+            return;
+
         this.MENU_main.drop('input');
     }
-    
-    ,after_redraw : function() {        
+
+    ,after_redraw : function() {
         this.draw_cursor(UI.global_to_local(this.cursor));
     }
-    
+
 });
 
 export {TexterTool};

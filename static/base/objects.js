@@ -17,7 +17,7 @@ function deepcopy(o) {
         return null;
     } else if (typeof(o)=='object') {
         let co = {};
-        for(const k in o) 
+        for(const k in o)
             co[k] = deepcopy(o[k]);
         return co;
     }
@@ -36,7 +36,7 @@ function getConstructor(T) {
             }
         }
     }
-    
+
     if (_T == null) {
         throw '@constructor not found for object :' + JSON.stringify(T);
     }
@@ -54,7 +54,7 @@ function allMethodNames(T) {
         }
     }
     return methodsNames;
-} 
+}
 
 function allFieldNames(T) {
     let fieldNames = [];
@@ -75,11 +75,11 @@ function _class(name, def) {
 
 function _new(T, params, dry) {
     params = (params===undefined)?[]:params;
-    
+
     let _T = getConstructor(T);
-    
+
     let at = null;
-    
+
     if (!has(_T, '__@__')) {
         // T was not parsed before
         at  = {
@@ -87,7 +87,7 @@ function _new(T, params, dry) {
             ,'super' : T['super']
             ,'mixins' : T['mixins']||[]
         };
-        
+
         // links to super
         if (!(at.super===undefined)) {
             // inherit stuff from _S
@@ -102,26 +102,26 @@ function _new(T, params, dry) {
                 _T.prototype[method_name] = M[method_name];
             });
         });
-        
+
         // own _T methods
         allMethodNames(T).map((method_name)=>{
             _T.prototype[method_name] = T[method_name];
         });
-        
+
         // own constructor
         T.init = _T;
-        
+
         _T['__@__'] = at;
-        
+
     } else {
         at = _T['__@__'];
     }
-    
+
     // create instance of the object with constructor call
     let obj = null;
 
     obj = Object.create(_T.prototype);
-    
+
     if (!dry) {
 
         // mixin methods
@@ -130,34 +130,34 @@ function _new(T, params, dry) {
                 obj[prop] = deepcopy(M[prop]);
             });
         });
-        
+
         //obj = new _T(...params);
         // inject getters setters for class-level variables
         at.statics.map((prop)=>{
             Object.defineProperty(obj, prop, {
                 // probably throw some here
                 // as class var should be addressed through Class.var explicitly
-                get: function() { 
-                    return T[prop]; 
+                get: function() {
+                    return T[prop];
                 }
-                ,set: function(value) { 
-                    T[prop] = value; 
+                ,set: function(value) {
+                    T[prop] = value;
                 }
             });
         });
-        
+
         // run mixin initializers
         obj._mixins = {};
         at.mixins.map((M)=>{
             let _M = getConstructor(M);
             obj._mixins[_M.name] = M;
             _M.call(obj);
-        });        
-        
+        });
+
         // run own constructor
         _T.apply(obj, params);
     }
-    
+
     return obj;
 }
 
