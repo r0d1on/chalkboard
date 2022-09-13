@@ -102,7 +102,7 @@ let TOOLS = {
             TOOLS.background = tool;
         } else {
             if (prev!=null) {
-                (prev.on_deactivated!==undefined)&&prev.on_deactivated();
+                TOOLS.deactivate(prev);
                 TOOLS.options_disable(prev);
             }
             TOOLS.options_enable(tool);
@@ -112,9 +112,16 @@ let TOOLS = {
     }
 
     ,deactivate_backtool : function() {
-        let prev = TOOLS.previous.pop();
-        TOOLS.show(prev);
-        TOOLS.background = null;
+        if (TOOLS.background!=null) {
+            let prev = TOOLS.previous.pop();
+            TOOLS.show(prev);
+            TOOLS.background = null;
+        }
+    }
+
+    ,deactivate : function(tool) {
+        tool = (tool===undefined)?TOOLS.current:tool;
+        (tool.on_deactivated!==undefined)&&tool.on_deactivated();
     }
 
     ,init : function(MENU_main, MENU_options) {
@@ -239,9 +246,8 @@ let TOOLS = {
     }
 
     ,on_blur : function() {
-        if (TOOLS.background!=null) {
-            TOOLS.deactivate_backtool();
-        }
+        TOOLS.deactivate_backtool();
+        TOOLS.deactivate();
     }
 
 };

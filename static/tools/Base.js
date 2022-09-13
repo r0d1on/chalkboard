@@ -79,6 +79,12 @@ let DrawToolBase = _class('DrawToolBase', {
         this.activated = false;
     }
 
+    ,on_deactivated : function() {
+        let lp = UI._last_point;
+        this.on_stop(lp);
+        ToolBase.on_deactivated.call(this);
+    }
+
 });
 
 

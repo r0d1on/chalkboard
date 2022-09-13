@@ -27,6 +27,7 @@ let PenTool = _class('PenTool', {
         }
         this.activated = false;
     }
+
 });
 
 

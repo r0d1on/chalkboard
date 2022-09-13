@@ -53,12 +53,6 @@ let PanZoomTool = _class('PanZoomTool', { // background tool
         return true;
     }
 
-    ,on_dectivated : function() {
-        let lp = UI._last_point;
-        DrawToolBase.on_stop.call(this, lp);
-        ToolBase.on_deactivated.call(this);
-    }
-
     ,on_wheel : function(delta) {
         let scale = 1.2 ** (Math.abs(delta) / 60);
 
