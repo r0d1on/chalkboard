@@ -2,7 +2,7 @@
 
 import {_class} from '../base/objects.js';
 
-let Menu = _class('Menu', {
+let Menu = {
 
     SIZE : 60
     ,LONG_CLICK_DELAY : 1000
@@ -178,6 +178,8 @@ let Menu = _class('Menu', {
         subelems.splice(index, 1);
     }
 
-});
+};
+
+Menu = _class('Menu', Menu);
 
 export {Menu};

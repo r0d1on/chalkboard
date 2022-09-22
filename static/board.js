@@ -27,6 +27,7 @@ import {CircleTool} from './tools/CircleTool.js';
 // background tools
 import {PanZoomTool} from './tools/PanZoomTool.js';
 import {UndoTool} from './tools/UndoTool.js';
+import {RedoTool} from './tools/RedoTool.js';
 
 // menu actions
 import {SAVE} from './actions/SAVE.js';
@@ -90,11 +91,18 @@ function init() {
 
     // drawing tools menu item
     TOOLS.init(MENU_main, MENU_options);
+
     // background tools
     TOOLS.add_tool(_new(PanZoomTool, []), false); // "Control" pan & zoom tool handler
+
     let undo = _new(UndoTool, []);
     TOOLS.add_tool(undo, false); // "Backspace" undo handler
+
+    let redo = _new(RedoTool, []);
+    TOOLS.add_tool(redo, false); // Shift+"Backspace" redo handler
+
     TOOLS.add_tool(SelectorTool.DELETE, false); // "Delete" deleter handler
+
     // foreground tools
     TOOLS.add_tool(_new(PenTool, []), true, '[p]en');
     TOOLS.add_tool(_new(EraserTool, []), true, '[e]raser');
@@ -114,6 +122,10 @@ function init() {
     // undo menu item
     let ctx = MENU_main.add('root', 'undo', undo.on_activated, 'canvas', 'undo [backspace]')[1].getContext('2d');
     UI.draw_glyph(undo.icon, ctx);
+
+    // redo menu item
+    ctx = MENU_main.add('root', 'redo', redo.on_activated, 'canvas', 'redo [shift+backspace]')[1].getContext('2d');
+    UI.draw_glyph(redo.icon, ctx);
 
     // delete menu item (selector.DELETE + default paste)
     selector.init(MENU_main);
@@ -136,5 +148,6 @@ console.log('loaded board.js');
 
 document.addEventListener('DOMContentLoaded', function(){
     setTimeout(init, 100);
+    window.bp = ()=>{debugger;}; // eslint-disable-line no-debugger
 });
 

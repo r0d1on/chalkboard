@@ -11,7 +11,7 @@ import {UI} from '../ui/UI.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
 
-let LineTool = _class('LineTool', {
+let LineTool = {
     super : DistortableDrawTool
 
     ,icon : [null,[8,51],[49,11],null,[8,53],[51,13]]
@@ -85,6 +85,8 @@ let LineTool = _class('LineTool', {
         return false;
     }
 
-});
+};
+
+LineTool = _class('LineTool', LineTool);
 
 export {LineTool};

@@ -695,24 +695,28 @@ let UI = {
         if (GRID_MODE.grid_active)
             UI.redraw_grid();
 
-        BOARD.strokes.map((stroke)=>{
-            if ((stroke.erased!=undefined)&&(stroke.erased>0))
-                return; // erased stroke
+        for(let commit_id=1; commit_id<=BOARD.commit_id; commit_id+=1) {
+            for(let i in BOARD.strokes[commit_id]) {
+                let stroke = BOARD.strokes[commit_id][i];
 
-            if (stroke.gp[0]==null)
-                return; // erasure stroke
+                if ((stroke.erased!=undefined)&&(stroke.erased>0))
+                    continue; // erased stroke
 
-            lp0 = UI.global_to_local(stroke.gp[0], UI.viewpoint);
-            lp1 = UI.global_to_local(stroke.gp[1], UI.viewpoint);
+                if (stroke.gp[0]==null)
+                    continue; // erasure stroke
 
-            UI.draw_stroke(
-                lp0
-                ,lp1
-                ,stroke.color
-                ,stroke.width * UI.viewpoint.scale
-                ,ctx
-            );
-        });
+                lp0 = UI.global_to_local(stroke.gp[0], UI.viewpoint);
+                lp1 = UI.global_to_local(stroke.gp[1], UI.viewpoint);
+
+                UI.draw_stroke(
+                    lp0
+                    ,lp1
+                    ,stroke.color
+                    ,stroke.width * UI.viewpoint.scale
+                    ,ctx
+                );
+            }
+        }
 
         if ((TOOLS.current!=null)&&(TOOLS.current.after_redraw!=undefined)) {
             TOOLS.current.after_redraw();

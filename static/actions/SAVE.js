@@ -28,52 +28,60 @@ let SAVE = {
         return JSON.parse(json);
     }
 
-    ,update_ids : function() {
-        BOARD.strokes.map((stroke)=>{
-            BOARD.commit_id = Math.max(BOARD.commit_id, stroke.commit_id+1);
-            BOARD.stroke_id = Math.max(BOARD.stroke_id, stroke.stroke_id+1);
-            let version = (stroke.version===undefined)?0:stroke.version;
-            BOARD.version = Math.max(BOARD.version, version);
-        });
+    ,_strokes_to_save : function(version) {
+        let new_strokes = {};
+
+        for(let commit_id in BOARD.strokes) {
+            new_strokes[commit_id] = {};
+
+            for(let i in BOARD.strokes[commit_id]) {
+                let stroke = BOARD.strokes[commit_id][i];
+                stroke = deepcopy(stroke);
+
+                if (version===undefined) {
+                    if (stroke.gp[0]==null) { // erase, undo action
+                        stroke = null;
+
+                    } else if (stroke.erased>=0) {
+                        stroke = null;
+
+                    } else if (stroke.erased<0) {
+                        delete stroke.erased;
+
+                    }
+
+                } else {
+                    if (stroke.version < version)
+                        stroke = null;
+
+                }
+
+                if (stroke!==null)
+                    new_strokes[commit_id][Object.keys(new_strokes[commit_id]).length] = stroke;
+
+            }
+        }
+
+        return new_strokes;
     }
 
     ,save : function() {
         let old = JSON.parse(localStorage.getItem('local_board_' + BOARD.board_name));
 
-        let new_strokes = BOARD.strokes.reduce((a, stroke)=>{ // drop deleted strokes
-            let min_version =  BOARD.strokes.reduce((a, stroke)=>{
-                return (stroke.version < a) ? stroke.version : a;
-            }, BOARD.version);
-
-            if (stroke.version===undefined)
-                stroke.version = min_version;
-
-            stroke = deepcopy(stroke);
-
-            if (stroke.erased>=0) {
-                return a; // ignore erased
-            } else if (stroke.erased<0) {
-                delete stroke.erased;
-            }
-            if (stroke.gp[0]==null) { // erase, undo action
-                return a;
-            }
-
-            a.push(stroke);
-            return a;
-        }, []);
+        let new_strokes = SAVE._strokes_to_save();
 
         if (old!=null) {
             if (prompt('overwrite ' + old.strokes.length + ' with ' + new_strokes.length + ' ?', 'no')!='yes')
                 return;
         }
 
-        console.log('version', BOARD.version, ',saving', new_strokes.length, 'strokes out of', BOARD.strokes.length);
+        console.log('version', BOARD.version, ',saving', new_strokes.length, 'commits out of', BOARD.strokes.length);
 
         let json = SAVE.serialize({
             strokes : new_strokes
             ,slides : SLIDER.slides
             ,view_rect : SLIDER.get_current_frame()
+            ,PERSISTENCE_VERSION : 1
         });
 
         localStorage.setItem('local_board_' + BOARD.board_name, json);
@@ -84,14 +92,37 @@ let SAVE = {
     }
 
     ,load : function() {
-        let json = localStorage.getItem('local_board_'+BOARD.board_name);
+        let json = localStorage.getItem('local_board_' + BOARD.board_name);
         if (json==null)
             return;
 
         let o = SAVE.deserialize(json);
 
-        BOARD.strokes = o.strokes;
-        SAVE.update_ids();
+        if (o.PERSISTENCE_VERSION===undefined) {
+            BOARD.strokes = {};
+            BOARD.strokes[1] = {};
+            for(let i in o.strokes) {
+                let stroke = o.strokes[i];
+                stroke.commit_id = 1;
+                stroke.stroke_idx = Object.keys(BOARD.strokes[stroke.commit_id]).length;
+                stroke.stroke_id = stroke.stroke_idx;
+                BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
+            }
+
+        } else if (o.PERSISTENCE_VERSION===1) {
+            BOARD.strokes = o.strokes;
+
+        }
+
+        for(let commit_id in BOARD.strokes) {
+            BOARD.commit_id = Math.max(BOARD.commit_id, commit_id);
+            for(let i in BOARD.strokes[commit_id]) {
+                let stroke = BOARD.strokes[commit_id][i];
+                BOARD.stroke_id = Math.max(BOARD.stroke_id, stroke.stroke_id);
+                let version = (stroke.version===undefined)?0:stroke.version;
+                BOARD.version = Math.max(BOARD.version, version);
+            }
+        }
 
         SLIDER.slides = o.slides;
         if (o.slides.length==0) {
@@ -111,29 +142,21 @@ let SAVE = {
         let in_strokes = msg['strokes'];
         //var in_version = msg["version"];
 
-        let id2idx = BOARD.strokes.reduce( (a, stroke, idx)=>{
-            a[stroke.stroke_id] = idx;
-            return a;
-        }, {});
+        for(let in_commit in msg['strokes']) {
+            let in_strokes = msg['strokes'][in_commit];
+            BOARD.strokes[in_commit] = BOARD.strokes[in_commit] || {};
 
-        for(let i=0; i<in_strokes.length; i++) {
-            let in_stroke = in_strokes[i];
-            if (in_stroke.stroke_id in id2idx) {
-                // updated stroke
-                let sid = id2idx[in_stroke.stroke_id];
-                let own_stroke = BOARD.strokes[sid];
-                if (in_stroke.version > own_stroke.version) {
-                    BOARD.strokes[sid] = in_stroke;
-                } else {
-                    // received stroke with outdated version, collision?
-                }
-            } else {
-                // new stroke
-                BOARD.strokes.push(in_stroke);
+            for(let in_idx in in_strokes) {
+                let in_stroke = in_strokes[in_idx];
+                let own_stroke = BOARD.strokes[in_commit][in_idx];
+
+                if ((own_stroke===undefined)||(in_stroke['version'] > own_stroke['version']))
+                    BOARD.strokes[in_commit][in_idx] = in_stroke;
+
+                BOARD.commit_id = Math.max(BOARD.commit_id, in_stroke.commit_id);
+                BOARD.stroke_id = Math.max(BOARD.stroke_id, in_stroke.stroke_id);
+                BOARD.version = Math.max(BOARD.version, in_stroke.version||0);
             }
-            BOARD.commit_id = Math.max(BOARD.commit_id, in_stroke.commit_id+1);
-            BOARD.stroke_id = Math.max(BOARD.stroke_id, in_stroke.stroke_id+1);
-            BOARD.version = Math.max(BOARD.version, in_stroke.version||0);
         }
 
         if (in_strokes.length) {
@@ -148,13 +171,6 @@ let SAVE = {
     }
 
     ,sync : function() {
-        let from_version = (SAVE.sent_version == null)? 0 : SAVE.sent_version + 1;
-        let new_strokes = BOARD.strokes.reduce((a, stroke)=>{
-            if (stroke.version >= from_version)
-                a.push(stroke);
-            return a;
-        }, []);
-
         if (SAVE.is_syncing) {
             console.log('skipping sync() - already syncing');
             return;
@@ -165,6 +181,9 @@ let SAVE = {
             return;
         }
 
+        let from_version = (SAVE.sent_version == null)? 0 : SAVE.sent_version + 1;
+
+        let new_strokes = SAVE._strokes_to_save(from_version);
 
         let message_out = deepcopy({
             name : BOARD.board_name

@@ -27,17 +27,19 @@ let BOARD = {
 
     ,version : 0
 
-    ,commit_id : 0
+    ,commit_id : 0  // last commit id
+    ,max_commit_id : 0 // max commit id in the log
+
     ,stroke_id : 0
-    ,strokes : [] // globally positioned strokes on board layer (committed ones)
+    ,strokes : {} // globally positioned strokes on board layer (committed ones)
     ,locked : false
 
     ,add_stroke : function(stroke) {
         stroke.version = BOARD.version;
-        stroke.commit_id = BOARD.commit_id;
         stroke.stroke_id = BOARD.stroke_id++;
 
-        BOARD.strokes.push(stroke);
+        let idx = Object.keys(BOARD.strokes[BOARD.commit_id]).length;
+        BOARD.strokes[BOARD.commit_id][idx] = stroke;
     }
 
     ,flush : function(buffer, clear) {
@@ -85,74 +87,68 @@ let BOARD = {
         return true;
     }
 
-    ,undo_strokes : function(strokes) {
+    ,hide_strokes : function(strokes, eraser_id) {
 
-        return strokes.reduce((a,stroke)=>{
+        return strokes.reduce((a, stroke)=>{
 
             if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase')) {
-                let erased = BOARD.strokes.reduce((a,s)=>{
-                    if (s.erased==stroke.stroke_id)
-                        a.push(s);
-                    return a;
-                },[]);
+                let erased = [];
+                for(let commit_id in BOARD.strokes) {
+                    let strokes_group = BOARD.strokes[commit_id];
+                    for(let i in strokes_group) {
+                        if ((strokes_group[i].erased==stroke.stroke_id)||(strokes_group[i].erased==-stroke.stroke_id))
+                            erased.push(strokes_group[i]);
+                    }
+                }
 
-                erased = BOARD.undo_strokes(erased);
+                erased = BOARD.hide_strokes(erased, stroke.stroke_id);
                 erased.map((s)=>{
                     a.push(s);
                 });
-            }
 
-            if ((stroke.erased!=undefined)&&(stroke.erased>0)) {
-                stroke.erased = -stroke.erased;
             } else {
-                stroke.erased = BOARD.stroke_id;
+
+                if (stroke.erased!=undefined) {
+                    stroke.erased = -stroke.erased;
+                } else {
+                    stroke.erased = eraser_id;
+                }
+
+                stroke.version = BOARD.version;
+                a.push(stroke);
             }
 
-            stroke.version = BOARD.version;
-
-            a.push(stroke);
             return a;
         }, []);
     }
 
-    ,rollback : function() {
+    ,undo : function() {
+        if (BOARD.commit_id == 0) {
+            return {};
+        }
 
-        let last_commit = 0;
-
-        BOARD.op_start();
-
-        let last_strokes = BOARD.strokes.reduce((a, stroke)=>{
-            let active = (stroke.gp[1]!='undo');
-            active = (active)&&((stroke.erased===undefined)||(stroke.erased<0));
-            if ((stroke.commit_id>last_commit)&&(active)) {
-                a = [];
-                last_commit = stroke.commit_id;
-            }
-            if (stroke.commit_id == last_commit) {
-                a.push(stroke);
-            }
-            return a;
-        }, []);
-
-        let changed = BOARD.undo_strokes(last_strokes);
-        BOARD.add_stroke({gp:[null, 'undo']});
-
-        BOARD.op_commit();
+        BOARD.commit_id -= 1;
 
         UI.redraw();
 
-        return UI.get_rect(changed.reduce((a, stroke)=>{
-            a.push(stroke.gp[0], stroke.gp[1]);
-            return a;
-        }, [] ));
-
+        return BOARD.strokes[BOARD.commit_id+1];
     }
 
     ,op_start : function() {
         if (BOARD.locked)
             throw 'board is locked';
+
+        if (BOARD.commit_id < BOARD.max_commit_id) {
+            for(let commit_id=BOARD.commit_id+1; commit_id<=BOARD.max_commit_id; commit_id++) {
+                delete BOARD.strokes[commit_id];
+            }
+        }
+
         BOARD.version += 1;
         BOARD.commit_id += 1;
+        BOARD.strokes[BOARD.commit_id] = {};
+        BOARD.max_commit_id = BOARD.commit_id;
+
         BOARD.locked = true;
     }
 
@@ -169,23 +165,27 @@ let BOARD = {
         let pnt = null;
         let ret = [];
 
-        for(let i=0; i<BOARD.strokes.length; i++) {
-            for(let pi=0; pi<2; pi++) {
-                pnt = BOARD.strokes[i].gp[pi];
-                if (pnt==null)
+        for(let commit_id=1; commit_id<=BOARD.commit_id; commit_id+=1) {
+            for(let i in BOARD.strokes[commit_id]) {
+                if (BOARD.strokes[commit_id][i].gp[0]==null)
                     continue;
 
-                if (BOARD.strokes[i].erased>0)
+                if (BOARD.strokes[commit_id][i].erased>0)
                     continue;
 
-                if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
-                    ret.push({
-                        stroke_idx : i
-                        ,stroke_id : BOARD.strokes[i].stroke_id
-                        ,point_idx : pi
-                    });
-                    if (!(points))
-                        break;
+                for(let pi=0; pi<2; pi++) {
+                    pnt = BOARD.strokes[commit_id][i].gp[pi];
+
+                    if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
+                        ret.push({
+                            commit_id : commit_id
+                            ,stroke_idx : i
+                            ,stroke_id : BOARD.strokes[commit_id][i].stroke_id
+                            ,point_idx : pi
+                        });
+                        if (!(points))
+                            break;
+                    }
                 }
             }
         }
@@ -264,7 +264,7 @@ let BOARD = {
             }
 
             glyph = glyph.map((gs)=>{
-                return BOARD.strokes[gs.stroke_idx].gp.map((p)=>{
+                return BOARD.strokes[gs.commit_id][gs.stroke_idx].gp.map((p)=>{
                     return {X:p.X-(col+0)*ddx, Y:p.Y-(row+0)*ddy};
                 });
             });

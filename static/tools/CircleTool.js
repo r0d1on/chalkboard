@@ -9,7 +9,7 @@ import {DistortableDrawTool} from './Base.js';
 import {UI} from '../ui/UI.js';
 
 
-let CircleTool = _class('CircleTool', {
+let CircleTool = {
     super : DistortableDrawTool
 
     ,icon : [null,[23,52],[19,50],[16,49],[14,46],[11,43],[9,40],[7,37],[7,33],[6,29],[7,26],[7,23],[9,19],[11,16],[14,14],[16,11],[20,10],[23,7],[26,7],[30,6],[34,7],[37,8],[40,9],[44,11],[46,13],[48,16],[51,19],[52,23],[53,27],[53,29],[53,34],[52,37],[51,40],[49,43],[47,46],[43,49],[40,50],[37,52],[33,53],[30,53],[26,53],[23,52]]
@@ -82,6 +82,8 @@ let CircleTool = _class('CircleTool', {
         this._render(figure, func);
     }
 
-});
+};
+
+CircleTool = _class('CircleTool', CircleTool);
 
 export {CircleTool};

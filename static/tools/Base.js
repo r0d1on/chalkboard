@@ -8,7 +8,7 @@ import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
 
-let ToolBase = _class('ToolBase', {
+let ToolBase = {
 
     ToolBase : function(name) {
         this.name = name;
@@ -26,10 +26,12 @@ let ToolBase = _class('ToolBase', {
 
     ,on_wheel : function() {}
 
-});
+};
+
+ToolBase = _class('ToolBase', ToolBase);
 
 
-let DrawToolBase = _class('DrawToolBase', {
+let DrawToolBase = {
     super : ToolBase
 
     ,DrawToolBase : function(name, cyclic, shortcut) {
@@ -77,6 +79,7 @@ let DrawToolBase = _class('DrawToolBase', {
     ,cancel : function() {
         UI.reset_layer('overlay');
         this.activated = false;
+        UI.redraw();
     }
 
     ,on_deactivated : function() {
@@ -85,10 +88,12 @@ let DrawToolBase = _class('DrawToolBase', {
         ToolBase.on_deactivated.call(this);
     }
 
-});
+};
+
+DrawToolBase = _class('DrawToolBase', DrawToolBase);
 
 
-let DistortableDrawTool = _class('DistortableDrawTool', {
+let DistortableDrawTool = {
     super : DrawToolBase
 
     ,DistortableDrawTool : function(name, cyclic, shortcut) {
@@ -175,7 +180,9 @@ let DistortableDrawTool = _class('DistortableDrawTool', {
         return false;
     }
 
-});
+};
+
+DistortableDrawTool = _class('DistortableDrawTool', DistortableDrawTool);
 
 
 export {ToolBase, DrawToolBase, DistortableDrawTool};

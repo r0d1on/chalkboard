@@ -15,26 +15,20 @@ def http_root():
     return flask.redirect(flask.url_for('static',filename='board.html#about').replace('%23','#'))
 
 def sync_message(loc, msg):
-    id2idx = {}
-    for idx, stroke in enumerate(loc['strokes']):
-        id2idx[stroke['stroke_id']] = idx
-
-    for in_stroke in msg['strokes']:
-        if in_stroke['stroke_id'] in id2idx:
-            sid = id2idx[in_stroke['stroke_id']]
-            own_stroke = loc['strokes'][sid]
-            if in_stroke['version'] > own_stroke['version']:
-                loc['strokes'][sid] = in_stroke
-        else:
-            loc['strokes'].append(in_stroke)
+    for in_commit, in_strokes in msg['strokes'].items():
+        loc['strokes'][in_commit] = loc['strokes'].get(in_commit, {})
+        for in_idx, in_stroke in in_strokes.items():
+            own_stroke = loc['strokes'][in_commit].get(in_idx, None)
+            if (own_stroke is None)or(in_stroke['version'] > own_stroke['version']):
+                loc['strokes'][in_commit][in_idx] = in_stroke
 
     return
 
 @app.route("/board.php", methods=['POST'])
 def http_php():
     msg = flask.request.get_json(force=True)
-    
-    print("brd=",msg['name'],' ver=', msg['version'],' msg=',len(msg['strokes']))
+
+    print("brd=", msg['name'], ' ver=', msg['version'], ' msg=', len(msg['strokes']))
 
     bname = msg['name'].split('!',1)
     if len(bname)==1:
@@ -55,7 +49,7 @@ def http_php():
             ,slides : (UI.view_mode=="follow") ? null : SLIDER.slides
 
             ,refresh : (SAVE.sent_version == null) ? 1 : 0
-        });    
+        });
     """
 
     changed = False
@@ -73,10 +67,10 @@ def http_php():
         print("new board:",bfile)
         loc = {
              "version" : 0
-            ,"strokes" : []
+            ,"strokes" : {}
             ,"view_rect" : None
             ,"slides" : []
-            
+
             ,"p" : bpass
         }
         changed = True
@@ -97,26 +91,28 @@ def http_php():
     if (len(msg["strokes"])>0)and(auth):
         if (msg["refresh"]==1):
             loc["version"] = 0
-            loc["strokes"] = []
-        
+            loc["strokes"] = {}
+
         sync_message(loc, msg)
         changed = True
 
     if changed:
         with open(bfile,'wt') as f:
             f.write(json.dumps(loc))
-        print("updated board:",bfile)
+        print("updated board:", bfile)
 
-    upd = []
-    for s in loc['strokes']:
-        if (s['version'] > msg['version']):
-            upd.append(s)
+    upd = {}
+    for loc_commit, loc_strokes in loc['strokes'].items():
+        for loc_idx, loc_stroke in loc_strokes.items():
+            if (loc_stroke['version'] > msg['version']):
+                upd[loc_commit] = upd.get(loc_commit, {})
+                upd[loc_commit][loc_idx] = loc_stroke
 
     return json.dumps({
           "strokes" : upd
          ,"received_version" : msg["version"]
-         ,"view_rect" : loc.get("view_rect",None)
-         ,"slides" : loc.get("slides",[])
+         ,"view_rect" : loc.get("view_rect", None)
+         ,"slides" : loc.get("slides", [])
     })
 
 
@@ -124,7 +120,7 @@ if __name__ == '__main__':
     debug = False
     port = 5000
     bind_ip = '0.0.0.0'
-    
+
     if len(sys.argv)>1:
         debug = ('--debug' in sys.argv)
         if '--port' in sys.argv:
