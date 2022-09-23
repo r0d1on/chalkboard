@@ -84,7 +84,7 @@ let UI = {
     }
 
 
-    ,keys : {'Control':false, 'Shift':false, 'Alt':false}
+    ,keys : {'Control':false, 'Shift':false, 'Alt':false, null:0}
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
@@ -415,8 +415,10 @@ let UI = {
 
 
     ,on_key_down : function(key) {
-        if (key in UI.keys)
+        if (key in UI.keys) {
             UI.keys[key] = true;
+            UI.keys[null] += 1;
+        }
 
         let handled = UI._event_handlers['on_key_down'].reduce((handled, handler)=>{
             return handled||handler(key);
@@ -436,8 +438,10 @@ let UI = {
         if (!handled)
             UI.on_key_up_default(key);
 
-        if (key in UI.keys)
+        if (key in UI.keys) {
             UI.keys[key] = false;
+            UI.keys[null] -= 1;
+        };
     }
 
     ,on_wheel : function(delta, deltaX) {

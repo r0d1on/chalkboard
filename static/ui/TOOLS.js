@@ -108,7 +108,6 @@ let TOOLS = {
             TOOLS.options_enable(tool);
             TOOLS.current = tool;
         }
-
     }
 
     ,deactivate_backtool : function() {
@@ -155,7 +154,15 @@ let TOOLS = {
 
             UI.draw_glyph(tool.icon, tool.canvas.getContext('2d'));
         }
+    }
 
+    ,_key_match : function(key, activation_key) {
+        if (activation_key == key) {
+            return true;
+        } else if ((Array.isArray(activation_key))&&(UI.keys[activation_key[0]])&&(activation_key[1] == key)) {
+            return true;
+        };
+        return false;
     }
 
     // events
@@ -169,9 +176,11 @@ let TOOLS = {
 
         for (const tool_name in TOOLS.tools) {
             const tool = TOOLS.tools[tool_name];
-            if (tool.activation_key == key) {
+            
+            if (TOOLS._key_match(key, tool.activation_key)) {
                 TOOLS.activate(tool_name, true); // activate as a background tool
                 return true;
+                
             } else if ((tool.shortcut!==undefined)&&(UI.keys[tool.shortcut[0]])&&(tool.shortcut[1] == key)) {
                 TOOLS.activate(tool_name); // activate as a foreground
                 return true;
@@ -193,7 +202,7 @@ let TOOLS = {
             return true;
         }
 
-        if ((TOOLS.background!=null)&&(TOOLS.background.activation_key==key))
+        if ((TOOLS.background!=null)&&(TOOLS._key_match(key, TOOLS.background.activation_key)))
             TOOLS.deactivate_backtool(); // deactivate background tool
 
         return false;
