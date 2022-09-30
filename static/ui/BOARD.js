@@ -1,5 +1,7 @@
 'use strict';
 
+import {size} from '../base/objects.js';
+
 import {dst2} from '../util/geometry.js';
 
 import {UI} from './UI.js';
@@ -27,18 +29,48 @@ let BOARD = {
 
     ,version : 0
 
-    ,commit_id : 0  // last commit id
-    ,max_commit_id : 0 // max commit id in the log
+    ,commit_id : '0'  // last commit id
+    ,max_commit_id : '0' // max commit id in the log
 
-    ,stroke_id : 0
+    ,stroke_id : '0'
     ,strokes : {} // globally positioned strokes on board layer (committed ones)
     ,locked : false
 
+    ,id_next : function(id, pad) {
+        pad = (pad===undefined)?4:pad;
+        let iid = id.split('-')[0];
+        let vid = id.split('-')[1] || UI.view_id;
+        
+        iid = Number.parseInt(iid, 36) + 1;
+        iid = Number(iid).toString(36);
+        
+        while (iid.length < pad)
+            iid = '0' + iid;
+        
+        return iid + '-' + vid;
+    }
+    
+    ,id_prev : function(id, pad) {
+        pad = (pad===undefined)?4:pad;
+        let iid = id.split('-')[0];
+        let vid = id.split('-')[1] || UI.view_id;
+
+        iid = Number.parseInt(iid, 36) - 1;
+        iid = (iid>=0)?Number(iid).toString(36):id.split('-')[0];
+        
+        while (iid.length < pad)
+            iid = '0' + iid;
+        
+        return iid + '-' + vid;
+    }
+
     ,add_stroke : function(stroke) {
         stroke.version = BOARD.version;
-        stroke.stroke_id = BOARD.stroke_id++;
+        
+        stroke.stroke_id = BOARD.stroke_id;
+        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
 
-        let idx = Object.keys(BOARD.strokes[BOARD.commit_id]).length;
+        let idx = size(BOARD.strokes[BOARD.commit_id]);
         BOARD.strokes[BOARD.commit_id][idx] = stroke;
     }
 
@@ -96,7 +128,7 @@ let BOARD = {
                 for(let commit_id in BOARD.strokes) {
                     let strokes_group = BOARD.strokes[commit_id];
                     for(let i in strokes_group) {
-                        if ((strokes_group[i].erased==stroke.stroke_id)||(strokes_group[i].erased==-stroke.stroke_id))
+                        if ((strokes_group[i].erased==stroke.stroke_id)||(strokes_group[i].erased=='-'+stroke.stroke_id))
                             erased.push(strokes_group[i]);
                     }
                 }
@@ -109,7 +141,10 @@ let BOARD = {
             } else {
 
                 if (stroke.erased!=undefined) {
-                    stroke.erased = -stroke.erased;
+                    if (stroke.erased[0]=='-')
+                        stroke.erased = stroke.erased.substr(1);
+                    else
+                        stroke.erased = '-' + stroke.erased;
                 } else {
                     stroke.erased = eraser_id;
                 }
@@ -122,16 +157,26 @@ let BOARD = {
         }, []);
     }
 
+    ,is_hidden : function(stroke) {
+        return (
+            (stroke.erased!==undefined)&&
+            (stroke.erased!==null)&&
+            (stroke.erased[0]!='-')
+        )
+    }
+
     ,undo : function() {
-        if (BOARD.commit_id == 0) {
+        if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id)) {
             return {};
         }
 
-        BOARD.commit_id -= 1;
+        let commit_id = BOARD.commit_id;
+
+        BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
 
         UI.redraw();
 
-        return BOARD.strokes[BOARD.commit_id+1];
+        return BOARD.strokes[commit_id];
     }
 
     ,op_start : function() {
@@ -139,13 +184,13 @@ let BOARD = {
             throw 'board is locked';
 
         if (BOARD.commit_id < BOARD.max_commit_id) {
-            for(let commit_id=BOARD.commit_id+1; commit_id<=BOARD.max_commit_id; commit_id++) {
+            for(let commit_id=BOARD.id_next(BOARD.commit_id); commit_id <= BOARD.max_commit_id; commit_id=BOARD.id_next(commit_id)) {
                 delete BOARD.strokes[commit_id];
             }
         }
 
         BOARD.version += 1;
-        BOARD.commit_id += 1;
+        BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
         BOARD.strokes[BOARD.commit_id] = {};
         BOARD.max_commit_id = BOARD.commit_id;
 
@@ -165,12 +210,12 @@ let BOARD = {
         let pnt = null;
         let ret = [];
 
-        for(let commit_id=1; commit_id<=BOARD.commit_id; commit_id+=1) {
+        for(let commit_id=BOARD.id_next('0'); commit_id<=BOARD.commit_id; commit_id=BOARD.id_next(commit_id)) {
             for(let i in BOARD.strokes[commit_id]) {
                 if (BOARD.strokes[commit_id][i].gp[0]==null)
                     continue;
 
-                if (BOARD.strokes[commit_id][i].erased>0)
+                if (BOARD.is_hidden(BOARD.strokes[commit_id][i]))
                     continue;
 
                 for(let pi=0; pi<2; pi++) {

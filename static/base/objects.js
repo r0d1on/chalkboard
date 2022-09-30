@@ -8,6 +8,10 @@ function copy(o) {
     return Object.assign({}, o);
 }
 
+function size(o) {
+    return Object.keys(o).length
+}
+
 function deepcopy(o) {
     if (typeof(o) in {'number':1, 'string':1}) {
         return o;
@@ -161,4 +165,4 @@ function _new(T, params, dry) {
     return obj;
 }
 
-export {copy, deepcopy, _class, _new};
+export {copy, size, deepcopy, _class, _new};

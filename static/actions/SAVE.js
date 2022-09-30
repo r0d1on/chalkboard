@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepcopy} from '../base/objects.js';
+import {deepcopy, size} from '../base/objects.js';
 
 import {UI} from '../ui/UI.js';
 
@@ -42,10 +42,10 @@ let SAVE = {
                     if (stroke.gp[0]==null) { // erase, undo action
                         stroke = null;
 
-                    } else if (stroke.erased>=0) {
+                    } else if (BOARD.is_hidden(stroke.erased)) {
                         stroke = null;
 
-                    } else if (stroke.erased<0) {
+                    } else if (stroke.erased!==undefined) {
                         delete stroke.erased;
 
                     }
@@ -57,7 +57,7 @@ let SAVE = {
                 }
 
                 if (stroke!==null)
-                    new_strokes[commit_id][Object.keys(new_strokes[commit_id]).length] = stroke;
+                    new_strokes[commit_id][size(new_strokes[commit_id])] = stroke;
 
             }
         }
@@ -104,7 +104,7 @@ let SAVE = {
             for(let i in o.strokes) {
                 let stroke = o.strokes[i];
                 stroke.commit_id = 1;
-                stroke.stroke_idx = Object.keys(BOARD.strokes[stroke.commit_id]).length;
+                stroke.stroke_idx = size(BOARD.strokes[stroke.commit_id]);
                 stroke.stroke_id = stroke.stroke_idx;
                 BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
             }

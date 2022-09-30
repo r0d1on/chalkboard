@@ -79,7 +79,7 @@ let SelectorTool = {
             if (BOARD.strokes[commit_id][i].gp[0]==null)
                 continue;
 
-            if (BOARD.strokes[commit_id][i].erased>0)
+            if (BOARD.is_hidden(BOARD.strokes[commit_id][i]))
                 continue;
 
             for(let pi=0; pi<2; pi++) {
@@ -109,7 +109,7 @@ let SelectorTool = {
         for(let id in this.original_strokes) {
             let old_stroke = this.original_strokes[id];
             // capture changed strokes
-            if (!(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx].erased>=0))
+            if (!(BOARD.is_hidden(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx])))
                 new_strokes.push(deepcopy(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx]));
             // return original strokes back
             BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx] = old_stroke;
@@ -550,10 +550,11 @@ let SelectorTool = {
             let ix = s0.stroke_idx;
             let stroke = BOARD.strokes[s0.commit_id][ix];
             let d = dst2(stroke.gp[0], stroke.gp[1]);
-            if ((d==0)&&(!(stroke.erased>0))&&(!(stroke.erased===null))) {
+            if ((d==0)&&(!BOARD.is_hidden(stroke))) {
                 a.push(stroke);
-                stroke.erased=null;
+                stroke.erased=undefined;
             }
+            
             return a;
         }, []);
 
@@ -568,7 +569,7 @@ let SelectorTool = {
             let rounded = 0;
             this.selection.map((s0)=>{
                 let ix = s0.stroke_idx;
-                if (BOARD.strokes[s0.commit_id][ix].erased>0)
+                if (BOARD.is_hidden(BOARD.strokes[s0.commit_id][ix]))
                     return;
 
                 BOARD.strokes[s0.commit_id][ix].gp.map((p)=>{

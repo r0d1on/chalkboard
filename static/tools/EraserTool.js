@@ -44,10 +44,7 @@ let EraserTool = {
                 if (strokes_group[i].gp[0]==null)
                     continue;
 
-                if (strokes_group[i].erased!=undefined)
-                    continue;
-
-                if (strokes_group[i].erased>0)
+                if (BOARD.is_hidden(strokes_group[i]))
                     continue;
 
                 if (!(this.touches(gp, strokes_group[i])))
@@ -78,7 +75,7 @@ let EraserTool = {
             let strokes_group = BOARD.strokes[commit_id];
             for(let i in strokes_group) {
                 if (strokes_group[i].erased==BOARD.stroke_id) {
-                    strokes_group[i].erased = -BOARD.stroke_id;
+                    strokes_group[i].erased = '-' + BOARD.stroke_id;
                     erased.push(strokes_group[i]);
                 }
             }

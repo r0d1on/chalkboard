@@ -70,6 +70,7 @@ let UI = {
     ,_last_point : null
 
     ,is_mobile : false
+    ,view_id : 'xx'
     ,view_mode : undefined
 
     ,window_width : null
@@ -291,6 +292,9 @@ let UI = {
 
         // UI modes
         UI.view_mode = uri.split('$')[1];
+
+        // view id
+        UI.view_id = Number(Math.ceil(Math.random()*1000)).toString(36);
 
         try {
             UI.is_mobile = navigator.userAgentData.mobile;
@@ -699,11 +703,11 @@ let UI = {
         if (GRID_MODE.grid_active)
             UI.redraw_grid();
 
-        for(let commit_id=1; commit_id<=BOARD.commit_id; commit_id+=1) {
+        for(let commit_id=BOARD.id_next('0'); commit_id<=BOARD.commit_id; commit_id=BOARD.id_next(commit_id)) {
             for(let i in BOARD.strokes[commit_id]) {
                 let stroke = BOARD.strokes[commit_id][i];
 
-                if ((stroke.erased!=undefined)&&(stroke.erased>0))
+                if (BOARD.is_hidden(stroke))
                     continue; // erased stroke
 
                 if (stroke.gp[0]==null)
