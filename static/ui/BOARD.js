@@ -179,15 +179,19 @@ let BOARD = {
         return BOARD.strokes[commit_id];
     }
 
-    ,op_start : function() {
-        if (BOARD.locked)
-            throw 'board is locked';
-
+    ,drop_redo : function() {
         if (BOARD.commit_id < BOARD.max_commit_id) {
             for(let commit_id=BOARD.id_next(BOARD.commit_id); commit_id <= BOARD.max_commit_id; commit_id=BOARD.id_next(commit_id)) {
                 delete BOARD.strokes[commit_id];
             }
         }
+    }
+
+    ,op_start : function() {
+        if (BOARD.locked)
+            throw 'board is locked';
+
+        BOARD.drop_redo();
 
         BOARD.version += 1;
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);

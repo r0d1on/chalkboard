@@ -30,16 +30,14 @@ let SAVE = {
         return JSON.parse(json);
     }
 
-    ,_strokes_to_save : function(version) {
+    ,_strokes_to_save : function(from_version) {
         let new_strokes = {};
 
         for(let commit_id in BOARD.strokes) {
-            new_strokes[commit_id] = {};
+            for(let stroke_idx in BOARD.strokes[commit_id]) {
+                let stroke = deepcopy(BOARD.strokes[commit_id][stroke_idx]);
 
-            for(let i in BOARD.strokes[commit_id]) {
-                let stroke = deepcopy(BOARD.strokes[commit_id][i]);
-
-                if (version===undefined) {
+                if (from_version===undefined) {
                     if (stroke.gp[0]==null) { // erase, undo action
                         stroke = null;
 
@@ -51,12 +49,19 @@ let SAVE = {
                     }
 
                 } else {
-                    if (stroke.version < version)
+                    if (stroke.version < from_version)
                         stroke = null;
                 }
 
-                if (stroke!==null)
+                if (stroke!==null) {
+                    if (!(commit_id in new_strokes))
+                        new_strokes[commit_id] = {};
+
+                    stroke.commit_id = commit_id;
+                    stroke.stroke_idx = stroke_idx;
+
                     new_strokes[commit_id][size(new_strokes[commit_id])] = stroke;
+                }
 
             }
         }
@@ -156,17 +161,19 @@ let SAVE = {
         SLIDER.update();
         SLIDER.move_to(o.view_rect);
 
+        SAVE.sent_version = null; // reset remote watermark to update the whole board
+
         SAVE.MENU_main.hide('save_group');
         UI.redraw();
     }
 
 
     ,sync_message : function(msg) {
-        let in_strokes = msg['strokes'];
-        //var in_version = msg["version"];
+        let max_commit = '';
+        let max_stroke_id = '';
 
-        for(let in_commit in msg['strokes']) {
-            let in_strokes = msg['strokes'][in_commit];
+        for(let in_commit in msg.strokes) {
+            let in_strokes = msg.strokes[in_commit];
             BOARD.strokes[in_commit] = BOARD.strokes[in_commit] || {};
 
             for(let in_idx in in_strokes) {
@@ -176,13 +183,24 @@ let SAVE = {
                 if ((own_stroke===undefined)||(in_stroke['version'] > own_stroke['version']))
                     BOARD.strokes[in_commit][in_idx] = in_stroke;
 
-                BOARD.commit_id = Math.max(BOARD.commit_id, in_stroke.commit_id);
-                BOARD.stroke_id = Math.max(BOARD.stroke_id, in_stroke.stroke_id);
-                BOARD.version = Math.max(BOARD.version, in_stroke.version||0);
+                BOARD.version = (BOARD.version > in_stroke.version) ? BOARD.version : in_stroke.version;
+                max_commit = (max_commit > in_stroke.commit_id) ? max_commit : in_stroke.commit_id;
+                max_stroke_id = (max_stroke_id > in_stroke.stroke_id) ? max_stroke_id : in_stroke.stroke_id;
             }
         }
 
-        if (in_strokes.length) {
+        if (size(msg.strokes)>0) {
+            BOARD.drop_redo();
+
+            max_commit = max_commit.split('-')[0];
+            max_commit = (BOARD.commit_id.split('-')[0] > max_commit)?BOARD.commit_id.split('-')[0]:max_commit;
+
+            max_stroke_id = max_stroke_id.split('-')[0];
+            max_stroke_id = (BOARD.stroke_id.split('-')[0] > max_stroke_id)?BOARD.stroke_id.split('-')[0]:max_stroke_id;
+
+            BOARD.commit_id = BOARD.id_next(max_commit);
+            BOARD.stroke_id = BOARD.id_next(max_stroke_id, 5);
+
             UI.redraw();
         }
 
@@ -213,11 +231,14 @@ let SAVE = {
 
             ,version : BOARD.version
             ,strokes : new_strokes
+
+            ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
+
             ,view_rect : (UI.view_mode=='follow') ? null : SLIDER.get_current_frame()
             ,slides : (UI.view_mode=='follow') ? null : SLIDER.slides
+            ,lead : (UI.view_mode == 'lead')? 1 : 0
 
             ,refresh : (SAVE.sent_version == null) ? 1 : 0
-            ,lead : (UI.view_mode == 'lead')? 1 : 0
         });
 
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
@@ -232,7 +253,7 @@ let SAVE = {
                         if ((message_in.resync)||(BOARD.locked)) {
                             console.log('will resync:', message_in);
                         } else {
-                            //console.log("received:", message_in);
+                            //console.log("<= |upd|:", size(message_in.strokes), " ver:", message_in.received_version);
                             SAVE.sent_version = message_in.received_version;
                             SAVE.sync_message(message_in);
                         }
@@ -256,6 +277,7 @@ let SAVE = {
         xhr.open('POST', '/board.php', true);
         xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
 
+        //console.log("=> |msg|:", size(message_out.strokes), " ver:", message_out.version);
         SAVE.is_syncing = true;
         xhr.send(JSON.stringify((message_out)));
     }
