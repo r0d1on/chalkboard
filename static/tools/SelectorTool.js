@@ -554,7 +554,7 @@ let SelectorTool = {
                 a.push(stroke);
                 stroke.erased=undefined;
             }
-            
+
             return a;
         }, []);
 

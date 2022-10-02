@@ -9,7 +9,7 @@ function copy(o) {
 }
 
 function size(o) {
-    return Object.keys(o).length
+    return Object.keys(o).length;
 }
 
 function deepcopy(o) {

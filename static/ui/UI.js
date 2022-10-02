@@ -445,7 +445,7 @@ let UI = {
         if (key in UI.keys) {
             UI.keys[key] = false;
             UI.keys[null] -= 1;
-        };
+        }
     }
 
     ,on_wheel : function(delta, deltaX) {
@@ -703,7 +703,10 @@ let UI = {
         if (GRID_MODE.grid_active)
             UI.redraw_grid();
 
-        for(let commit_id=BOARD.id_next('0'); commit_id<=BOARD.commit_id; commit_id=BOARD.id_next(commit_id)) {
+        for(let commit_id in BOARD.strokes) {
+            if (commit_id > BOARD.commit_id)
+                break;
+
             for(let i in BOARD.strokes[commit_id]) {
                 let stroke = BOARD.strokes[commit_id][i];
 

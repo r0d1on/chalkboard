@@ -40,16 +40,16 @@ let BOARD = {
         pad = (pad===undefined)?4:pad;
         let iid = id.split('-')[0];
         let vid = id.split('-')[1] || UI.view_id;
-        
+
         iid = Number.parseInt(iid, 36) + 1;
         iid = Number(iid).toString(36);
-        
+
         while (iid.length < pad)
             iid = '0' + iid;
-        
+
         return iid + '-' + vid;
     }
-    
+
     ,id_prev : function(id, pad) {
         pad = (pad===undefined)?4:pad;
         let iid = id.split('-')[0];
@@ -57,16 +57,16 @@ let BOARD = {
 
         iid = Number.parseInt(iid, 36) - 1;
         iid = (iid>=0)?Number(iid).toString(36):id.split('-')[0];
-        
+
         while (iid.length < pad)
             iid = '0' + iid;
-        
+
         return iid + '-' + vid;
     }
 
     ,add_stroke : function(stroke) {
         stroke.version = BOARD.version;
-        
+
         stroke.stroke_id = BOARD.stroke_id;
         BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
 
@@ -162,7 +162,7 @@ let BOARD = {
             (stroke.erased!==undefined)&&
             (stroke.erased!==null)&&
             (stroke.erased[0]!='-')
-        )
+        );
     }
 
     ,undo : function() {

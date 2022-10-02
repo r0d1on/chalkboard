@@ -161,7 +161,7 @@ let TOOLS = {
             return true;
         } else if ((Array.isArray(activation_key))&&(UI.keys[activation_key[0]])&&(activation_key[1] == key)) {
             return true;
-        };
+        }
         return false;
     }
 
@@ -176,11 +176,11 @@ let TOOLS = {
 
         for (const tool_name in TOOLS.tools) {
             const tool = TOOLS.tools[tool_name];
-            
+
             if (TOOLS._key_match(key, tool.activation_key)) {
                 TOOLS.activate(tool_name, true); // activate as a background tool
                 return true;
-                
+
             } else if ((tool.shortcut!==undefined)&&(UI.keys[tool.shortcut[0]])&&(tool.shortcut[1] == key)) {
                 TOOLS.activate(tool_name); // activate as a foreground
                 return true;
