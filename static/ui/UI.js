@@ -283,17 +283,31 @@ let UI = {
         window.addEventListener('blur', ()=>{
             UI.on_blur();
         });
+
+        // hash change listener
+        window.addEventListener('hashchange', ()=>{
+            UI.on_hash_change();
+        });
+
+    }
+
+    ,_parse_uri : function(uri) {
+        // board name
+        let old_name = BOARD.board_name;
+        BOARD.board_name = uri.split('$')[0];
+
+        // UI view mode
+        let old_view_mode = UI.view_mode;
+        UI.view_mode = uri.split('$')[1];
+
+        return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
 
     ,init : function() {
-        // env constants
-        let uri = window.location.hash.slice(1,);
-        BOARD.board_name = uri.split('$')[0];
+        // parse out board name and view mode from location hash
+        UI._parse_uri(window.location.hash.slice(1,));
 
-        // UI modes
-        UI.view_mode = uri.split('$')[1];
-
-        // view id
+        // generate view id
         UI.view_id = Number(Math.ceil(Math.random()*1000)).toString(36);
 
         try {
@@ -314,6 +328,8 @@ let UI = {
         UI.update_layers();
 
         UI._setup_event_listeners();
+
+        document.body.style['background-color'] = '#AAA';
     }
 
 
@@ -495,15 +511,24 @@ let UI = {
     }
 
     ,on_focus : function() {
+        document.body.style['background-color'] = '#AAA';
         UI._event_handlers['on_focus'].reduce((handled, handler)=>{
             return handled||handler();
         }, false);
     }
 
     ,on_blur : function() {
+        document.body.style['background-color'] = '#DDD';
         UI._event_handlers['on_blur'].reduce((handled, handler)=>{
             return handled||handler();
         }, false);
+    }
+
+    ,on_hash_change : function() {
+        if (UI._parse_uri(window.location.hash.slice(1,))) {
+            console.log(window.location.hash.slice(1,));
+            window.location.reload();
+        }
     }
 
     // Stroke handling
