@@ -214,22 +214,27 @@ let BOARD = {
         let pnt = null;
         let ret = [];
 
-        for(let commit_id=BOARD.id_next('0'); commit_id<=BOARD.commit_id; commit_id=BOARD.id_next(commit_id)) {
-            for(let i in BOARD.strokes[commit_id]) {
-                if (BOARD.strokes[commit_id][i].gp[0]==null)
+        for(let commit_id in BOARD.strokes) {
+            if (commit_id > BOARD.commit_id)
+                break;
+
+            let strokes_group = BOARD.strokes[commit_id];
+
+            for(let stroke_idx in strokes_group) {
+                if (strokes_group[stroke_idx].gp[0]==null)
                     continue;
 
-                if (BOARD.is_hidden(BOARD.strokes[commit_id][i]))
+                if (BOARD.is_hidden(strokes_group[stroke_idx]))
                     continue;
 
                 for(let pi=0; pi<2; pi++) {
-                    pnt = BOARD.strokes[commit_id][i].gp[pi];
+                    pnt = strokes_group[stroke_idx].gp[pi];
 
                     if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
                         ret.push({
                             commit_id : commit_id
-                            ,stroke_idx : i
-                            ,stroke_id : BOARD.strokes[commit_id][i].stroke_id
+                            ,stroke_idx : stroke_idx
+                            ,stroke_id : strokes_group[stroke_idx].stroke_id
                             ,point_idx : pi
                         });
                         if (!(points))

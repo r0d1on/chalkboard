@@ -57,6 +57,12 @@ let SLIDER = {
     ,_timer : null
     ,move_to : function(rect) {
         let rect0 = SLIDER.get_current_frame();
+
+        if ((rect0[0].X==rect[0].X)&&(rect0[0].Y==rect[0].Y)
+        //&&(rect0[1].X==rect[1].X)&&(rect0[1].Y==rect[1].Y)
+        )
+            return;
+
         let LDX = (UI.window_width - UI.CANVAS_MARGIN*2);
         //let LDY = (UI.window_width - UI.CANVAS_MARGIN*2);
 

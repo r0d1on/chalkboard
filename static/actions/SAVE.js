@@ -189,7 +189,7 @@ let SAVE = {
             }
         }
 
-        if (size(msg.strokes)>0) {
+        if (size(msg.strokes) > 0) {
             BOARD.drop_redo();
 
             max_commit = max_commit.split('-')[0];
