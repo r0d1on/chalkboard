@@ -170,6 +170,9 @@ let Menu = {
     }
 
     ,drop : function(id) {
+        if (!(id in this.tree))
+            return;
+
         this.tree['root'].rdom.removeChild(this.tree[id].dom);
         this.tree['root'].rdom.removeChild(this.tree[id].rdom);
 
