@@ -435,6 +435,9 @@ let UI = {
 
 
     ,on_key_down : function(key) {
+        if (BOARD.board_name=='debug')
+            console.log('ui.key_down:', key);
+
         if (key in UI.keys) {
             UI.keys[key] = true;
             UI.keys[null] += 1;
@@ -451,6 +454,9 @@ let UI = {
     }
 
     ,on_key_up : function(key) {
+        if (BOARD.board_name=='debug')
+            console.log('ui.key_up:', key);
+
         let handled = UI._event_handlers['on_key_up'].reduce((handled, handler)=>{
             return handled||handler(key);
         }, false);
