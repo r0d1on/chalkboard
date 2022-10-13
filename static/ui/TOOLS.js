@@ -264,7 +264,6 @@ let TOOLS = {
         if (TOOLS.current===undefined)
             return;
 
-        console.log('reactivate tool', TOOLS.current);
         TOOLS.current.on_activated();
     }
 
