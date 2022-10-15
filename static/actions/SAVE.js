@@ -201,23 +201,7 @@ let SAVE = {
         if (e.target.files.length != 1)
             return;
 
-        const file = e.target.files[0];
-        const reader = new FileReader();
-
-        reader.addEventListener('load',
-            ((file)=>{
-                let name = file.name;
-                return (ee)=>{
-                    const board_data = ee.target.result;
-                    console.log('loaded file: ', name);
-                    SAVE._unpersist(board_data);
-                    UI.redraw();
-                };
-            })(file)
-            ,false
-        );
-
-        reader.readAsText(file);
+        SAVE.on_file(e.target.files[0]);
     }
 
     ,upload : function() {
@@ -364,6 +348,24 @@ let SAVE = {
         UI.draw_glyph(SAVE.icon_sync, ctx, undefined, (SAVE.autosync?undefined:'#555'));
     }
 
+    ,on_file : function(file) {
+        const reader = new FileReader();
+
+        reader.addEventListener('load',
+            ((file)=>{
+                let name = file.name;
+                return (ee)=>{
+                    const board_data = ee.target.result;
+                    console.log('loaded file: ', name);
+                    SAVE._unpersist(board_data);
+                    UI.redraw();
+                };
+            })(file)
+            ,false
+        );
+
+        reader.readAsText(file);
+    }
 
     ,init : function(MENU_main) {
         SAVE.MENU_main = MENU_main;
@@ -388,6 +390,8 @@ let SAVE = {
         UI.draw_glyph(SAVE.icon_upload, ctx);
 
         //SAVE.sync_switch();
+
+        UI.addEventListener('on_file', SAVE.on_file);
 
         document.getElementById('file-input').addEventListener('change', SAVE.handleFiles);
     }

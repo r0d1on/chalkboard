@@ -68,6 +68,7 @@ let UI = {
     ,LAYERS : ['background', 'board', 'buffer', 'overlay']
 
     ,_last_point : null
+    ,_under_focus : false
 
     ,is_mobile : false
     ,view_id : 'xx'
@@ -85,7 +86,13 @@ let UI = {
     }
 
 
-    ,keys : {'Control':false, 'Shift':false, 'Alt':false, null:0}
+    ,keys : {
+        'Control' : false
+        , 'Shift' : false
+        , 'Alt' : false
+        , 'SpecialKeys' : 0
+        , null : true
+    }
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
@@ -247,31 +254,8 @@ let UI = {
         });
 
         // paste listener
-        document.addEventListener('paste', (e)=>{
-            let cd = e.clipboardData;
-            console.log('paste:',cd);
-            for(let i=0; i<cd.types.length; i++) {
-                console.log('=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-');
-                console.log('type:', cd.types[i]);
-                console.log('kind:', cd.items[i].kind);
-
-                if (cd.items[i].kind=='string') {
-                    cd.items[i].getAsString(
-                        ((type)=>{
-                            return (data)=>{
-                                UI._on_paste(data, type);
-                            };
-                        })(cd.types[i])
-                    );
-
-                } else if (cd.items[i].kind=='file') {
-                    let file = cd.items[i].getAsFile();
-                    UI.on_file(file);
-
-                } else {
-                    console.log('Unknown kind:', cd.items[i].kind);
-                }
-            }
+        document.addEventListener('paste', e => {
+            UI._handle_data(e.clipboardData);
         });
 
         // window focus listener
@@ -287,6 +271,29 @@ let UI = {
         // hash change listener
         window.addEventListener('hashchange', ()=>{
             UI.on_hash_change();
+        });
+
+        // drag'n'drop handlers
+        window.addEventListener('dragenter', e =>{
+            e.stopPropagation();
+            e.preventDefault();
+            UI._on_focus_change('#ACA');
+        });
+        window.addEventListener('dragover', e =>{
+            e.stopPropagation();
+            e.preventDefault();
+            UI._on_focus_change('#ACA');
+        });
+        window.addEventListener('dragleave', e =>{
+            e.stopPropagation();
+            e.preventDefault();
+            UI._on_focus_change(UI._under_focus);
+        });
+        window.addEventListener('drop', e =>{
+            e.stopPropagation();
+            e.preventDefault();
+            UI._handle_data(e.dataTransfer);
+            UI._on_focus_change(true);
         });
 
     }
@@ -329,7 +336,7 @@ let UI = {
 
         UI._setup_event_listeners();
 
-        document.body.style['background-color'] = '#AAA';
+        UI._on_focus_change(true);
     }
 
 
@@ -347,6 +354,8 @@ let UI = {
 
         ,'on_focus' : []
         ,'on_blur' : []
+
+        ,'on_file' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -440,7 +449,8 @@ let UI = {
 
         if (key in UI.keys) {
             UI.keys[key] = true;
-            UI.keys[null] += 1;
+            UI.keys['SpecialKeys'] += 1;
+            UI.keys[null] = UI.keys['SpecialKeys']==0;
         }
 
         let handled = UI._event_handlers['on_key_down'].reduce((handled, handler)=>{
@@ -466,7 +476,8 @@ let UI = {
 
         if (key in UI.keys) {
             UI.keys[key] = false;
-            UI.keys[null] -= 1;
+            UI.keys['SpecialKeys'] = Math.max(0, UI.keys['SpecialKeys'] - 1);
+            UI.keys[null] = (UI.keys['SpecialKeys']==0);
         }
     }
 
@@ -479,6 +490,32 @@ let UI = {
             UI.on_wheel_default(delta, deltaX);
     }
 
+
+    ,_handle_data : function(data_transfer) {
+        for(let i=0; i<data_transfer.types.length; i++) {
+            let data_item = data_transfer.items[i];
+            console.log('=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-');
+            console.log('type:', data_transfer.types[i]);
+            console.log('kind:', data_item.kind);
+
+            if (data_item.kind=='string') {
+                data_item.getAsString(
+                    ((type)=>{
+                        return (data)=>{
+                            UI._on_paste(data, type);
+                        };
+                    })(data_transfer.types[i])
+                );
+
+            } else if (data_item.kind=='file') {
+                let file = data_item.getAsFile();
+                UI.on_file(file);
+
+            } else {
+                console.log('Unknown data transfer kind received:', data_item.kind);
+            }
+        }
+    }
 
     ,_on_paste : function(text, type) {
         //console.log("paste:", type , text);
@@ -499,10 +536,6 @@ let UI = {
         UI.on_paste_text(text);
     }
 
-    ,on_file : function(file) {
-        console.log('FILE:', file);
-    }
-
     ,on_paste_text : function(text) {
         console.log('TEXT:', text);
     }
@@ -516,15 +549,37 @@ let UI = {
             UI.on_paste_strokes_default(strokes);
     }
 
+    ,on_file : function(file) {
+        let handled = UI._event_handlers['on_file'].reduce((handled, handler)=>{
+            return handled||handler(file);
+        }, false);
+
+        if (!handled)
+            console.log('unhandled file transfer:', file);
+    }
+
+
+    ,_on_focus_change : function(under_focus) {
+        if (under_focus==true) {
+            UI.under_focus = under_focus;
+            document.body.style['background-color'] = '#AAA';
+        } else if (under_focus==false) {
+            UI.under_focus = under_focus;
+            document.body.style['background-color'] = '#DDD';
+        } else {
+            document.body.style['background-color'] = under_focus;
+        }
+    }
+
     ,on_focus : function() {
-        document.body.style['background-color'] = '#AAA';
+        UI._on_focus_change(true);
         UI._event_handlers['on_focus'].reduce((handled, handler)=>{
             return handled||handler();
         }, false);
     }
 
     ,on_blur : function() {
-        document.body.style['background-color'] = '#DDD';
+        UI._on_focus_change(false);
         UI._event_handlers['on_blur'].reduce((handled, handler)=>{
             return handled||handler();
         }, false);
