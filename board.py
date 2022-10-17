@@ -4,6 +4,10 @@ import os
 import sys
 import json
 
+CONFIG = {
+    "dry" : False
+}
+
 app = flask.Flask(__name__
                 ,static_url_path = ''
                 ,static_folder   = 'static'
@@ -12,7 +16,7 @@ app = flask.Flask(__name__
 
 @app.route('/', methods=['GET'])
 def http_root():
-    return flask.redirect(flask.url_for('static',filename='board.html#about').replace('%23','#'))
+    return flask.redirect(flask.url_for('static',filename='index.html#about').replace('%23','#'))
 
 def sync_message(loc, msg):
     for in_commit, in_strokes in msg['strokes'].items():
@@ -24,13 +28,16 @@ def sync_message(loc, msg):
 
     return
 
-@app.route("/board.php", methods=['POST'])
-def http_php():
+@app.route("/sync", methods=['POST'])
+def http_sync():
     msg = flask.request.get_json(force=True)
 
     print("<= brd=", msg['name'], ' ver=', msg['version'], ' |msg|=', len(msg['strokes']))
 
-    bname = msg['name'].split('!',1)
+    if (msg["version"] < 0) and (CONFIG['dry']):
+        raise Exception("backend is not available")
+
+    bname = msg['name'].split('!', 1)
     if len(bname)==1:
         bpass = ""
     else:
@@ -117,8 +124,15 @@ if __name__ == '__main__':
         debug = ('--debug' in sys.argv)
         if '--port' in sys.argv:
             port = sys.argv[sys.argv.index('--port') + 1]
+        
         if '--bind' in sys.argv:
             bind_ip = sys.argv[sys.argv.index('--bind') + 1]
+
+        if '--dry' in sys.argv:
+            CONFIG['dry'] = sys.argv[sys.argv.index('--dry') + 1]
+        else:
+            CONFIG['dry'] = False
+        print('dry mode:', CONFIG['dry'])
 
     if debug:
         app.run(host=bind_ip, port=port, threaded=False, debug=True)

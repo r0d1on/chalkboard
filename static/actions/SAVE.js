@@ -253,6 +253,28 @@ let SAVE = {
 
     }
 
+    ,_request : function(api_endpoint, message, cb, timeout) {
+        timeout = (timeout===undefined) ? 10*1000 : timeout;
+
+        let xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = ((xhr, message)=>{
+            return ()=>{
+                if (xhr.readyState == 4) {
+                    cb(xhr, message);
+                } else {
+                    //console.log("xhr:", xhr, "rs:", xhr.readyState);
+                }
+            };
+        })(xhr, message);
+
+        xhr.timeout = timeout;
+        xhr.ontimeout = ((xhr)=>{return ()=>{console.log('timeout',xhr);};})(xhr);
+        xhr.open('POST', api_endpoint, true);
+        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+        xhr.send(JSON.stringify((message)));
+    }
+
     ,sync : function() {
         if (SAVE.is_syncing) {
             console.log('skipping sync() - already syncing');
@@ -285,43 +307,29 @@ let SAVE = {
 
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
 
-        let xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = ((xhr, message_out)=>{
-            return ()=>{
-                if (xhr.readyState == 4) {
-                    if (xhr.status == 200) {
-                        let message_in = JSON.parse(xhr.responseText);
-                        //console.log("sent: ", message_out.version, "L=", message_out.strokes.length, message_out);
-                        if ((message_in.resync)||(BOARD.locked)) {
-                            console.log('will resync:', message_in);
-                        } else {
-                            //console.log("<= |upd|:", size(message_in.strokes), " ver:", message_in.received_version);
-                            SAVE.sent_version = message_in.received_version;
-                            SAVE.sync_message(message_in);
-                        }
-
-                    } else {
-                        console.log('could not send the data:', xhr);
-                        console.log('message:', message_out);
-                        if (SAVE.autosync) {
-                            SAVE.sync_switch();
-                        }
-                    }
-                    SAVE.is_syncing = false;
+        SAVE.is_syncing = true;
+        SAVE._request('/sync', message_out, (xhr, message)=>{
+            if (xhr.status == 200) {
+                let message_in = JSON.parse(xhr.responseText);
+                //console.log("sent: ", message.version, "L=", message.strokes.length, message);
+                if ((message_in.resync)||(BOARD.locked)) {
+                    console.log('will resync:', message_in);
                 } else {
-                    //console.log("xhr:", xhr, "rs:", xhr.readyState);
+                    //console.log("<= |upd|:", size(message_in.strokes), " ver:", message_in.received_version);
+                    SAVE.sent_version = message_in.received_version;
+                    SAVE.sync_message(message_in);
                 }
-            };
-        })(xhr, message_out);
-
-        xhr.timeout = 10*1000;
-        xhr.ontimeout = ((xhr)=>{return ()=>{console.log('timeout',xhr);};})(xhr);
-        xhr.open('POST', '/board.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+            } else {
+                console.log('could not send the data:', xhr);
+                console.log('message:', message);
+                if (SAVE.autosync) {
+                    SAVE.sync_switch();
+                }
+            }
+            SAVE.is_syncing = false;
+        });
 
         //console.log("=> |msg|:", size(message_out.strokes), " ver:", message_out.version);
-        SAVE.is_syncing = true;
-        xhr.send(JSON.stringify((message_out)));
     }
 
     ,sync_switch : function() {
@@ -379,10 +387,6 @@ let SAVE = {
         ctx = MENU_main.add('save_group', 'load', SAVE.load, 'canvas', 'load locally')[1].getContext('2d');
         UI.draw_glyph(SAVE.icon_load, ctx);
 
-        SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
-        ctx = SAVE.canvas_sync.getContext('2d');
-        UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
-
         ctx = MENU_main.add('save_group', 'download', SAVE.download, 'canvas', 'download board')[1].getContext('2d');
         UI.draw_glyph(SAVE.icon_download, ctx);
 
@@ -394,6 +398,22 @@ let SAVE = {
         UI.addEventListener('on_file', SAVE.on_file);
 
         document.getElementById('file-input').addEventListener('change', SAVE.handleFiles);
+
+        SAVE._request('/sync', {
+            name : BOARD.board_name
+            ,version : -1
+            ,strokes : {}
+        }, (xhr)=>{
+            if (xhr.status == 200) {
+                console.log('backend available: ', xhr);
+                SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
+                let ctx = SAVE.canvas_sync.getContext('2d');
+                UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
+            } else {
+                console.log('backend unavailable: ', xhr);
+            }
+        }, 500);
+
     }
 
 };

@@ -183,6 +183,11 @@ let Menu = {
 
         let item = this.items[id];
 
+        // drop children
+        item.sub.map((sid)=>{
+            this.drop(sid);
+        });
+
         // 4. remove from menu container
         this.items['root'].rdom.removeChild(item.rdom);
 
