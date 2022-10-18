@@ -1,6 +1,6 @@
 'use strict';
 
-import {copy} from '/base/objects.js';
+import {copy} from '../base/objects.js';
 
 import {dst2 , sub, angle} from '../util/geometry.js';
 

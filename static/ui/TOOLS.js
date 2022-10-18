@@ -1,6 +1,6 @@
 'use strict';
 
-import {copy} from '/base/objects.js';
+import {copy} from '../base/objects.js';
 
 import {UI} from './UI.js';
 
