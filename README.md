@@ -17,6 +17,12 @@ Should work just fine in both desktop and mobile Chrome..
 * rudimentary online shared drawing sessions (refreshed with server polling, so not instant)
 * named boards
 * read-only (write protected) boards
+* saving / loading board from / to browser local storage
+* downloading / uploading board from / to machine local storage
+
+### hosted on github pages:
+
+ * https://r0d1on.github.io/chalkboard/
 
 ### running locally:
 
