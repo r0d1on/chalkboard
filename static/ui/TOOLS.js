@@ -82,8 +82,11 @@ let TOOLS = {
         this.MENU_main.hide('tools');
     }
 
-    ,activate : function(tool_name, background) {
+    ,activate : function(tool_name, background, button) {
         background = (background===undefined)?false:background;
+        button = (button===undefined)?0:button;
+
+        TOOLS.fast_tools[button] = tool_name;
 
         let tool = TOOLS.tools[tool_name];
         let prev = TOOLS.current;
@@ -100,8 +103,10 @@ let TOOLS = {
             TOOLS.show(tool);
         }
 
-        if (tool.on_activated!==undefined)
+        if (tool.on_activated!==undefined) {
             tool.on_activated();
+            tool._activated_by = button;
+        }
 
         if (background) {
             TOOLS.background = tool;
@@ -158,7 +163,7 @@ let TOOLS = {
         return (e, id, long)=>{ // eslint-disable-line no-unused-vars
             TOOLS.fast_tools[e.button] = tool_name;
             if (e.button==0) {
-                TOOLS.activate(tool_name);
+                TOOLS.activate(tool_name, false, 0);
             } else {
                 UI.toast('tools', e.button + ' => ' + tool_name, 700);
                 return true;
@@ -205,11 +210,11 @@ let TOOLS = {
             const tool = TOOLS.tools[tool_name];
 
             if (TOOLS._key_match(key, tool.activation_key)) {
-                TOOLS.activate(tool_name, true); // activate as a background tool
+                TOOLS.activate(tool_name, true, -1); // activate as a background tool
                 return true;
 
             } else if ((tool.shortcut!==undefined)&&(UI.keys[tool.shortcut[0]])&&(tool.shortcut[1] == key)) {
-                TOOLS.activate(tool_name); // activate as a foreground
+                TOOLS.activate(tool_name, false, 0); // activate as a foreground
                 return true;
             }
         }
@@ -253,7 +258,7 @@ let TOOLS = {
             handled = true;
         } else {
             if ((button in TOOLS.fast_tools)&&(button!=0)) {
-                TOOLS.activate(TOOLS.fast_tools[button]);
+                TOOLS.activate(TOOLS.fast_tools[button], false, button);
                 if (TOOLS.current.is_capturing)
                     TOOLS.fast_tools[0] = TOOLS.fast_tools[button];
             }
@@ -281,7 +286,7 @@ let TOOLS = {
             handled = true;
         } else {
             handled = ((TOOLS.current.on_stop!=undefined)&&(TOOLS.current.on_stop(point)));
-            TOOLS.activate(TOOLS.fast_tools[0]);
+            TOOLS.activate(TOOLS.fast_tools[0], false, 0);
         }
         return handled;
     }
