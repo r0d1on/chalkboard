@@ -160,13 +160,7 @@ let UI = {
         buffer_canvas.addEventListener('mousedown', e => {
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
-            if (e.button==2) {
-                e.stopPropagation();
-                e.preventDefault();
-                UI.on_start_alt(lp);
-            } else {
-                UI.on_start(lp);
-            }
+            UI.on_start(lp, e.button);
         });
         buffer_canvas.addEventListener('touchstart', e => {
             UI.is_mobile = true;
@@ -187,7 +181,7 @@ let UI = {
                 UI.on_key_down('Control'); // activate zoom / pan
             }
 
-            UI.on_start({X:lp.X, Y:lp.Y, D:lp.D});
+            UI.on_start({X:lp.X, Y:lp.Y, D:lp.D}, 0);
             e.preventDefault();
         });
 
@@ -355,7 +349,6 @@ let UI = {
     // Events
     ,_event_handlers : {
         'on_start' : []
-        ,'on_start_alt' : []
         ,'on_move' : []
         ,'on_stop' : []
 
@@ -437,20 +430,11 @@ let UI = {
     }
 
 
-    ,on_start : function(lp) {
+    ,on_start : function(lp, button) {
         UI._event_handlers['on_start'].reduce((handled, handler)=>{
-            return handled||handler(copy(lp));
+            return handled||handler(copy(lp), button);
         }, false);
     }
-
-
-    ,on_start_alt : function(lp) {
-        UI._event_handlers['on_start_alt'].reduce((handled, handler)=>{
-            return handled||handler(copy(lp));
-        }, false);
-    }
-
-
 
     ,on_move : function(lp) {
         UI._event_handlers['on_move'].reduce((handled, handler)=>{
@@ -875,6 +859,9 @@ let UI = {
 
     }
 
+    ,toast : function(topic, text, lifespan) {
+        return toast(topic, text, lifespan);
+    }
 };
 
 export {UI};

@@ -27,6 +27,7 @@ let TexterTool = {
     ,TexterTool : function(MENU_main) {
         DrawToolBase.init.call(this, 'texter', false, ['Control', 'i']);
         this.MENU_main = MENU_main;
+        this.is_capturing = true;
     }
 
     ,put_char : function(key, bx, by, scale, draw_fun) {
