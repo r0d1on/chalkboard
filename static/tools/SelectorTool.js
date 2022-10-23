@@ -24,6 +24,7 @@ let SelectorTool = {
 
     ,SelectorTool : function() {
         DrawToolBase.init.call(this, SelectorTool.NAME, false, ['Control', 's']);
+        this.is_capturing = true;
     }
 
     ,mode : 0 // 0:selecting / 1:selected / 2:moving / 3:scale / 4:rotate

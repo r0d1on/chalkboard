@@ -12,14 +12,15 @@ let ToolBase = {
 
     ToolBase : function(name) {
         this.name = name;
+        this.is_capturing = false; // if once activated the tool "wants" to keep being activated
     }
 
-    ,on_activated : function(){
-        console.log(this.name,' - activated');
+    ,on_activated : function() {
+        console.log(this.name, ' - activated');
     }
 
     ,on_deactivated : function() {
-        console.log(this.name,' - deactivated');
+        console.log(this.name, ' - deactivated');
     }
 
     ,after_redraw : function() {}

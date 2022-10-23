@@ -16,6 +16,8 @@ let TOOLS = {
 
     ,current : null
     ,background : null
+    ,fast_tools : {}
+
     ,MENU_main : null
     ,MENU_options : null
 
@@ -86,6 +88,9 @@ let TOOLS = {
         let tool = TOOLS.tools[tool_name];
         let prev = TOOLS.current;
 
+        if (tool==prev)
+            return;
+
         TOOLS.previous.push(prev);
 
         if (TOOLS.background!=null) {
@@ -100,14 +105,22 @@ let TOOLS = {
 
         if (background) {
             TOOLS.background = tool;
+
         } else {
             if (prev!=null) {
                 TOOLS.deactivate(prev);
                 TOOLS.options_disable(prev);
             }
+
             TOOLS.options_enable(tool);
             TOOLS.current = tool;
+
+            if (!(0 in TOOLS.fast_tools))
+                TOOLS.fast_tools[0] = tool_name;
+
         }
+
+        return;
     }
 
     ,deactivate_backtool : function() {
@@ -141,17 +154,30 @@ let TOOLS = {
         UI.addEventListener('on_focus', TOOLS.on_focus);
     }
 
+    ,_tool_activator : function(tool_name) {
+        return (e, id, long)=>{ // eslint-disable-line no-unused-vars
+            TOOLS.fast_tools[e.button] = tool_name;
+            if (e.button==0) {
+                TOOLS.activate(tool_name);
+            } else {
+                UI.toast('tools', e.button + ' => ' + tool_name, 700);
+                return true;
+            }
+        };
+    }
+
     ,add_tool : function(tool, visible, title) {
         visible = (visible===undefined)?true:visible;
 
         TOOLS.tools[tool.name] = tool;
 
         if (visible) {
-            [tool.div, tool.canvas] = this.MENU_main.add('tools', tool.name, ((tool_name)=>{
-                return ()=>{
-                    TOOLS.activate(tool_name);
-                };
-            })(tool.name), 'canvas', title);
+            [tool.div, tool.canvas] = this.MENU_main.add(
+                'tools'
+                , tool.name
+                , TOOLS._tool_activator(tool.name)
+                , 'canvas', title
+            );
 
             UI.draw_glyph(tool.icon, tool.canvas.getContext('2d'));
         }
@@ -218,13 +244,23 @@ let TOOLS = {
         return false;
     }
 
-    ,on_start : function(lp) {
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_start!=undefined)&&(TOOLS.background.on_start(copy(lp)))) {
-            return true;
-        } else if ((TOOLS.current.on_start!=undefined)&&(TOOLS.current.on_start(copy(lp)))) {
-            return true;
+    ,on_start : function(lp, button) {
+        const point = copy(lp);
+        const background = (TOOLS.background!=null)&&(TOOLS.background.on_start!=undefined);
+        let handled = false;
+
+        if ((background)&&(TOOLS.background.on_start(point, button))) {
+            handled = true;
+        } else {
+            if ((button in TOOLS.fast_tools)&&(button!=0)) {
+                TOOLS.activate(TOOLS.fast_tools[button]);
+                if (TOOLS.current.is_capturing)
+                    TOOLS.fast_tools[0] = TOOLS.fast_tools[button];
+            }
+
+            handled = ((TOOLS.current.on_start!=undefined)&&(TOOLS.current.on_start(point, button)));
         }
-        return false;
+        return handled;
     }
 
     ,on_move : function(lp) {
@@ -237,12 +273,17 @@ let TOOLS = {
     }
 
     ,on_stop : function(lp) {
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_stop!=undefined)&&(TOOLS.background.on_stop(copy(lp)))) {
-            return true;
-        } else if ((TOOLS.current.on_stop!=undefined)&&(TOOLS.current.on_stop(copy(lp)))) {
-            return true;
+        const point = copy(lp);
+        const background = (TOOLS.background!=null)&&(TOOLS.background.on_stop!=undefined);
+        let handled = false;
+
+        if ((background)&&(TOOLS.background.on_stop(point))) {
+            handled = true;
+        } else {
+            handled = ((TOOLS.current.on_stop!=undefined)&&(TOOLS.current.on_stop(point)));
+            TOOLS.activate(TOOLS.fast_tools[0]);
         }
-        return false;
+        return handled;
     }
 
     ,on_paste_strokes : function(strokes) {

@@ -71,10 +71,7 @@ let Menu = {
         function handler(e) {
             let long = ((new Date()).valueOf() - that.items[id]._push) > Menu.LONG_CLICK_DELAY;
 
-            //console.log("menu:", id);
-
             if ( ( onclk != undefined ) && ( onclk != null ) && ( !onclk(e, id, long) ) ) {
-                //console.log(id, e, " - cancelled");
                 return;
             }
 
@@ -115,8 +112,17 @@ let Menu = {
         dom_elem.style['width'] = Menu.SIZE + 'px';
         dom_elem.style['height'] = Menu.SIZE + 'px';
         dom_elem.style['background-color'] = Menu.COLOR0;
-        dom_elem.addEventListener('click', this.onclick(id, onclick));
+
         dom_elem.addEventListener('mousedown', this.onpush(id));
+        dom_elem.addEventListener('touchstart', this.onpush(id));
+        dom_elem.addEventListener('mouseup', this.onclick(id, onclick));
+        dom_elem.addEventListener('touchend', this.onclick(id, onclick));
+        dom_elem.addEventListener('contextmenu', e => {
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });
+
         dom_elem.title = title||'';
 
         // create inner element if requested
