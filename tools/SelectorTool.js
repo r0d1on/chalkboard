@@ -45,7 +45,7 @@ let SelectorTool = {
         UI.on_paste_strokes_default = (strokes)=>{
             console.log('selector:on_paste_strokes_default');
 
-            TOOLS.activate(SelectorTool.NAME);
+            TOOLS.activate(SelectorTool.NAME, false, 0);
 
             this.last_point = {
                 X : UI.window_width/2
@@ -228,6 +228,19 @@ let SelectorTool = {
         // draw over selected points
     }
 
+    ,clear_selection : function() {
+        this.mode = 0;
+        this.selection = null;
+        this.selection_center = null;
+        this.selection_rect = null;
+        this.activated = false;
+
+        if (this._activated_by > 0) {
+            this._activated_by = null;
+            let previous_tool = TOOLS.previous.slice(-1)[0];
+            TOOLS.activate(previous_tool.name, false, 0);
+        }
+    }
 
     ,start_mode : function(mode) {
         BOARD.op_start();
@@ -277,10 +290,7 @@ let SelectorTool = {
             });
 
             if (anchor_i == null) {
-                this.mode = 0;
-                this.selection = null;
-                this.selection_center = null;
-                this.selection_rect = null;
+                this.clear_selection();
                 UI.redraw();
                 return;
             }
@@ -600,10 +610,8 @@ let SelectorTool = {
         };
 
         if (key=='Escape') {
-            this.activated = false;
-            this.mode = 0;
+            this.clear_selection();
             handled = true;
-
         }
 
         if (this.mode==1) {
@@ -651,8 +659,7 @@ let SelectorTool = {
     }
 
     ,on_deactivated : function() {
-        this.activated = false;
-        this.selection = null;
+        this.clear_selection();
         DrawToolBase.on_deactivated.call(this);
     }
 

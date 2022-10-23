@@ -112,7 +112,7 @@ function init() {
     TOOLS.add_tool(_new(LineTool, []), true, '[l]ine, arrow');
     let selector = _new(SelectorTool, []);
     TOOLS.add_tool(selector, true, '[s]elect - scale, rotate, copy, paste');
-    TOOLS.activate('pen');
+    TOOLS.activate('pen', false, 0);
 
     // config menu item
     SETUP.init(MENU_main);

@@ -162,8 +162,11 @@ let SAVE = {
         } else {
             SLIDER.current_ix = 0;
         }
+
         SLIDER.update();
-        SLIDER.move_to(o.view_rect);
+
+        if (!((o.view_rect===undefined)||(o.view_rect==null)))
+            SLIDER.move_to(o.view_rect);
     }
 
     ,load : function() {
