@@ -126,8 +126,7 @@ let TexterTool = {
         } else if (key=='Escape') {
             if (this._activated_by > 0) {
                 this._activated_by = null;
-                let previous_tool = TOOLS.previous.slice(-1)[0];
-                TOOLS.activate(previous_tool.name, false, 0);
+                TOOLS.activate(TOOLS.alt_tools[0], false, 0);
             }
             return false;
 
