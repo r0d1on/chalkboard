@@ -233,9 +233,9 @@ let SelectorTool = {
         this.selection = null;
         this.selection_center = null;
         this.selection_rect = null;
-        this.activated = false;
 
         if (this._activated_by > 0) {
+            this.activated = false;
             this._activated_by = null;
             TOOLS.activate(TOOLS.alt_tools[0], false, 0);
         }
@@ -659,6 +659,7 @@ let SelectorTool = {
 
     ,on_deactivated : function() {
         this.clear_selection();
+        this.activated = false;
         DrawToolBase.on_deactivated.call(this);
     }
 
