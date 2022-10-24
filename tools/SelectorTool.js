@@ -237,8 +237,7 @@ let SelectorTool = {
 
         if (this._activated_by > 0) {
             this._activated_by = null;
-            let previous_tool = TOOLS.previous.slice(-1)[0];
-            TOOLS.activate(previous_tool.name, false, 0);
+            TOOLS.activate(TOOLS.alt_tools[0], false, 0);
         }
     }
 
@@ -670,7 +669,7 @@ let SelectorTool = {
 
         ,selector : null
 
-        ,activation_key : 'Delete'
+        ,background_key : 'Delete'
 
         ,on_activated : function() {
             if (SelectorTool.DELETE.selector.mode==1) {

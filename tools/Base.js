@@ -12,7 +12,7 @@ let ToolBase = {
 
     ToolBase : function(name) {
         this.name = name;
-        this.is_capturing = false; // if once activated the tool "wants" to keep being activated
+        this.is_capturing = false; // once fast-activated the tool will release the control by itself
     }
 
     ,on_activated : function() {

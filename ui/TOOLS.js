@@ -16,7 +16,7 @@ let TOOLS = {
 
     ,current : null
     ,background : null
-    ,fast_tools : {}
+    ,alt_tools : {} // tools assigned to alt mouse buttons
 
     ,MENU_main : null
     ,MENU_options : null
@@ -86,7 +86,8 @@ let TOOLS = {
         background = (background===undefined)?false:background;
         button = (button===undefined)?0:button;
 
-        TOOLS.fast_tools[button] = tool_name;
+        if (!(button in TOOLS.alt_tools))
+            TOOLS.alt_tools[button] = tool_name;
 
         let tool = TOOLS.tools[tool_name];
         let prev = TOOLS.current;
@@ -119,9 +120,6 @@ let TOOLS = {
 
             TOOLS.options_enable(tool);
             TOOLS.current = tool;
-
-            if (!(0 in TOOLS.fast_tools))
-                TOOLS.fast_tools[0] = tool_name;
 
         }
 
@@ -161,11 +159,13 @@ let TOOLS = {
 
     ,_tool_activator : function(tool_name) {
         return (e, id, long)=>{ // eslint-disable-line no-unused-vars
-            TOOLS.fast_tools[e.button] = tool_name;
+            TOOLS.alt_tools[e.button] = tool_name;
             if (e.button==0) {
+                // immediately activate selected tool
                 TOOLS.activate(tool_name, false, 0);
             } else {
-                UI.toast('tools', e.button + ' => ' + tool_name, 700);
+                // assign alt button to activate the tool
+                UI.toast('tools', e.button + ' => ' + tool_name, 1000);
                 return true;
             }
         };
@@ -188,10 +188,10 @@ let TOOLS = {
         }
     }
 
-    ,_key_match : function(key, activation_key) {
-        if (activation_key == key) {
+    ,_key_match : function(key, background_key) {
+        if (background_key == key) {
             return true;
-        } else if ((Array.isArray(activation_key))&&(UI.keys[activation_key[0]])&&(activation_key[1] == key)) {
+        } else if ((Array.isArray(background_key))&&(UI.keys[background_key[0]])&&(background_key[1] == key)) {
             return true;
         }
         return false;
@@ -209,7 +209,7 @@ let TOOLS = {
         for (const tool_name in TOOLS.tools) {
             const tool = TOOLS.tools[tool_name];
 
-            if (TOOLS._key_match(key, tool.activation_key)) {
+            if (TOOLS._key_match(key, tool.background_key)) {
                 TOOLS.activate(tool_name, true, -1); // activate as a background tool
                 return true;
 
@@ -234,7 +234,7 @@ let TOOLS = {
             return true;
         }
 
-        if ((TOOLS.background!=null)&&(TOOLS._key_match(key, TOOLS.background.activation_key)))
+        if ((TOOLS.background!=null)&&(TOOLS._key_match(key, TOOLS.background.background_key)))
             TOOLS.deactivate_backtool(); // deactivate background tool
 
         return false;
@@ -257,11 +257,8 @@ let TOOLS = {
         if ((background)&&(TOOLS.background.on_start(point, button))) {
             handled = true;
         } else {
-            if ((button in TOOLS.fast_tools)&&(button!=0)) {
-                TOOLS.activate(TOOLS.fast_tools[button], false, button);
-                if (TOOLS.current.is_capturing)
-                    TOOLS.fast_tools[0] = TOOLS.fast_tools[button];
-            }
+            if ((button in TOOLS.alt_tools)&&(button!=0))
+                TOOLS.activate(TOOLS.alt_tools[button], false, button);
 
             handled = ((TOOLS.current.on_start!=undefined)&&(TOOLS.current.on_start(point, button)));
         }
@@ -286,7 +283,9 @@ let TOOLS = {
             handled = true;
         } else {
             handled = ((TOOLS.current.on_stop!=undefined)&&(TOOLS.current.on_stop(point)));
-            TOOLS.activate(TOOLS.fast_tools[0], false, 0);
+
+            if (!TOOLS.current.is_capturing)
+                TOOLS.activate(TOOLS.alt_tools[0], false, 0);
         }
         return handled;
     }
