@@ -90,9 +90,9 @@ let UI = {
         'Control' : false
         , 'Shift' : false
         , 'Alt' : false
-        , 'SpecialKeys' : 0
         , null : true
     }
+    ,keys_special : 0
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
@@ -449,6 +449,12 @@ let UI = {
         }, false);
     }
 
+    ,_update_special : function() {
+        UI.keys_special = 0;
+        for (const key in UI.keys)
+            UI.keys_special += (key!=null)?UI.keys[key]*1:0;
+        UI.keys[null] = UI.keys_special==0;
+    }
 
     ,on_key_down : function(key) {
         if (BOARD.board_name=='debug')
@@ -456,8 +462,7 @@ let UI = {
 
         if (key in UI.keys) {
             UI.keys[key] = true;
-            UI.keys['SpecialKeys'] += 1;
-            UI.keys[null] = UI.keys['SpecialKeys']==0;
+            UI._update_special();
         }
 
         let handled = UI._event_handlers['on_key_down'].reduce((handled, handler)=>{
@@ -483,8 +488,7 @@ let UI = {
 
         if (key in UI.keys) {
             UI.keys[key] = false;
-            UI.keys['SpecialKeys'] = Math.max(0, UI.keys['SpecialKeys'] - 1);
-            UI.keys[null] = (UI.keys['SpecialKeys']==0);
+            UI._update_special();
         }
     }
 
@@ -544,7 +548,12 @@ let UI = {
     }
 
     ,on_paste_text_default : function(text) {
-        console.log('TEXT:', text);
+        if ('texter' in TOOLS.tools) {
+            TOOLS.deactivate_backtool();
+            TOOLS.activate('texter', false, 0);
+            TOOLS.on_start(UI._last_point, 0);
+            TOOLS.on_paste_text(text);
+        }
     }
 
     ,on_paste_text : function(text) {
