@@ -357,6 +357,7 @@ let UI = {
         ,'on_wheel' : []
 
         ,'on_paste_strokes' : []
+        ,'on_paste_text' : []
 
         ,'on_focus' : []
         ,'on_blur' : []
@@ -542,8 +543,17 @@ let UI = {
         UI.on_paste_text(text);
     }
 
-    ,on_paste_text : function(text) {
+    ,on_paste_text_default : function(text) {
         console.log('TEXT:', text);
+    }
+
+    ,on_paste_text : function(text) {
+        let handled = UI._event_handlers['on_paste_text'].reduce((handled, handler)=>{
+            return handled||handler(text);
+        }, false);
+
+        if (!handled)
+            UI.on_paste_text_default(text);
     }
 
     ,on_paste_strokes : function(strokes) {

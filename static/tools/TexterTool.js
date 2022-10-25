@@ -92,9 +92,11 @@ let TexterTool = {
     ,on_stop : function(lp) { // eslint-disable-line no-unused-vars
     }
 
-    ,on_key_down : function(key) {
+    ,on_key_down : function(key, commit) {
         if (this.cursor==null)
             return;
+
+        commit = (commit===undefined)?true:commit;
 
         let lcursor = UI.global_to_local(this.cursor);
 
@@ -148,7 +150,7 @@ let TexterTool = {
             lcursor.X = rect[0].X;
             lcursor.Y -= (Math.floor( (lcursor.Y - rect[1].Y) / mx )) * mx;
 
-        } else if (key=='Enter') {
+        } else if ((key=='Enter')||(key=='\n')) {
             let lparagraph = UI.global_to_local(this.paragraph);
             lcursor.X = lparagraph.X;
             lcursor.Y += 3 * 2 * BRUSH.get_local_width();
@@ -164,7 +166,8 @@ let TexterTool = {
 
         this.cursor = UI.local_to_global(lcursor);
 
-        BOARD.flush_commit();
+        if (commit)
+            BOARD.flush_commit();
 
         this.draw_cursor(lcursor);
         return true;
@@ -222,6 +225,18 @@ let TexterTool = {
 
     ,after_redraw : function() {
         this.draw_cursor(UI.global_to_local(this.cursor));
+    }
+
+    ,on_paste_text : function(text) {
+        let ctrl_status = UI.keys['Control'];
+        UI.keys['Control'] = false;
+
+        for(let i=0; i<text.length; i++)
+            this.on_key_down(text[i], false);
+
+        UI.keys['Control'] = ctrl_status;
+
+        BOARD.flush_commit();
     }
 
 };
