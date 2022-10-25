@@ -153,6 +153,7 @@ let TOOLS = {
         UI.addEventListener('on_move', TOOLS.on_move);
         UI.addEventListener('on_stop', TOOLS.on_stop);
         UI.addEventListener('on_paste_strokes', TOOLS.on_paste_strokes);
+        UI.addEventListener('on_paste_text', TOOLS.on_paste_text);
         UI.addEventListener('on_blur', TOOLS.on_blur);
         UI.addEventListener('on_focus', TOOLS.on_focus);
     }
@@ -197,14 +198,29 @@ let TOOLS = {
         return false;
     }
 
+    ,_handled : function(tool, event, args) {
+        return (
+            (tool!=null)&&
+            (event in tool)&&
+            (tool[event]!=undefined)&&
+            (tool[event].apply(tool, args))
+        );
+    }
+
+    ,_tools_handle : function(event, args) {
+        if (TOOLS._handled(TOOLS.background, event, args))
+            return true;
+
+        if (TOOLS._handled(TOOLS.current, event, args))
+            return true;
+
+        return false;
+    }
+
     // events
     ,on_key_down : function(key) {
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_key_down!=undefined)&&(TOOLS.background.on_key_down(key))) {
+        if (TOOLS._tools_handle('on_key_down', [key]))
             return true;
-        }
-        if ((TOOLS.current.on_key_down!=undefined)&&(TOOLS.current.on_key_down(key))) {
-            return true;
-        }
 
         for (const tool_name in TOOLS.tools) {
             const tool = TOOLS.tools[tool_name];
@@ -220,19 +236,15 @@ let TOOLS = {
         }
 
         if (key=='Escape') {
-            (TOOLS.background!=null)&&(TOOLS.background.cancel!=undefined)&&(TOOLS.background.cancel());
-            (TOOLS.current!=null)&&(TOOLS.current.cancel!=undefined)&&(TOOLS.current.cancel());
+            TOOLS._tools_handle('cancel', []);
         }
 
         return false;
     }
 
     ,on_key_up : function(key) {
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_key_up!=undefined)&&(TOOLS.background.on_key_up(key))) {
+        if (TOOLS._tools_handle('on_key_up', [key]))
             return true;
-        } else if ((TOOLS.current.on_key_up!=undefined)&&(TOOLS.current.on_key_up(key))) {
-            return true;
-        }
 
         if ((TOOLS.background!=null)&&(TOOLS._key_match(key, TOOLS.background.background_key)))
             TOOLS.deactivate_backtool(); // deactivate background tool
@@ -241,11 +253,8 @@ let TOOLS = {
     }
 
     ,on_wheel : function(delta) {
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_wheel!=undefined)&&(TOOLS.background.on_wheel(delta))) {
+        if (TOOLS._tools_handle('on_wheel', [delta]))
             return true;
-        } else if ((TOOLS.current.on_wheel!=undefined)&&(TOOLS.current.on_wheel(delta))) {
-            return true;
-        }
         return false;
     }
 
@@ -266,11 +275,8 @@ let TOOLS = {
     }
 
     ,on_move : function(lp) {
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_move!=undefined)&&(TOOLS.background.on_move(copy(lp)))) {
+        if (TOOLS._tools_handle('on_move', [copy(lp)]))
             return true;
-        } else if ((TOOLS.current.on_move!=undefined)&&(TOOLS.current.on_move(copy(lp)))) {
-            return true;
-        }
         return false;
     }
 
@@ -291,12 +297,14 @@ let TOOLS = {
     }
 
     ,on_paste_strokes : function(strokes) {
-        //console.log('strokes:',strokes);
-        if ((TOOLS.background!=null)&&(TOOLS.background.on_paste_strokes!=undefined)&&(TOOLS.background.on_paste_strokes(strokes))) {
+        if (TOOLS._tools_handle('on_paste_strokes', [strokes]))
             return true;
-        } else if ((TOOLS.current.on_paste_strokes!=undefined)&&(TOOLS.current.on_paste_strokes(strokes))) {
+        return false;
+    }
+
+    ,on_paste_text : function(text) {
+        if (TOOLS._tools_handle('on_paste_text', [text]))
             return true;
-        }
         return false;
     }
 
