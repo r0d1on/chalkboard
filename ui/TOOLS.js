@@ -190,10 +190,13 @@ let TOOLS = {
     }
 
     ,_key_match : function(key, background_key) {
-        if (background_key == key) {
+        if (background_key == key) { // key itself
             return true;
-        } else if ((Array.isArray(background_key))&&(UI.keys[background_key[0]])&&(background_key[1] == key)) {
-            return true;
+        } else if (Array.isArray(background_key)) { // list of key combos
+            for(let i=0; i<background_key.length; i++) {
+                if ((UI.keys[background_key[i][0]])&&(background_key[i][1] == key))
+                    return true;
+            }
         }
         return false;
     }
@@ -247,7 +250,7 @@ let TOOLS = {
             return true;
 
         if ((TOOLS.background!=null)&&(TOOLS._key_match(key, TOOLS.background.background_key)))
-            TOOLS.deactivate_backtool(); // deactivate background tool
+            TOOLS.deactivate_backtool();
 
         return false;
     }
