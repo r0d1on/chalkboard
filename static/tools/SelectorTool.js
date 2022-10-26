@@ -305,9 +305,14 @@ let SelectorTool = {
 
             } else if (anchor_i==3) { // paste
                 if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
-                    navigator.clipboard.readText().then(text => {
-                        UI.on_paste(text, 'text/plain');
-                    });
+                    if ((navigator.clipboard===undefined)||(navigator.clipboard==null)) {
+                        SelectorTool.USE_SYSTEM_CLIPBOARD = false;
+                        UI.toast('copy/paste', 'system clipboard is unavailable', 2000);
+                    } else {
+                        navigator.clipboard.readText().then(text => {
+                            UI.on_paste(text, 'text/plain');
+                        });
+                    }
                 } else {
                     this.paste(this.clipboard);
                 }
@@ -487,11 +492,17 @@ let SelectorTool = {
         }, []);
 
         if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
-            window.navigator.clipboard.writeText(
-                JSON.stringify({
-                    'strokes' : this.clipboard
-                })
-            ).then(console.log('copied to system clipboard'));
+            if ((navigator.clipboard===undefined)||(navigator.clipboard==null)) {
+                SelectorTool.USE_SYSTEM_CLIPBOARD = false;
+                UI.toast('copy/paste', 'system clipboard is unavailable', 2000);
+            } else {
+                window.navigator.clipboard.writeText(
+                    JSON.stringify({
+                        'strokes' : this.clipboard
+                    })
+                ).then(console.log('copied to system clipboard'));
+            }
+
         }
 
         this.draw_selected();
@@ -658,9 +669,9 @@ let SelectorTool = {
     }
 
     ,on_deactivated : function() {
-        this.clear_selection();
+        //this.clear_selection();
         this.activated = false;
-        DrawToolBase.on_deactivated.call(this);
+        //DrawToolBase.on_deactivated.call(this);
     }
 
     ,DELETE : { // background tool
@@ -701,6 +712,6 @@ let SelectorTool = {
 
 };
 
-SelectorTool = _class('SelectorTool',SelectorTool);
+SelectorTool = _class('SelectorTool', SelectorTool);
 
 export {SelectorTool};
