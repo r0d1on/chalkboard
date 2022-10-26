@@ -90,6 +90,7 @@ let UI = {
         'Control' : false
         , 'Shift' : false
         , 'Alt' : false
+        , 'Meta' : false
         , null : true
     }
     ,keys_special : 0
@@ -103,7 +104,7 @@ let UI = {
 
         if (maketoast) {
             const zoom_prc = Math.round(1000*((UI.viewpoint.scale>=1)?UI.viewpoint.scale:-1/UI.viewpoint.scale))/10;
-            toast('viewpoint','( '+Math.round(UI.viewpoint.dx)+' , '+Math.round(UI.viewpoint.dy)+') :: <b>'+zoom_prc+'%</b>', 700);
+            toast('viewpoint', '( '+Math.round(UI.viewpoint.dx)+' , '+Math.round(UI.viewpoint.dy)+') :: <b>'+zoom_prc+'%</b>', 700);
         }
     }
 

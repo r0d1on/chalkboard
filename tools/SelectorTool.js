@@ -626,11 +626,11 @@ let SelectorTool = {
 
         if (this.mode==1) {
 
-            if ((UI.keys['Control'])&&(key=='c')) {
+            if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='c')) {
                 this.copy();
                 handled = true;
 
-            } else if ((UI.keys['Control'])&&(key=='v')) {
+            } else if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='v')) {
                 if (!SelectorTool.USE_SYSTEM_CLIPBOARD) {
                     this.paste(this.clipboard);
                     handled = true;
