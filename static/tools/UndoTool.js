@@ -16,7 +16,7 @@ let UndoTool = { // background tool
 
     ,UndoTool : function() {
         ToolBase.init.call(this, 'undo');
-        this.background_key = [null, 'Backspace'];
+        this.background_key = [[null, 'Backspace'], ['Control', 'z']];
     }
 
     ,on_activated : function() {

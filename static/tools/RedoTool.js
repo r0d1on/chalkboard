@@ -16,7 +16,7 @@ let RedoTool = { // background tool
 
     ,RedoTool : function() {
         ToolBase.init.call(this, 'redo');
-        this.background_key = ['Shift', 'Backspace'];
+        this.background_key = [['Shift', 'Backspace'], ['Control', 'y']];
     }
 
     ,on_activated : function() {
