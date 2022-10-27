@@ -506,18 +506,22 @@ let UI = {
     ,_handle_data : function(data_transfer) {
         for(let i=0; i<data_transfer.types.length; i++) {
             let data_item = data_transfer.items[i];
+            let data_type = data_transfer.types[i];
             console.log('=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-');
-            console.log('type:', data_transfer.types[i]);
+            console.log('type:', data_type);
             console.log('kind:', data_item.kind);
 
             if (data_item.kind=='string') {
-                data_item.getAsString(
-                    ((type)=>{
-                        return (data)=>{
-                            UI._on_paste(data, type);
-                        };
-                    })(data_transfer.types[i])
-                );
+                if (data_type=='text/plain') {
+                    data_item.getAsString(
+                        (data)=>{
+                            UI._on_paste_string(data);
+                        }
+                    );
+
+                } else if (data_type=='text/html') {
+                    UI.toast('copy/paste', 'can\'t paste html yet', 2000);
+                }
 
             } else if (data_item.kind=='file') {
                 let file = data_item.getAsFile();
@@ -529,21 +533,15 @@ let UI = {
         }
     }
 
-    ,_on_paste : function(text, type) {
-        //console.log("paste:", type , text);
+    ,_on_paste_string : function(text) {
         try {
-            if (type!='text/plain')
-                throw 'not a plain text';
-
             let js = JSON.parse(text);
-            if (js.strokes===undefined) {
+            if (js.strokes===undefined)
                 throw 'not a figure';
-            } else {
-                UI.on_paste_strokes(js.strokes);
-                return;
-            }
+            UI.on_paste_strokes(js.strokes);
+            return;
         } catch (ex) {
-            console.log('pasted text is not parseable:',ex);
+            console.log('pasted text is not parseable:', ex);
         }
         UI.on_paste_text(text);
     }
