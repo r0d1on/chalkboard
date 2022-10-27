@@ -47,13 +47,9 @@ let SelectorTool = {
 
             TOOLS.activate(SelectorTool.NAME, false, 0);
 
-            this.last_point = {
-                X : UI.window_width/2
-                ,Y : UI.window_height/2
-            };
+            this.last_point = UI._last_point;
 
             this.paste(strokes);
-            //UI.redraw();
         };
     }
 
@@ -476,6 +472,7 @@ let SelectorTool = {
 
 
     ,clipboard : []
+
     ,copy : function() {
         let copied = new Set();
         this.clipboard = this.selection.reduce((a, sl)=>{
@@ -507,26 +504,29 @@ let SelectorTool = {
 
         this.draw_selected();
     }
-    ,paste : function(clipboard) {
 
-        let cx = 0;
-        let cy = 0;
+    ,paste : function(clipboard) {
+        let dx = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
+        let dy = [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY];
         clipboard.map((stroke)=>{
-            cx += stroke.gp[0].X + stroke.gp[1].X;
-            cy += stroke.gp[0].Y + stroke.gp[1].Y;
+            dx = [Math.min(dx[0], stroke.gp[0].X), Math.max(dx[1], stroke.gp[0].X)];
+            dx = [Math.min(dx[0], stroke.gp[1].X), Math.max(dx[1], stroke.gp[1].X)];
+
+            dy = [Math.min(dy[0], stroke.gp[0].Y), Math.max(dy[1], stroke.gp[0].Y)];
+            dy = [Math.min(dy[0], stroke.gp[1].Y), Math.max(dy[1], stroke.gp[1].Y)];
         });
-        cx /= clipboard.length * 2;
-        cy /= clipboard.length * 2;
+        dx = (dx[0] + dx[1])/2.0;
+        dy = (dy[0] + dy[1])/2.0;
 
         BOARD.buffer = [];
         clipboard.map((stroke)=>{
             stroke.gp[0] = UI.local_to_global({
-                X : stroke.gp[0].X - cx + this.last_point.X
-                ,Y : stroke.gp[0].Y - cy + this.last_point.Y
+                X : stroke.gp[0].X - dx + this.last_point.X
+                ,Y : stroke.gp[0].Y - dy + this.last_point.Y
             });
             stroke.gp[1] = UI.local_to_global({
-                X : stroke.gp[1].X - cx + this.last_point.X
-                ,Y : stroke.gp[1].Y - cy + this.last_point.Y
+                X : stroke.gp[1].X - dx + this.last_point.X
+                ,Y : stroke.gp[1].Y - dy + this.last_point.Y
             });
             stroke.width /= UI.viewpoint.scale;
             BOARD.buffer.push(stroke);
@@ -541,6 +541,7 @@ let SelectorTool = {
         this.clipboard = [];
         this.mode = 1;
     }
+
 
     ,optimize : function() {
 
@@ -609,6 +610,7 @@ let SelectorTool = {
         }
     }
 
+
     ,on_key_down : function(key) {
         let handled = false;
 
@@ -655,11 +657,9 @@ let SelectorTool = {
     }
 
     ,on_paste_strokes : function(strokes) {
-        if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
-            console.log('selector:on_paste_strokes');
-            this.paste(strokes);
-            return true;
-        }
+        console.log('selector:on_paste_strokes');
+        this.paste(strokes);
+        return true;
     }
 
     ,after_redraw : function() {
