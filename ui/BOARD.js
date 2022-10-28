@@ -120,7 +120,6 @@ let BOARD = {
     }
 
     ,hide_strokes : function(strokes, eraser_id) {
-
         return strokes.reduce((a, stroke)=>{
 
             if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase')) {
@@ -155,6 +154,13 @@ let BOARD = {
 
             return a;
         }, []);
+    }
+
+    ,hide_commit : function(strokes) {
+        BOARD.op_start();
+        BOARD.hide_strokes(strokes, BOARD.stroke_id);
+        BOARD.add_stroke({gp:[null, 'erase']});
+        BOARD.op_commit();
     }
 
     ,is_hidden : function(stroke) {

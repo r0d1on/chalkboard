@@ -11,6 +11,14 @@ import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
 import {TOOLS} from '../ui/TOOLS.js';
 
+const SelectorModes = {
+    SELECTING : 0
+    ,SELECTED : 1
+    ,MOVING : 2
+    ,SCALING : 3
+    ,ROTATING : 4
+    ,OPTIMIZE : 5
+};
 
 let SelectorTool = {
     super : DrawToolBase
@@ -92,7 +100,7 @@ let SelectorTool = {
         if (this.selection.length>0) {
             this.get_selection_bounds();
             this.draw_selected();
-            this.mode = 1;
+            this.mode = SelectorModes.SELECTED;
         } else {
             this.activated = false;
             this.selection = null;
@@ -225,7 +233,7 @@ let SelectorTool = {
     }
 
     ,clear_selection : function() {
-        this.mode = 0;
+        this.mode = SelectorModes.SELECTING;
         this.selection = null;
         this.selection_center = null;
         this.selection_rect = null;
@@ -246,11 +254,11 @@ let SelectorTool = {
     ,on_start : function(lp) {
         DrawToolBase.on_start.call(this, lp);
 
-        if (this.mode==0) { // selecting
+        if (this.mode==SelectorModes.SELECTING) {
             return;
         }
 
-        if (this.mode==1) { // selected
+        if (this.mode==SelectorModes.SELECTED) {
             let dst = Math.sqrt(dst2(lp, UI.global_to_local(this.selection_center)));
             let W = SelectorTool.WIDTH;
 
@@ -258,7 +266,7 @@ let SelectorTool = {
                 dst /= 3;
 
             if (dst < W) {
-                this.start_mode(2); // move mode
+                this.start_mode(SelectorModes.MOVING);
                 return;
             }
 
@@ -294,10 +302,10 @@ let SelectorTool = {
                 this.copy();
 
             } else if (anchor_i==1) {
-                this.start_mode(4); // rotate mode
+                this.start_mode(SelectorModes.ROTATING);
 
             } else if (anchor_i==2) {
-                this.start_mode(3); // scale mode
+                this.start_mode(SelectorModes.SCALING);
 
             } else if (anchor_i==3) { // paste
                 if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
@@ -315,9 +323,9 @@ let SelectorTool = {
                 //this._select_commit();
 
             } else if (anchor_i==4) { // optimize
-                this.start_mode(4);
+                this.start_mode(SelectorModes.OPTIMIZE);
                 this.optimize();
-                this.stop_mode(4);
+                this.stop_mode(SelectorModes.OPTIMIZE);
 
             }
         }
@@ -375,6 +383,17 @@ let SelectorTool = {
         }
     }
 
+    ,_selected_strokes : function() {
+        let was = new Set();
+        let selected_strokes = [];
+        this.selection.map((sl)=>{
+            if (!was.has(sl.stroke_id)) {
+                selected_strokes.push(BOARD.strokes[sl.commit_id][sl.stroke_idx]);
+                was.add(sl.stroke_id);
+            }
+        });
+        return selected_strokes;
+    }
 
     ,_move_selection : function(dx, dy) {
         this.selection.map((sl)=>{
@@ -407,14 +426,14 @@ let SelectorTool = {
     }
 
     ,on_move : function(lp) {
-        if (this.mode==0) {
+        if (this.mode==SelectorModes.SELECTING) {
             this.move_selecting(lp);
         } else {
-            if (this.mode==2) { // moving
+            if (this.mode==SelectorModes.MOVING) {
                 this.move_moving(lp);
-            } else if (this.mode==3) { // scaling
+            } else if (this.mode==SelectorModes.SCALING) {
                 this.move_scale(lp);
-            } else if (this.mode==4) { // rotating
+            } else if (this.mode==SelectorModes.ROTATING) {
                 this.move_rotate(lp);
             }
             UI.redraw();
@@ -446,24 +465,24 @@ let SelectorTool = {
         if (this.selection.length>0) {
             this.get_selection_bounds();
             this.draw_selected();
-            this.mode = 1;
+            this.mode = SelectorModes.SELECTED;
         }
     }
 
     ,stop_mode : function(mode) { // eslint-disable-line no-unused-vars
         this._replace_changed();
-        this.mode = 1;
+        this.mode = SelectorModes.SELECTED;
         BOARD.op_commit();
         this._select_commit();
     }
 
     ,on_stop : function(lp) {
-        if (this.mode==0) { // stopped selecting
+        if (this.mode==SelectorModes.SELECTING) {
             this.stop_selecting(lp);
 
-        } else if (this.mode==1) { // this mode is transient, should not happen
+        } else if (this.mode==SelectorModes.SELECTED) { // this mode is transient, should not happen
         } else {
-            this.stop_mode(this.mode); // stopped moving
+            this.stop_mode(this.mode); // stopped moving / scaling
 
         }
 
@@ -539,7 +558,7 @@ let SelectorTool = {
         this.draw_selected();
 
         this.clipboard = [];
-        this.mode = 1;
+        this.mode = SelectorModes.SELECTED;
     }
 
 
@@ -626,17 +645,15 @@ let SelectorTool = {
             handled = true;
         }
 
-        if (this.mode==1) {
-
+        if (this.mode==SelectorModes.SELECTED) {
             if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='c')) {
                 this.copy();
                 handled = true;
 
-            } else if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='v')) {
-                if (!SelectorTool.USE_SYSTEM_CLIPBOARD) {
-                    this.paste(this.clipboard);
-                    handled = true;
-                }
+            } else if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='x')) {
+                this.copy();
+                BOARD.hide_commit(this._selected_strokes());
+                handled = true;
 
             } else if (key in keymap) {
                 let dxdy = keymap[key];
@@ -648,6 +665,13 @@ let SelectorTool = {
 
             }
 
+        }
+
+        if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='v')) {
+            if (!SelectorTool.USE_SYSTEM_CLIPBOARD) {
+                this.paste(this.clipboard);
+                handled = true;
+            }
         }
 
         if (handled)
@@ -663,7 +687,7 @@ let SelectorTool = {
     }
 
     ,after_redraw : function() {
-        if ((this.mode==1)||(this.mode==2)) {
+        if ((this.mode==SelectorModes.SELECTED)||(this.mode==SelectorModes.MOVING)) {
             this.draw_selected();
         }
     }
@@ -684,25 +708,11 @@ let SelectorTool = {
         ,background_key : 'Delete'
 
         ,on_activated : function() {
-            if (SelectorTool.DELETE.selector.mode==1) {
+            let that = SelectorTool.DELETE.selector;
+            if (that.mode==SelectorModes.SELECTED) {
+                BOARD.hide_commit(that._selected_strokes());
 
-                BOARD.op_start();
-
-                let was = new Set();
-                let selected_strokes = [];
-                SelectorTool.DELETE.selector.selection.map((sl)=>{
-                    if (!was.has(sl.stroke_id)) {
-                        selected_strokes.push(BOARD.strokes[sl.commit_id][sl.stroke_idx]);
-                        was.add(sl.stroke_id);
-                    }
-                });
-
-                BOARD.hide_strokes(selected_strokes, BOARD.stroke_id);
-                BOARD.add_stroke({gp:[null, 'erase']});
-
-                BOARD.op_commit();
-
-                SelectorTool.DELETE.selector.mode = 0;
+                SelectorTool.DELETE.selector.mode = SelectorModes.SELECTING;
                 SelectorTool.DELETE.selector.selection = null;
 
                 UI.redraw();
