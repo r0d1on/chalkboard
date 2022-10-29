@@ -27,3 +27,31 @@ canvas.layer {
     padding: 0px;
     margin: 0px;
 }
+
+
+
+.menu_item {
+    box-shadow: 1px 6px 5px #0004;
+    position: absolute;
+    background-color: #666D;
+}
+
+.menu_chldrn {
+    background-color: #555D;
+}
+
+.menu_chldrn_t_h {
+    border-right: 3px solid black;
+}
+
+.menu_chldrn_t_v {
+    border-bottom: 3px solid black;
+}
+
+.menu_chldrn_b_h {
+    border-right: 3px solid black;
+}
+
+.menu_chldrn_b_v {
+    border-top: 3px solid black;
+}

@@ -4,13 +4,20 @@ import {_class} from '../base/objects.js';
 
 import {UI} from './UI.js';
 
+function has_class(dom_elem, className) {
+    return (dom_elem.className.split(/ /g).indexOf(className)>=0)
+}
+
+function add_class(dom_elem, className) {
+    if (!has_class(dom_elem, className)) {
+        dom_elem.className = dom_elem.className + " " + className;
+    }
+}
 
 let Menu = {
 
     SIZE : 60
     ,LONG_CLICK_DELAY : 1000
-    ,COLOR0 : '#666D'
-    ,COLOR1 : '#555D'
 
     ,Menu : function(root_name, root_div_id, top) {
         this.id = root_div_id;
@@ -125,10 +132,9 @@ let Menu = {
         // create dom node for the item
         let dom_elem = document.createElement('div');
         dom_elem.id = id;
-        dom_elem.style['position'] = 'absolute';
         dom_elem.style['width'] = Menu.SIZE + 'px';
         dom_elem.style['height'] = Menu.SIZE + 'px';
-        dom_elem.style['background-color'] = Menu.COLOR0;
+        add_class(dom_elem, "menu_item");
 
         dom_elem.addEventListener('mousedown', this.onpush(id, false));
         dom_elem.addEventListener('touchstart', this.onpush(id, true));
@@ -186,12 +192,8 @@ let Menu = {
         // 3. inject item's dom to parent row dom element
         parent.rdom.appendChild(dom_elem);
         if (parent.dom != null) {
-            parent.dom.style['background-color'] = Menu.COLOR1;
-            if (!parent.horizontal) {
-                parent.dom.style['border-' + bot_prop] = '3px solid black';
-            } else {
-                parent.dom.style['border-right'] = '3px solid black';
-            }
+            add_class(parent.dom, "menu_chldrn");
+            add_class(parent.dom, "menu_chldrn_"+(this.top?'t':'b')+'_'+(parent.horizontal?"h":"v"));
         }
 
         // 4. add item's container to menu container
