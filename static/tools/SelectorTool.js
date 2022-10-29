@@ -51,7 +51,7 @@ let SelectorTool = {
 
         // default strokes paste override
         UI.on_paste_strokes_default = (strokes)=>{
-            console.log('selector:on_paste_strokes_default');
+            UI.log('selector:on_paste_strokes_default');
 
             TOOLS.activate(SelectorTool.NAME, false, 0);
 
@@ -516,7 +516,7 @@ let SelectorTool = {
                     JSON.stringify({
                         'strokes' : this.clipboard
                     })
-                ).then(console.log('copied to system clipboard'));
+                ).then(UI.log('copied to system clipboard'));
             }
 
         }
@@ -583,7 +583,7 @@ let SelectorTool = {
                 }
             }
         }
-        console.log('Squeezed: ',squeezed);
+        UI.log('Squeezed: ',squeezed);
 
 
         // delete dots - strokes of length 0
@@ -603,7 +603,7 @@ let SelectorTool = {
             deleted.map((stroke)=>{delete stroke.erased;});
             BOARD.hide_strokes(deleted, BOARD.stroke_id);
         }
-        console.log('Deleted: ', deleted.length);
+        UI.log('Deleted: ', deleted.length);
 
         //
         if (UI.keys['Shift']) { // round up opt
@@ -625,7 +625,7 @@ let SelectorTool = {
                 });
 
             });
-            console.log('Rounded: ', rounded);
+            UI.log('Rounded: ', rounded);
         }
     }
 
@@ -681,7 +681,7 @@ let SelectorTool = {
     }
 
     ,on_paste_strokes : function(strokes) {
-        console.log('selector:on_paste_strokes');
+        UI.log('selector:on_paste_strokes');
         this.paste(strokes);
         return true;
     }

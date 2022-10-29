@@ -32,21 +32,26 @@
     <div id="options"></div> 
 
     <script>
-        console.log("html");
+        console.log("start");
         document.addEventListener("DOMContentLoaded", function(event){
-            
             const gh_pages_host = "r0d1on.github.io"; //"127.0.0.1:5000";
             let show_ribbon = (window.location.href).split(/\/\//)[1].split(/\//)[0]==gh_pages_host;
-            
+            //document.body.style['overflow'] = 'hidden';
             if (show_ribbon) {
+                let c = document.createElement("div");
+                c.style["position"] = "absolute";
+                c.style["right"] = "0px";
+                c.style["top"] = "0px";
+                c.style['overflow'] = 'hidden';
+                document.body.appendChild(c);
+
                 let a = document.createElement("a");
                 a.innerHTML = '<img loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_green_007200.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">';
                 a.href = "https://github.com/r0d1on/chalkboard";
-                a.style["position"] = "absolute";
-                a.style["position"] = "absolute";
+                a.style["position"] = "relative";
                 a.style["right"] = "0px";
                 a.style["top"] = "0px";
-                document.body.appendChild(a);
+                c.appendChild(a);
                 
                 let f = (a, c)=>{
                     return ()=>{

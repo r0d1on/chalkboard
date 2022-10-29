@@ -184,8 +184,7 @@ let TexterTool = {
         if (!UI.is_mobile)
             return;
 
-        if (BOARD.board_name=='debug')
-            console.log('texter additional input activation');
+        UI.log('texter additional input activation');
 
         let inp = this.MENU_main.add('root', 'input', null, 'input')[1];
 
@@ -217,8 +216,7 @@ let TexterTool = {
         if (!UI.is_mobile)
             return;
 
-        if (BOARD.board_name=='debug')
-            console.log('texter additional input deactivation');
+        UI.log('texter additional input deactivation');
 
         this.MENU_main.drop('input');
     }

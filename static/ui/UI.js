@@ -60,6 +60,26 @@ function toast(topic, text, lifespan) {
     };
 }
 
+let LOG=[];
+function log(...args) {
+    console.log(...args);
+    if (BOARD.board_name=='debug') {
+        LOG.splice(0,0,args.join(' '));
+        LOG.slice(0,40);
+
+        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+
+        for(let i=0; i < LOG.length; i++) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(10, i*25, 20*LOG[i].length, 20);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'black';
+            ctx.font='20px courier';
+            ctx.strokeText(''+(i)+'::'+LOG[i], 10, 20+i*25);
+        }
+    }
+}
+
 
 let UI = {
 
@@ -115,7 +135,6 @@ let UI = {
 
     ,viewpoint_zoom: function(scale, center) {
         let p0 = UI.local_to_global(center);
-        //console.log(center,p0);
 
         UI.viewpoint.scale *= scale;
 
@@ -126,7 +145,6 @@ let UI = {
 
         let dx = (p0.X - p1.X);
         let dy = (p0.Y - p1.Y);
-        //console.log(dx, dy);
 
         UI.viewpoint_shift(dx, dy, false);
     }
@@ -159,11 +177,13 @@ let UI = {
         let buffer_canvas = UI.layers[UI.LAYERS.indexOf('buffer')];
 
         buffer_canvas.addEventListener('mousedown', e => {
+            UI.log('ui.mousedown', e);
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
             UI.on_start(lp, e.button);
         });
         buffer_canvas.addEventListener('touchstart', e => {
+            UI.log('ui.touchstart', e);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
 
@@ -217,11 +237,13 @@ let UI = {
 
         // tool usage stop events
         buffer_canvas.addEventListener('mouseup', e => {
+            UI.log('ui.mouseup', e);
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
             UI.on_stop(lp);
         });
         buffer_canvas.addEventListener('touchend', e => {
+            UI.log('ui.touchend', e);
             UI.is_mobile = true;
             let lp = UI._last_point;
 
@@ -398,6 +420,8 @@ let UI = {
 
 
     ,on_key_down_default : function(key) {
+        UI.log('key_down:', key);
+
         if (key == '+') {
             BRUSH.update_size(+5);
         } else if (key == '-') {
@@ -406,18 +430,15 @@ let UI = {
             BRUSH.select_color((BRUSH.cid + 1) % BRUSH.COLORS.length);
             return true;
         }
-        if (BOARD.board_name=='debug')
-            console.log('key_down:', key);
+
     }
 
     ,on_key_up_default : function(key) {
-        if (BOARD.board_name=='debug')
-            console.log('key_up:', key);
+        UI.log('key_up:', key);
     }
 
     ,on_paste_strokes_default : function(strokes) {
-        if (BOARD.board_name=='debug')
-            console.log('received strokes:', strokes);
+        UI.log('received strokes:', strokes);
     }
 
     ,on_wheel_default : function(delta, deltaX) {
@@ -458,8 +479,7 @@ let UI = {
     }
 
     ,on_key_down : function(key) {
-        if (BOARD.board_name=='debug')
-            console.log('ui.key_down:', key);
+        UI.log('ui.key_down:', key);
 
         if (key in UI.keys) {
             UI.keys[key] = true;
@@ -477,8 +497,7 @@ let UI = {
     }
 
     ,on_key_up : function(key) {
-        if (BOARD.board_name=='debug')
-            console.log('ui.key_up:', key);
+        UI.log('ui.key_up:', key);
 
         let handled = UI._event_handlers['on_key_up'].reduce((handled, handler)=>{
             return handled||handler(key);
@@ -528,7 +547,7 @@ let UI = {
                 UI.on_file(file);
 
             } else {
-                console.log('Unknown data transfer kind received:', data_item.kind);
+                UI.log('Unknown data transfer kind received:', data_item.kind);
             }
         }
     }
@@ -541,7 +560,7 @@ let UI = {
             UI.on_paste_strokes(js.strokes);
             return;
         } catch (ex) {
-            console.log('pasted text is not parseable:', ex);
+            UI.log('pasted text is not parseable:', ex);
         }
         UI.on_paste_text(text);
     }
@@ -579,7 +598,7 @@ let UI = {
         }, false);
 
         if (!handled)
-            console.log('unhandled file transfer:', file);
+            UI.log('unhandled file transfer:', file);
     }
 
 
@@ -611,7 +630,7 @@ let UI = {
 
     ,on_hash_change : function() {
         if (UI._parse_uri(window.location.hash.slice(1,))) {
-            console.log(window.location.hash.slice(1,));
+            UI.log(window.location.hash.slice(1,));
             window.location.reload();
         }
     }
@@ -879,6 +898,10 @@ let UI = {
 
     ,toast : function(topic, text, lifespan) {
         return toast(topic, text, lifespan);
+    }
+
+    ,log : function(...args) {
+        log(...args);
     }
 };
 
