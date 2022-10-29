@@ -67,7 +67,9 @@ function log(...args) {
         LOG.splice(0,0,args.join(' '));
         LOG.slice(0,40);
 
-        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+        UI.reset_layer('debug');
+
+        let ctx = UI.contexts[UI.LAYERS.indexOf('debug')];
 
         for(let i=0; i < LOG.length; i++) {
             ctx.fillStyle = 'white';
@@ -85,7 +87,7 @@ let UI = {
 
     CANVAS_MARGIN : 20
     ,GRID : 30.0
-    ,LAYERS : ['background', 'board', 'buffer', 'overlay']
+    ,LAYERS : ['background', 'debug', 'board', 'buffer', 'overlay']
 
     ,_last_point : null
     ,_under_focus : false
@@ -157,11 +159,15 @@ let UI = {
         canvas.height = UI.window_height - 2 * UI.CANVAS_MARGIN;
     }
 
-    ,update_layers : function() {
+    ,update_layers : function(for_redraw) {
+        for_redraw = (for_redraw===undefined)?false:for_redraw;
         UI.window_width = window.innerWidth;
         UI.window_height = window.innerHeight;
         UI.LAYERS.map((layer_name)=>{
-            UI.reset_layer(layer_name);
+            if (for_redraw&&(layer_name=='debug'))
+                return;
+            else
+                UI.reset_layer(layer_name);
         });
     }
 
@@ -827,7 +833,7 @@ let UI = {
         const ctx = UI.contexts[UI.LAYERS.indexOf('board')];
         let lp0, lp1;
 
-        UI.update_layers();
+        UI.update_layers(true);
 
         if (GRID_MODE.grid_active)
             UI.redraw_grid();
