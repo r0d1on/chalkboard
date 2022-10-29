@@ -2,6 +2,9 @@
 
 import {_class} from '../base/objects.js';
 
+import {UI} from './UI.js';
+
+
 let Menu = {
 
     SIZE : 60
@@ -58,18 +61,32 @@ let Menu = {
         this.items[id].rdom.style['display'] = 'block';
     }
 
-    ,onpush : function(id) {
+    ,onpush : function(id, touch) {
         let that = this;
-        function handler() {
+        function handler(e) {
+            UI.log('menu.onpush', id, touch, e);
+            if (touch) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
             that.items[id]._push = (new Date()).valueOf();
         }
         return handler;
     }
 
-    ,onclick : function(id, onclk) {
+    ,onclick : function(id, onclk, touch) {
         let that = this;
         function handler(e) {
+            UI.log('menu.onclick', id, touch, e);
+            if (touch) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            
             let long = ((new Date()).valueOf() - that.items[id]._push) > Menu.LONG_CLICK_DELAY;
+
+            if (touch && (e.button===undefined))
+                e.button = 0;
 
             if ( ( onclk != undefined ) && ( onclk != null ) && ( !onclk(e, id, long) ) ) {
                 return;
@@ -113,10 +130,10 @@ let Menu = {
         dom_elem.style['height'] = Menu.SIZE + 'px';
         dom_elem.style['background-color'] = Menu.COLOR0;
 
-        dom_elem.addEventListener('mousedown', this.onpush(id));
-        dom_elem.addEventListener('touchstart', this.onpush(id));
-        dom_elem.addEventListener('mouseup', this.onclick(id, onclick));
-        dom_elem.addEventListener('touchend', this.onclick(id, onclick));
+        dom_elem.addEventListener('mousedown', this.onpush(id, false));
+        dom_elem.addEventListener('touchstart', this.onpush(id, true));
+        dom_elem.addEventListener('mouseup', this.onclick(id, onclick, false));
+        dom_elem.addEventListener('touchend', this.onclick(id, onclick, true));
         dom_elem.addEventListener('contextmenu', e => {
             e.stopPropagation();
             e.preventDefault();

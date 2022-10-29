@@ -73,11 +73,11 @@ function log(...args) {
 
         for(let i=0; i < LOG.length; i++) {
             ctx.fillStyle = 'white';
-            ctx.fillRect(10, i*25, 20*LOG[i].length, 20);
+            ctx.fillRect(10, (i+2)*25, 20*LOG[i].length, 20);
             ctx.lineWidth = 2;
             ctx.strokeStyle = 'black';
             ctx.font='20px courier';
-            ctx.strokeText(''+(i)+'::'+LOG[i], 10, 20+i*25);
+            ctx.strokeText(''+(i)+'::'+LOG[i], 10, 20+(i+2)*25);
         }
     }
 }
