@@ -203,9 +203,9 @@ let SAVE = {
     }
 
     ,download_png : function() {
-        var a = document.createElement('a');
+        let a = document.createElement('a');
         a.download = BOARD.board_name + '.png';
-        a.href = UI.layers[UI.LAYERS.indexOf("board")].toDataURL();
+        a.href = UI.layers[UI.LAYERS.indexOf('board')].toDataURL();
         a.click();
 
         SAVE.MENU_main.hide('save_group');
@@ -404,7 +404,7 @@ let SAVE = {
 
         ctx = MENU_main.add('save_group', 'download_group', null, 'canvas', 'download...')[1].getContext('2d');
         UI.draw_glyph(SAVE.icon_download_group, ctx);
-        
+
         ctx = MENU_main.add('download_group', 'download', SAVE.download, 'canvas', 'download board')[1].getContext('2d');
         UI.draw_glyph(SAVE.icon_download, ctx);
 

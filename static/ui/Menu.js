@@ -5,12 +5,12 @@ import {_class} from '../base/objects.js';
 import {UI} from './UI.js';
 
 function has_class(dom_elem, className) {
-    return (dom_elem.className.split(/ /g).indexOf(className)>=0)
+    return (dom_elem.className.split(/ /g).indexOf(className)>=0);
 }
 
 function add_class(dom_elem, className) {
     if (!has_class(dom_elem, className)) {
-        dom_elem.className = dom_elem.className + " " + className;
+        dom_elem.className = dom_elem.className + ' ' + className;
     }
 }
 
@@ -134,7 +134,7 @@ let Menu = {
         dom_elem.id = id;
         dom_elem.style['width'] = Menu.SIZE + 'px';
         dom_elem.style['height'] = Menu.SIZE + 'px';
-        add_class(dom_elem, "menu_item");
+        add_class(dom_elem, 'menu_item');
 
         dom_elem.addEventListener('mousedown', this.onpush(id, false));
         dom_elem.addEventListener('touchstart', this.onpush(id, true));
@@ -165,7 +165,6 @@ let Menu = {
         let left = parent.left;
 
         let top_prop = (this.top)?'top':'bottom';
-        let bot_prop = (!this.top)?'top':'bottom';
 
         if (parent.horizontal) {
             left += parent.sub.length;
@@ -192,8 +191,8 @@ let Menu = {
         // 3. inject item's dom to parent row dom element
         parent.rdom.appendChild(dom_elem);
         if (parent.dom != null) {
-            add_class(parent.dom, "menu_chldrn");
-            add_class(parent.dom, "menu_chldrn_"+(this.top?'t':'b')+'_'+(parent.horizontal?"h":"v"));
+            add_class(parent.dom, 'menu_chldrn');
+            add_class(parent.dom, 'menu_chldrn_'+(this.top?'t':'b')+'_'+(parent.horizontal?'h':'v'));
         }
 
         // 4. add item's container to menu container
