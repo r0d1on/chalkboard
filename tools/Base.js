@@ -16,11 +16,11 @@ let ToolBase = {
     }
 
     ,on_activated : function() {
-        console.log(this.name, ' - activated');
+        UI.log(this.name, ' - activated');
     }
 
     ,on_deactivated : function() {
-        console.log(this.name, ' - deactivated');
+        UI.log(this.name, ' - deactivated');
     }
 
     ,after_redraw : function() {}
@@ -109,7 +109,7 @@ let DistortableDrawTool = {
                     ,[null,[46,26],[50,10],null,[8,53],[25,46],[27,30],[46,26]] // distorted 2
                 ]
                 ,'on_click' : ()=>{
-                    console.log('fuzz');
+                    UI.log('fuzz');
                 }
                 ,'type' : 'count'
                 ,'tooltip' : 'hand-alike distortion mode'
@@ -121,7 +121,7 @@ let DistortableDrawTool = {
                     ,[null,[9,50],[11,49],null,[15,45],[16,43],null,[21,39],[22,38],null,[26,34],[28,33],null,[32,29],[33,27],null,[38,23],[39,22],null,[43,18],[45,17],null,[49,13],[50,11],null,[9,50],[11,49],null,[15,45],[16,43],null,[21,39],[22,38],null,[26,34],[28,33],null,[32,29],[33,27],null,[38,23],[39,22],null,[43,18],[45,17],null,[49,13],[50,11]]
                 ]
                 ,'on_click' : ()=>{
-                    console.log('mode');
+                    UI.log('mode');
                 }
                 ,'type' : 'count'
                 ,'tooltip' : 'solid / dash / dotted'

@@ -94,7 +94,7 @@ let SAVE = {
                 return;
         }
 
-        console.log('version', BOARD.version, ',saving', new_size, 'commits out of', size(BOARD.strokes));
+        UI.log('version', BOARD.version, ',saving', new_size, 'commits out of', size(BOARD.strokes));
 
         localStorage.setItem('local_board_' + BOARD.board_name, board_data);
 
@@ -271,7 +271,7 @@ let SAVE = {
         })(xhr, message);
 
         xhr.timeout = timeout;
-        xhr.ontimeout = ((xhr)=>{return ()=>{console.log('timeout',xhr);};})(xhr);
+        xhr.ontimeout = ((xhr)=>{return ()=>{UI.log('timeout',xhr);};})(xhr);
         xhr.open('POST', api_endpoint, true);
         xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
 
@@ -280,12 +280,12 @@ let SAVE = {
 
     ,sync : function() {
         if (SAVE.is_syncing) {
-            console.log('skipping sync() - already syncing');
+            UI.log('skipping sync() - already syncing');
             return;
         }
 
         if (BOARD.locked) {
-            console.log('skipping sync() - board is locked');
+            UI.log('skipping sync() - board is locked');
             return;
         }
 
@@ -316,15 +316,15 @@ let SAVE = {
                 let message_in = JSON.parse(xhr.responseText);
                 //console.log("sent: ", message.version, "L=", message.strokes.length, message);
                 if ((message_in.resync)||(BOARD.locked)) {
-                    console.log('will resync:', message_in);
+                    UI.log('will resync:', message_in);
                 } else {
                     //console.log("<= |upd|:", size(message_in.strokes), " ver:", message_in.received_version);
                     SAVE.sent_version = message_in.received_version;
                     SAVE.sync_message(message_in);
                 }
             } else {
-                console.log('could not send the data:', xhr);
-                console.log('message:', message);
+                UI.log('could not send the data:', xhr);
+                UI.log('message:', message);
                 if (SAVE.autosync) {
                     SAVE.sync_switch();
                 }
@@ -338,7 +338,7 @@ let SAVE = {
     ,sync_switch : function() {
         function _sync() {
             if (SAVE.is_syncing) {
-                console.log('skipping sync: already syncing');
+                UI.log('skipping sync: already syncing');
             } else {
                 SAVE.sync();
             }
@@ -367,7 +367,7 @@ let SAVE = {
                 let name = file.name;
                 return (ee)=>{
                     const board_data = ee.target.result;
-                    console.log('loaded file: ', name);
+                    UI.log('loaded file: ', name);
                     SAVE._unpersist(board_data);
                     UI.redraw();
                 };
@@ -408,12 +408,12 @@ let SAVE = {
             ,strokes : {}
         }, (xhr)=>{
             if (xhr.status == 200) {
-                console.log('backend available: ', xhr);
+                UI.log('backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
                 let ctx = SAVE.canvas_sync.getContext('2d');
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
             } else {
-                console.log('backend unavailable: ', xhr);
+                UI.log('backend unavailable: ', xhr);
             }
         }, 500);
 

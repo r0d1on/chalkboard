@@ -7,7 +7,6 @@ import {dst2} from '../util/geometry.js';
 import {UI} from './UI.js';
 import {BRUSH} from './BRUSH.js';
 
-
 let BOARD = {
     board_name : null
 

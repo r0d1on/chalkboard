@@ -6,7 +6,6 @@ import {Menu} from './ui/Menu.js';
 
 import {UI} from './ui/UI.js';
 
-import {BOARD} from './ui/BOARD.js';
 import {BRUSH} from './ui/BRUSH.js';
 
 import {GRID_MODE} from './ui/GRID_MODE.js';
@@ -32,27 +31,6 @@ import {RedoTool} from './tools/RedoTool.js';
 // menu actions
 import {SAVE} from './actions/SAVE.js';
 import {SLIDER} from './actions/SLIDER.js';
-
-
-let DT=[];
-function debug(t) {
-    if (BOARD.board_name=='debug') {
-        console.log(t);
-        DT.splice(0,0,t);
-        DT.slice(0,40);
-
-        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
-
-        for(let i=0; i < DT.length; i++) {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(10, i*25, 20*DT[i].length, 20);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'black';
-            ctx.font='20px courier';
-            ctx.strokeText(''+(i)+'::'+DT[i], 10, 20+i*25);
-        }
-    }
-}
 
 
 // SETUP CONTAINER
@@ -141,7 +119,7 @@ function init() {
 
     UI.redraw();
 
-    debug('board.js initialised');
+    UI.log('board.js initialised');
 }
 
 console.log('loaded board.js');
