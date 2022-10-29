@@ -46,7 +46,7 @@ let Menu = {
         if (id == null)
             return;
 
-        if (id != 'root')
+        if ((id != 'root')&&(x === undefined))
             this.items[id].rdom.style['display'] = 'none';
 
         this.items[id].sub.map((sid)=>{
@@ -82,7 +82,7 @@ let Menu = {
                 e.stopPropagation();
                 e.preventDefault();
             }
-            
+
             let long = ((new Date()).valueOf() - that.items[id]._push) > Menu.LONG_CLICK_DELAY;
 
             if (touch && (e.button===undefined))
