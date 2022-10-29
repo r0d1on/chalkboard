@@ -6,6 +6,7 @@ import {Menu} from './ui/Menu.js';
 
 import {UI} from './ui/UI.js';
 
+import {BOARD} from './ui/BOARD.js';
 import {BRUSH} from './ui/BRUSH.js';
 
 import {GRID_MODE} from './ui/GRID_MODE.js';
@@ -119,7 +120,7 @@ function init() {
 
     UI.redraw();
 
-    UI.log('board.js initialised');
+    UI.log('board.js initialised', BOARD.board_name);
 }
 
 console.log('loaded board.js');

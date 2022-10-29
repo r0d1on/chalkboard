@@ -46,7 +46,7 @@ let Menu = {
         if (id == null)
             return;
 
-        if (id != 'root')
+        if ((id != 'root')&&(x === undefined))
             this.items[id].rdom.style['display'] = 'none';
 
         this.items[id].sub.map((sid)=>{
