@@ -82,7 +82,7 @@ let Menu = {
                 e.stopPropagation();
                 e.preventDefault();
             }
-            
+
             let long = ((new Date()).valueOf() - that.items[id]._push) > Menu.LONG_CLICK_DELAY;
 
             if (touch && (e.button===undefined))
