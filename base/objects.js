@@ -27,6 +27,13 @@ function deepcopy(o) {
     }
 }
 
+function extend(target, source) {
+    target = (target===undefined)?{}:target;
+    for (const key in source)
+        target[key] = source[key];
+    return target;
+}
+
 function getConstructor(T) {
     let _T = null;
     // get constructor
@@ -165,4 +172,4 @@ function _new(T, params, dry) {
     return obj;
 }
 
-export {copy, size, deepcopy, _class, _new};
+export {copy, size, deepcopy, extend, _class, _new};
