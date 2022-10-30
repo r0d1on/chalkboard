@@ -241,7 +241,7 @@ let SelectorTool = {
         if (this._activated_by > 0) {
             this.activated = false;
             this._activated_by = null;
-            TOOLS.activate(TOOLS.alt_tools[0], false, 0);
+            TOOLS.reactivate_default();
         }
     }
 
