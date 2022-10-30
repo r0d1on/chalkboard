@@ -80,7 +80,6 @@ let TOOLS = {
         let ctx = TOOLS.canvas.getContext('2d');
         ctx.clearRect(0, 0, TOOLS.canvas.width, TOOLS.canvas.height);
         UI.draw_glyph(tool.icon, ctx);
-        this.MENU_main.hide('tools');
     }
 
     ,activate : function(tool_name, background, button) {
@@ -163,14 +162,11 @@ let TOOLS = {
     ,_tool_activator : function(tool_name) {
         return (e, id, long)=>{ // eslint-disable-line no-unused-vars
             TOOLS.alt_tools[e.button] = tool_name;
-            if (e.button==0) {
-                // immediately activate selected tool
-                TOOLS.activate(tool_name, false, 0);
-            } else {
-                // assign alt button to activate the tool
-                UI.toast('tools', e.button + ' => ' + tool_name, 1000);
-                return true;
-            }
+            if (e.button==0)
+                TOOLS.activate(tool_name, false, 0); // immediately activate selected tool
+            else
+                UI.toast('tools', e.button + ' => ' + tool_name, 1000); // assign alt button to activate the tool
+            return true;
         };
     }
 
