@@ -1,6 +1,6 @@
 'use strict';
 
-import {_class} from '../base/objects.js';
+import {_class, extend} from '../base/objects.js';
 
 import {UI} from '../ui/UI.js';
 
@@ -101,7 +101,7 @@ let DistortableDrawTool = {
         DrawToolBase.init.call(this, name, cyclic, shortcut);
         this.distorted = 0;
         this.mode = 0;
-        this.options = {
+        this.options = extend(this.options, {
             'distorted' : {
                 'icon' : [
                     [null,[8,51],[49,11],null,[8,53],[51,13]] // normal
@@ -126,7 +126,7 @@ let DistortableDrawTool = {
                 ,'type' : 'count'
                 ,'tooltip' : 'solid / dash / dotted'
             }
-        };
+        });
     }
 
     ,_pre_render : function(figure) {
@@ -186,4 +186,26 @@ let DistortableDrawTool = {
 DistortableDrawTool = _class('DistortableDrawTool', DistortableDrawTool);
 
 
-export {ToolBase, DrawToolBase, DistortableDrawTool};
+let SwitchableOrigin = {
+    SwitchableOrigin : function() {
+        this.origin = 0;
+        this.options =  extend(this.options, {
+            'origin' : {
+                'icon' : [
+                    [null,[35,13],[30,8],[25,13],null,[30,51],[30,8],null,[47,35],[52,30],[47,25],null,[9,30],[52,30]] // origin = click
+                    ,[null,[47,15],[52,10],[47,5],null,[9,10],[52,10],null,[5,48],[10,53],[15,48],null,[9,10],[10,53]] // origin = (click-current)/2
+                ]
+                ,'on_click' : ()=>{
+                    UI.log('origin');
+                }
+                ,'type' : 'count'
+                ,'tooltip' : 'origin mode'
+            }
+        });
+    }
+};
+
+SwitchableOrigin = _class('SwitchableOrigin', SwitchableOrigin);
+
+
+export {ToolBase, DrawToolBase, DistortableDrawTool, SwitchableOrigin};
