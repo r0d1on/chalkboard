@@ -32,13 +32,14 @@ let BoxTool = {
         let dy = rect[1].Y - rect[0].Y;
 
         let figure = [
-            {X: rect[0].X - dx, Y: rect[0].Y - dy}, {X: rect[0].X + dx, Y: rect[0].Y - dy},
-            {X: rect[0].X + dx, Y: rect[0].Y + dy}, {X: rect[0].X - dx, Y: rect[0].Y + dy}
+            {X: cp.X - dx, Y: cp.Y - dy}, {X: cp.X + dx, Y: cp.Y - dy},
+            {X: cp.X + dx, Y: cp.Y + dy}, {X: cp.X - dx, Y: cp.Y + dy}
         ];
 
         figure = this._pre_render(figure);
 
         this._render(figure, func);
+        func(cp,cp);
     }
 
     ,on_key_down : function(key) {
