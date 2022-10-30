@@ -19,7 +19,8 @@ let BRUSH = {
         ['#469A',  '#469']
     ]
 
-    ,cid : 0
+    ,color_id : 0
+    ,alt_colors : {}
     ,size : 5
 
     ,div : null
@@ -27,16 +28,33 @@ let BRUSH = {
     ,MENU_main : null
     ,MENU_options : null
 
-    ,select_color : function(cid) {
-        //console.log("color id selected: ",cid);
-        BRUSH.cid = cid;
+    ,activate_color : function(button) {
+        button = (button===undefined)?0:button;
+        UI.log('activate color :', button);
+        if (button in BRUSH.alt_colors)
+            BRUSH.select_color(BRUSH.alt_colors[button]);
+    }
+
+    ,select_color : function(color_id) {
+        BRUSH.color_id = color_id;
         BRUSH.div.style['background-color'] = BRUSH.get_color('E');
-        this.MENU_main.hide('colors');
+    }
+
+    ,attach_color : function(color_id, button) {
+        button = (button===undefined)?0:button;
+        UI.log('attached color :', color_id, button);
+        BRUSH.alt_colors[button] = color_id;
+
+        if (button==UI._last_button)
+            BRUSH.select_color(color_id);
     }
 
     ,oncolor : function(e, id, long) { // eslint-disable-line no-unused-vars
-        let cid = id.split('_')[1]*1;
-        BRUSH.select_color(cid);
+        UI.log('brush.oncolor :', id, long, e);
+        const color_id = id.split('_')[1]*1;
+        let button = (long)?1:e.button;
+        BRUSH.attach_color(color_id, button);
+        BRUSH.MENU_main.hide('colors');
     }
 
     ,update_size : function (delta) {
@@ -66,9 +84,9 @@ let BRUSH = {
         return BRUSH.MODE.scaled ? BRUSH.size * UI.viewpoint.scale : BRUSH.size;
     }
 
-    ,get_color : function(alpha, cid) {
-        cid = (cid===undefined)?BRUSH.cid:cid;
-        let color = BRUSH.COLORS[cid][0];
+    ,get_color : function(alpha, color_id) {
+        color_id = (color_id===undefined)?BRUSH.color_id:color_id;
+        let color = BRUSH.COLORS[color_id][0];
         color = (alpha===undefined)?color:(color.slice(0,-1) + alpha);
         return color;
     }
@@ -103,9 +121,10 @@ let BRUSH = {
             g.style['background-color'] = '#666D';
         });
 
+        BRUSH.attach_color(0 ,0);
         BRUSH.update_size();
 
-        // bruch size changer options menu items
+        // brush size changer options menu items
         let ctx = this.MENU_options.add('root'
             , 'brush_size_inc'
             , ()=>{

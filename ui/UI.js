@@ -91,6 +91,7 @@ let UI = {
 
     ,_last_point : null
     ,_under_focus : false
+    ,_last_button : 0
 
     ,is_mobile : false
     ,view_id : 'xx'
@@ -290,6 +291,7 @@ let UI = {
 
         // paste listener
         document.addEventListener('paste', e => {
+            UI.log('ui.paste: ', e);
             UI._handle_data(e.clipboardData);
         });
 
@@ -325,6 +327,7 @@ let UI = {
             UI._on_focus_change(UI._under_focus);
         });
         window.addEventListener('drop', e =>{
+            UI.log('ui.drop:', e);
             e.stopPropagation();
             e.preventDefault();
             UI._handle_data(e.dataTransfer);
@@ -433,10 +436,9 @@ let UI = {
         } else if (key == '-') {
             BRUSH.update_size(-5);
         } else if (key == 'Tab') {
-            BRUSH.select_color((BRUSH.cid + 1) % BRUSH.COLORS.length);
+            BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS.length, UI._last_button);
             return true;
         }
-
     }
 
     ,on_key_up_default : function(key) {
@@ -463,6 +465,7 @@ let UI = {
         UI._event_handlers['on_start'].reduce((handled, handler)=>{
             return handled||handler(copy(lp), button);
         }, false);
+        UI._last_button = button;
     }
 
     ,on_move : function(lp) {
@@ -519,6 +522,8 @@ let UI = {
     }
 
     ,on_wheel : function(delta, deltaX) {
+        UI.log('ui.on_wheel:', delta, deltaX);
+
         let handled = UI._event_handlers['on_wheel'].reduce((handled, handler)=>{
             return handled||handler(delta, deltaX);
         }, false);
@@ -909,6 +914,7 @@ let UI = {
     ,log : function(...args) {
         log(...args);
     }
+
 };
 
 export {UI};

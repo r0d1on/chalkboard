@@ -90,6 +90,7 @@ let TexterTool = {
     }
 
     ,on_stop : function(lp) { // eslint-disable-line no-unused-vars
+        return; // overload base on_stop handler
     }
 
     ,on_key_down : function(key, commit) {
@@ -128,7 +129,7 @@ let TexterTool = {
         } else if (key=='Escape') {
             if (this._activated_by > 0) {
                 this._activated_by = null;
-                TOOLS.activate(TOOLS.alt_tools[0], false, 0);
+                TOOLS.reactivate_default();
             }
             return false;
 

@@ -2,6 +2,7 @@
 
 import {copy} from '../base/objects.js';
 
+import {BRUSH} from './BRUSH.js';
 import {UI} from './UI.js';
 
 
@@ -104,26 +105,27 @@ let TOOLS = {
             TOOLS.show(tool);
         }
 
-        if (tool.on_activated!==undefined) {
+        if (tool.on_activated!==undefined)
             tool.on_activated();
-            tool._activated_by = button;
-        }
+        tool._activated_by = button;
 
         if (background) {
             TOOLS.background = tool;
-
         } else {
             if (prev!=null) {
                 TOOLS.deactivate(prev);
                 TOOLS.options_disable(prev);
             }
-
             TOOLS.options_enable(tool);
             TOOLS.current = tool;
-
         }
 
         return;
+    }
+
+    ,reactivate_default : function() {
+        TOOLS.activate(TOOLS.alt_tools[0], false, 0);
+        BRUSH.activate_color(0);
     }
 
     ,deactivate_backtool : function() {
@@ -269,9 +271,11 @@ let TOOLS = {
         if ((background)&&(TOOLS.background.on_start(point, button))) {
             handled = true;
         } else {
-            if ((button in TOOLS.alt_tools)&&(button!=0))
-                TOOLS.activate(TOOLS.alt_tools[button], false, button);
-
+            if (button!=0) {
+                BRUSH.activate_color(button);
+                if (button in TOOLS.alt_tools)
+                    TOOLS.activate(TOOLS.alt_tools[button], false, button);
+            }
             handled = ((TOOLS.current.on_start!=undefined)&&(TOOLS.current.on_start(point, button)));
         }
         return handled;
@@ -292,9 +296,8 @@ let TOOLS = {
             handled = true;
         } else {
             handled = ((TOOLS.current.on_stop!=undefined)&&(TOOLS.current.on_stop(point)));
-
             if (!TOOLS.current.is_capturing)
-                TOOLS.activate(TOOLS.alt_tools[0], false, 0);
+                TOOLS.reactivate_default();
         }
         return handled;
     }
