@@ -211,12 +211,12 @@ let SAVE = {
         } else {
             let overlay = UI.layers[UI.LAYERS.indexOf('overlay')];
             let ctx = overlay.getContext('2d');
-            ctx.fillStyle = UI.layers[UI.LAYERS.indexOf("background")].style['background-color'];
-            ctx.fillRect(0, 0, overlay.width, overlay.height)
+            ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
+            ctx.fillRect(0, 0, overlay.width, overlay.height);
             UI.redraw(ctx);
             a.href = overlay.toDataURL();
             UI.reset_layer('overlay');
-        };
+        }
         a.click();
 
         SAVE.MENU_main.hide('save_group');

@@ -168,22 +168,22 @@ let SelectorTool = {
         UI.draw_stroke(lp, lp, SelectorTool.COLOR_COPYPASTE, W, ctx);
 
         let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
-        let figure = [
+        let box = [ // selection box figure
             {X:rect[0].X-W-S, Y:rect[0].Y-W-S}, {X:rect[1].X+W+S, Y:rect[0].Y-W-S},
             {X:rect[1].X+W+S, Y:rect[1].Y+W+S},
             {X:rect[0].X-W-S, Y:rect[1].Y+W+S}
         ];
 
         let d = W * 2;
-        let figures = [
-            [{X:figure[0].X,Y:figure[0].Y+d}, figure[0], {X:figure[0].X+d,Y:figure[0].Y}]
-            ,[{X:figure[1].X-d,Y:figure[1].Y}, figure[1], {X:figure[1].X,Y:figure[1].Y+d}]
-            ,[{X:figure[2].X,Y:figure[2].Y-d}, figure[2], {X:figure[2].X-d,Y:figure[2].Y}]
-            ,[{X:figure[3].X+d,Y:figure[3].Y}, figure[3], {X:figure[3].X,Y:figure[3].Y-d}]
+        let brackets = [ // selection box brackets
+            [{X:box[0].X  , Y:box[0].Y+d}, box[0], {X:box[0].X+d, Y:box[0].Y  }]
+            ,[{X:box[1].X-d, Y:box[1].Y  }, box[1], {X:box[1].X  , Y:box[1].Y+d}]
+            ,[{X:box[2].X  , Y:box[2].Y-d}, box[2], {X:box[2].X-d, Y:box[2].Y  }]
+            ,[{X:box[3].X+d, Y:box[3].Y  }, box[3], {X:box[3].X  , Y:box[3].Y-d}]
         ];
 
         // draw rect
-        figures.map((f)=>{
+        brackets.map((f)=>{
             f.map((p,pi)=>{
                 if (pi < f.length-1)
                     UI.draw_stroke(
@@ -198,40 +198,50 @@ let SelectorTool = {
 
         // draw ancor mode selectors
         // rotator
-        lp = figure[1];
+        lp = box[1];
         ctx.beginPath();
         ctx.arc(lp.X, lp.Y, d/2, Math.PI, Math.PI/2);
         ctx.stroke();
 
         // scaler
-        lp = figure[2];
+        lp = box[2];
         ctx.beginPath();
         ctx.rect(lp.X-d/2, lp.Y-d/2, d, d);
         ctx.stroke();
 
         // optimizer
         lp = {
-            X: figure[1].X
-            ,Y:(figure[1].Y + figure[2].Y)/2
+            X: box[1].X
+            ,Y:(box[1].Y + box[2].Y)/2
         };
         UI.draw_stroke({X:lp.X-d/2,Y:lp.Y-d/2},{X:lp.X+d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
         UI.draw_stroke({X:lp.X+d/2,Y:lp.Y-d/2},{X:lp.X-d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
 
         // copy
-        lp = figure[0];
+        lp = box[0];
         UI.draw_stroke({X:lp.X,Y:lp.Y},{X:lp.X-d,Y:lp.Y-d}  ,SelectorTool.COLOR_COPYPASTE, W, ctx);
         UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X,Y:lp.Y-d},SelectorTool.COLOR_COPYPASTE, W, ctx);
         UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X-d,Y:lp.Y},SelectorTool.COLOR_COPYPASTE, W, ctx);
 
         // paste
         if (this.clipboard.length) {
-            lp = figure[3];
+            lp = box[3];
             UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
             UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y}, SelectorTool.COLOR_COPYPASTE, W, ctx);
             UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
         }
 
         // draw over selected points
+        this._selected_strokes().map((s)=>{
+            UI.draw_stroke(
+                UI.global_to_local(s.gp[0])
+                ,UI.global_to_local(s.gp[1])
+                ,'#F335'
+                ,s.width * UI.viewpoint.scale * 1.3
+                ,ctx
+            );
+        });
+
     }
 
     ,clear_selection : function() {
