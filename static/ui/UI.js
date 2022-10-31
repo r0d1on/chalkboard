@@ -845,7 +845,7 @@ let UI = {
         } else {
             ctx = target_ctx;
             ctx_back = target_ctx;
-        };
+        }
 
         if (GRID_MODE.grid_active)
             UI.redraw_grid(ctx_back);
