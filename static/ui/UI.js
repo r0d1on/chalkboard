@@ -173,7 +173,6 @@ let UI = {
     }
 
     ,_setup_event_listeners : function() {
-
         // window size change listener
         window.addEventListener('resize', ()=>{
             UI.update_layers();
@@ -834,14 +833,22 @@ let UI = {
     }
 
 
-    ,redraw : function() {
-        const ctx = UI.contexts[UI.LAYERS.indexOf('board')];
+    ,redraw : function(target_ctx) {
+        let ctx = null;
+        let ctx_back = null;
         let lp0, lp1;
 
-        UI.update_layers(true);
+        if (target_ctx === undefined) {
+            UI.update_layers(true);
+            ctx = UI.contexts[UI.LAYERS.indexOf('board')];
+            ctx_back = UI.contexts[UI.LAYERS.indexOf('background')];
+        } else {
+            ctx = target_ctx;
+            ctx_back = target_ctx;
+        };
 
         if (GRID_MODE.grid_active)
-            UI.redraw_grid();
+            UI.redraw_grid(ctx_back);
 
         for(let commit_id in BOARD.strokes) {
             if (commit_id > BOARD.commit_id)
@@ -876,9 +883,7 @@ let UI = {
         BRUSH.update_size();
     }
 
-    ,redraw_grid : function() {
-        const ctx = UI.contexts[UI.LAYERS.indexOf('background')];
-
+    ,redraw_grid : function(ctx) {
         //h
         let y = - (UI.viewpoint.dy % UI.GRID) * UI.viewpoint.scale;
         while (y < UI.window_height) {
