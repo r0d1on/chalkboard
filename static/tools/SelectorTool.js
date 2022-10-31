@@ -9,6 +9,7 @@ import {DrawToolBase} from './Base.js';
 import {UI} from '../ui/UI.js';
 
 import {BOARD} from '../ui/BOARD.js';
+import {BRUSH} from '../ui/BRUSH.js';
 import {TOOLS} from '../ui/TOOLS.js';
 
 const SelectorModes = {
@@ -159,6 +160,7 @@ let SelectorTool = {
         }
 
         let W = SelectorTool.WIDTH;
+        let S = BRUSH.get_local_width();
 
         // draw selected center
         let lp = UI.global_to_local(this.selection_center);
@@ -167,9 +169,9 @@ let SelectorTool = {
 
         let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
         let figure = [
-            {X:rect[0].X-W, Y:rect[0].Y-W}, {X:rect[1].X+W, Y:rect[0].Y-W},
-            {X:rect[1].X+W, Y:rect[1].Y+W},
-            {X:rect[0].X-W, Y:rect[1].Y+W}
+            {X:rect[0].X-W-S, Y:rect[0].Y-W-S}, {X:rect[1].X+W+S, Y:rect[0].Y-W-S},
+            {X:rect[1].X+W+S, Y:rect[1].Y+W+S},
+            {X:rect[0].X-W-S, Y:rect[1].Y+W+S}
         ];
 
         let d = W * 2;
@@ -261,6 +263,7 @@ let SelectorTool = {
         if (this.mode==SelectorModes.SELECTED) {
             let dst = Math.sqrt(dst2(lp, UI.global_to_local(this.selection_center)));
             let W = SelectorTool.WIDTH;
+            let S = BRUSH.get_local_width();
 
             if (UI.is_mobile)
                 dst /= 3;
@@ -272,12 +275,12 @@ let SelectorTool = {
 
             let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
             let figure = [
-                {X:rect[0].X-W, Y:rect[0].Y-W}, // copy
-                {X:rect[1].X+W, Y:rect[0].Y-W}, // rotate
-                {X:rect[1].X+W, Y:rect[1].Y+W}, // scale
-                {X:rect[0].X-W, Y:rect[1].Y+W}, // paste
+                {X:rect[0].X-W-S, Y:rect[0].Y-W-S}, // copy
+                {X:rect[1].X+W+S, Y:rect[0].Y-W-S}, // rotate
+                {X:rect[1].X+W+S, Y:rect[1].Y+W+S}, // scale
+                {X:rect[0].X-W-S, Y:rect[1].Y+W+S}, // paste
 
-                {X:rect[1].X+W, Y:(rect[0].Y+rect[1].Y)/2} // optimize
+                {X:rect[1].X+W+S, Y:(rect[0].Y+rect[1].Y)/2} // optimize
             ];
 
             let anchor_i = null;
