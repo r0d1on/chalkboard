@@ -39,7 +39,6 @@ let BoxTool = {
         figure = this._pre_render(figure);
 
         this._render(figure, func);
-        func(cp,cp);
     }
 
     ,on_key_down : function(key) {
