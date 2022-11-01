@@ -40,7 +40,8 @@ let SelectorTool = {
 
     ,original_strokes : {}
 
-    ,selection : null
+    ,selection : []
+    ,selection_keys : {}
     ,selection_center : null
     ,selection_rect : null
 
@@ -65,46 +66,61 @@ let SelectorTool = {
     ,_save_selected : function() {
         this.original_strokes = {};
 
-        this.selection.map((sl)=>{
-            let stroke = BOARD.strokes[sl.commit_id][sl.stroke_idx];
+        this.selection.map((sel)=>{
+            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
             if (!(stroke.stroke_id in this.original_strokes)) {
-                this.original_strokes[sl.stroke_id] = deepcopy(stroke);
-                this.original_strokes[sl.stroke_id].commit_id = sl.commit_id;
-                this.original_strokes[sl.stroke_id].stroke_idx = sl.stroke_idx;
+                this.original_strokes[sel.stroke_id] = deepcopy(stroke);
+                this.original_strokes[sel.stroke_id].commit_id = sel.commit_id;
+                this.original_strokes[sel.stroke_id].stroke_idx = sel.stroke_idx;
             }
         });
-
     }
 
-    ,_select_commit : function(commit_id) {
-        commit_id = (commit_id===undefined)?BOARD.commit_id:commit_id;
-
+    ,_selection_reset : function() {
         this.selection = [];
+        this.selection_keys = {};
+        this.selection_center = null;
+        this.selection_rect = null;
+    }
 
-        for(let i in BOARD.strokes[commit_id]) {
-            if (BOARD.strokes[commit_id][i].gp[0]==null)
+    ,_add_selected_point : function(commit_id, stroke_idx, point_idx) {
+        let stroke_id = BOARD.strokes[commit_id][stroke_idx].stroke_id;
+        let sel_key = '' + commit_id + '/' + stroke_id + '/' + point_idx;
+        if (!(sel_key in this.selection_keys)) {
+            this.selection.push({
+                commit_id : commit_id
+                ,stroke_idx : stroke_idx
+                ,stroke_id : stroke_id
+                ,point_idx : point_idx
+            });
+            this.selection_keys[sel_key] = this.selection.length - 1;
+        }
+    }
+
+    ,_select_commit : function(commit_id, reset) {
+        commit_id = (commit_id===undefined)?BOARD.commit_id:commit_id;
+        reset = (reset===undefined)?true:reset;
+
+        if (reset)
+            this._selection_reset();
+
+        for(let stroke_idx in BOARD.strokes[commit_id]) {
+            if (BOARD.strokes[commit_id][stroke_idx].gp[0]==null)
                 continue;
 
-            if (BOARD.is_hidden(BOARD.strokes[commit_id][i]))
+            if (BOARD.is_hidden(BOARD.strokes[commit_id][stroke_idx]))
                 continue;
 
-            for(let pi=0; pi<2; pi++) {
-                this.selection.push({
-                    commit_id : commit_id
-                    ,stroke_idx : i
-                    ,stroke_id : BOARD.strokes[commit_id][i].stroke_id
-                    ,point_idx : pi
-                });
-            }
+            this._add_selected_point(commit_id, stroke_idx, 0);
+            this._add_selected_point(commit_id, stroke_idx, 1);
         }
 
-        if (this.selection.length>0) {
-            this.get_selection_bounds();
+        if (this.selection.length > 0) {
             this.draw_selected();
             this.mode = SelectorModes.SELECTED;
         } else {
+            UI.reset_layer('overlay');
             this.activated = false;
-            this.selection = null;
         }
 
     }
@@ -152,10 +168,12 @@ let SelectorTool = {
     }
 
     ,draw_selected : function() {
+        this.get_selection_bounds();
+
         let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
         UI.reset_layer('overlay');
 
-        if ((this.selection===null)||(this.selection.length==0)) {
+        if (this.selection.length == 0) {
             return;
         }
 
@@ -164,7 +182,7 @@ let SelectorTool = {
 
         // draw selected center
         let lp = UI.global_to_local(this.selection_center);
-        UI.draw_stroke(lp, lp, SelectorTool.COLOR, W*2, ctx);
+        UI.draw_stroke(lp, lp, SelectorTool.COLOR, W * 2, ctx);
         UI.draw_stroke(lp, lp, SelectorTool.COLOR_COPYPASTE, W, ctx);
 
         let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
@@ -244,16 +262,14 @@ let SelectorTool = {
 
     }
 
-    ,clear_selection : function() {
+    ,cancel_selection : function() {
         this.mode = SelectorModes.SELECTING;
-        this.selection = null;
-        this.selection_center = null;
-        this.selection_rect = null;
+        this._selection_reset();
 
-        if (this._activated_by > 0) {
+        if (this._activated_by > 0) { // if activated as an alt tool
             this.activated = false;
             this._activated_by = null;
-            TOOLS.reactivate_default();
+            TOOLS.reactivate_default(); // return control to the main tool
         }
     }
 
@@ -265,6 +281,38 @@ let SelectorTool = {
 
     ,on_start : function(lp) {
         DrawToolBase.on_start.call(this, lp);
+
+        if (UI.keys['Shift']||UI.keys['Alt']) {
+            // Shift - select / unselect
+            // Alt - select / unselect figure
+            let W = SelectorTool.WIDTH;
+            let S = BRUSH.get_local_width();
+
+            let points = BOARD.get_strokes(
+                UI.get_rect([
+                    {X:lp.X-W-S, Y:lp.Y-W-S}
+                    ,{X:lp.X+W+S, Y:lp.Y+W+S}
+                ]).map((p)=>{
+                    return UI.local_to_global(p);
+                })
+                ,true); // select points
+
+            if (UI.keys['Alt']) {
+                (
+                    new Set(points.map((pnt)=>{return pnt.commit_id;}))
+                ).forEach((commit_id)=>{
+                    this._select_commit(commit_id, false);
+                });
+            }
+
+            points.map((pnt)=>{
+                this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
+            });
+
+            this.draw_selected();
+            this.mode = SelectorModes.SELECTED;
+            return;
+        }
 
         if (this.mode==SelectorModes.SELECTING) {
             return;
@@ -306,7 +354,7 @@ let SelectorTool = {
             });
 
             if (anchor_i == null) {
-                this.clear_selection();
+                this.cancel_selection();
                 UI.redraw();
                 return;
             }
@@ -333,7 +381,6 @@ let SelectorTool = {
                 } else {
                     this.paste(this.clipboard);
                 }
-                //this._select_commit();
 
             } else if (anchor_i==4) { // optimize
                 this.start_mode(SelectorModes.OPTIMIZE);
@@ -352,8 +399,8 @@ let SelectorTool = {
             let cx = ( (lp.X - lpc.X) / (this.last_point.X - lpc.X) );
             let cy = ( (lp.Y - lpc.Y) / (this.last_point.Y - lpc.Y) );
 
-            this.selection.map((sl)=>{
-                let pnt = BOARD.strokes[sl.commit_id][sl.stroke_idx].gp[sl.point_idx];
+            this.selection.map((sel)=>{
+                let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
                 pnt.X -= this.selection_center.X;
                 pnt.Y -= this.selection_center.Y;
 
@@ -380,8 +427,8 @@ let SelectorTool = {
 
             if (Math.abs(a) > 1) a = 0;
 
-            this.selection.map((sl)=>{
-                let pnt = BOARD.strokes[sl.commit_id][sl.stroke_idx].gp[sl.point_idx];
+            this.selection.map((sel)=>{
+                let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
                 pnt.X -= this.selection_center.X;
                 pnt.Y -= this.selection_center.Y;
 
@@ -399,18 +446,18 @@ let SelectorTool = {
     ,_selected_strokes : function() {
         let was = new Set();
         let selected_strokes = [];
-        this.selection.map((sl)=>{
-            if (!was.has(sl.stroke_id)) {
-                selected_strokes.push(BOARD.strokes[sl.commit_id][sl.stroke_idx]);
-                was.add(sl.stroke_id);
+        this.selection.map((sel)=>{
+            if (!was.has(sel.stroke_id)) {
+                selected_strokes.push(BOARD.strokes[sel.commit_id][sel.stroke_idx]);
+                was.add(sel.stroke_id);
             }
         });
         return selected_strokes;
     }
 
     ,_move_selection : function(dx, dy) {
-        this.selection.map((sl)=>{
-            let pnt = BOARD.strokes[sl.commit_id][sl.stroke_idx].gp[sl.point_idx];
+        this.selection.map((sel)=>{
+            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
             pnt.X += dx;
             pnt.Y += dy;
         });
@@ -457,8 +504,8 @@ let SelectorTool = {
 
     ,get_selection_bounds : function() {
         this.selection_rect = UI.get_rect(
-            this.selection.map((sl)=>{
-                return BOARD.strokes[sl.commit_id][sl.stroke_idx].gp[sl.point_idx];
+            this.selection.map((sel)=>{
+                return BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
             })
         );
 
@@ -471,12 +518,15 @@ let SelectorTool = {
         UI.reset_layer('overlay');
         let sp = this.start_point;
 
-        this.selection = BOARD.get_strokes(UI.get_rect([sp, lp]).map((p)=>{
+        let points = BOARD.get_strokes(UI.get_rect([sp, lp]).map((p)=>{
             return UI.local_to_global(p);
         }), true); // selected points
 
-        if (this.selection.length>0) {
-            this.get_selection_bounds();
+        points.map((pnt)=>{
+            this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
+        });
+
+        if (this.selection.length > 0) {
             this.draw_selected();
             this.mode = SelectorModes.SELECTED;
         }
@@ -507,8 +557,8 @@ let SelectorTool = {
 
     ,copy : function() {
         let copied = new Set();
-        this.clipboard = this.selection.reduce((a, sl)=>{
-            let stroke = BOARD.strokes[sl.commit_id][sl.stroke_idx];
+        this.clipboard = this.selection.reduce((a, sel)=>{
+            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
             if (!copied.has(stroke.stroke_id)) {
                 copied.add(stroke.stroke_id);
                 let c_stroke = deepcopy(stroke);
@@ -567,7 +617,6 @@ let SelectorTool = {
 
         this._select_commit();
 
-        this.get_selection_bounds();
         this.draw_selected();
 
         this.clipboard = [];
@@ -654,7 +703,7 @@ let SelectorTool = {
         };
 
         if (key=='Escape') {
-            this.clear_selection();
+            this.cancel_selection();
             handled = true;
         }
 
@@ -706,7 +755,6 @@ let SelectorTool = {
     }
 
     ,on_deactivated : function() {
-        //this.clear_selection();
         this.activated = false;
         //DrawToolBase.on_deactivated.call(this);
     }
@@ -726,7 +774,7 @@ let SelectorTool = {
                 BOARD.hide_commit(that._selected_strokes());
 
                 SelectorTool.DELETE.selector.mode = SelectorModes.SELECTING;
-                SelectorTool.DELETE.selector.selection = null;
+                SelectorTool.DELETE.selector._selection_reset();
 
                 UI.redraw();
             }
