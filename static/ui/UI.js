@@ -9,7 +9,6 @@ import {BRUSH} from './BRUSH.js';
 import {GRID_MODE} from './GRID_MODE.js';
 import {TOOLS} from './TOOLS.js';
 
-
 let TOASTS = {};
 function toast(topic, text, lifespan) {
 
@@ -84,8 +83,9 @@ function log(...args) {
 
 
 let UI = {
+    IO : null
 
-    CANVAS_MARGIN : 20
+    ,CANVAS_MARGIN : 20
     ,GRID : 30.0
     ,LAYERS : ['background', 'debug', 'board', 'buffer', 'overlay']
 
@@ -182,13 +182,13 @@ let UI = {
         // tool usage start events
         let buffer_canvas = UI.layers[UI.LAYERS.indexOf('buffer')];
 
-        buffer_canvas.addEventListener('mousedown', e => {
+        UI.IO.add_event(buffer_canvas, 'mousedown', e => {
             UI.log('ui.mousedown', e);
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
             UI.on_start(lp, e.button);
         });
-        buffer_canvas.addEventListener('touchstart', e => {
+        UI.IO.add_event(buffer_canvas, 'touchstart', e => {
             UI.log('ui.touchstart', e);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
@@ -212,19 +212,19 @@ let UI = {
             e.preventDefault();
         });
 
-        buffer_canvas.addEventListener('contextmenu', e => {
+        UI.IO.add_event(buffer_canvas, 'contextmenu', e => {
             e.stopPropagation();
             e.preventDefault();
             return false;
         });
 
         // tool move events
-        buffer_canvas.addEventListener('mousemove', e => {
+        UI.IO.add_event(buffer_canvas, 'mousemove', e => {
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
             UI.on_move(lp);
         });
-        buffer_canvas.addEventListener('touchmove', e => {
+        UI.IO.add_event(buffer_canvas, 'touchmove', e => {
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
 
@@ -242,13 +242,13 @@ let UI = {
         });
 
         // tool usage stop events
-        buffer_canvas.addEventListener('mouseup', e => {
+        UI.IO.add_event(buffer_canvas, 'mouseup', e => {
             UI.log('ui.mouseup', e);
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
             UI.on_stop(lp);
         });
-        buffer_canvas.addEventListener('touchend', e => {
+        UI.IO.add_event(buffer_canvas, 'touchend', e => {
             UI.log('ui.touchend', e);
             UI.is_mobile = true;
             let lp = UI._last_point;
@@ -271,61 +271,61 @@ let UI = {
         });
 
         // mouse wheel listener
-        buffer_canvas.addEventListener('wheel', e => {
+        UI.IO.add_event(buffer_canvas, 'wheel', e => {
             UI.on_wheel(e.deltaY, e.deltaX);
             e.preventDefault();
         });
 
         // keyboard listener
-        document.addEventListener('keydown', e => {
+        UI.IO.add_event(document, 'keydown', e => {
             const handled = UI.on_key_down(e.key);
             if ((handled)||(((e.key=='+')||(e.key=='-'))&&(UI.keys['Control'])))
                 e.preventDefault();
         });
-        document.addEventListener('keyup', e => {
+        UI.IO.add_event(document, 'keyup', e => {
             UI.on_key_up(e.key);
             if (((e.key=='+')||(e.key=='-'))&&(UI.keys['Control']))
                 e.preventDefault();
         });
 
         // paste listener
-        document.addEventListener('paste', e => {
+        UI.IO.add_event(document, 'paste', e => {
             UI.log('ui.paste: ', e);
             UI._handle_data(e.clipboardData);
         });
 
         // window focus listener
-        window.addEventListener('focus', ()=>{
+        UI.IO.add_event(window, 'focus', ()=>{
             UI.on_focus();
         });
 
         // window blur listener
-        window.addEventListener('blur', ()=>{
+        UI.IO.add_event(window, 'blur', ()=>{
             UI.on_blur();
         });
 
         // hash change listener
-        window.addEventListener('hashchange', ()=>{
+        UI.IO.add_event(window, 'hashchange', ()=>{
             UI.on_hash_change();
         });
 
         // drag'n'drop handlers
-        window.addEventListener('dragenter', e =>{
+        UI.IO.add_event(window, 'dragenter', e =>{
             e.stopPropagation();
             e.preventDefault();
             UI._on_focus_change('#ACA');
         });
-        window.addEventListener('dragover', e =>{
+        UI.IO.add_event(window, 'dragover', e =>{
             e.stopPropagation();
             e.preventDefault();
             UI._on_focus_change('#ACA');
         });
-        window.addEventListener('dragleave', e =>{
+        UI.IO.add_event(window, 'dragleave', e =>{
             e.stopPropagation();
             e.preventDefault();
             UI._on_focus_change(UI._under_focus);
         });
-        window.addEventListener('drop', e =>{
+        UI.IO.add_event(window, 'drop', e =>{
             UI.log('ui.drop:', e);
             e.stopPropagation();
             e.preventDefault();
@@ -347,7 +347,11 @@ let UI = {
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
 
-    ,init : function() {
+    ,init : function(IO) {
+        UI.IO = IO;
+
+        UI.log('IO type: ', UI.IO.type());
+
         // parse out board name and view mode from location hash
         UI._parse_uri(window.location.hash.slice(1,));
 
@@ -921,5 +925,6 @@ let UI = {
     }
 
 };
+
 
 export {UI};
