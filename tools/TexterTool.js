@@ -191,6 +191,7 @@ let TexterTool = {
 
         inp.style['width'] = (Menu.SIZE-9) + 'px';
         inp.style['height'] = (Menu.SIZE-8) + 'px';
+        inp.style['font-size'] = '40px';
         inp.addEventListener('keydown',(e)=>{
             if ((e.key in {'Enter':1, 'Backspace':1})) {
                 this.on_key_down(e.key);
