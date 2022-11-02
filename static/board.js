@@ -33,6 +33,7 @@ import {RedoTool} from './tools/RedoTool.js';
 import {SAVE} from './actions/SAVE.js';
 import {SLIDER} from './actions/SLIDER.js';
 
+const io_module = import('./ui/IO.js');
 
 // SETUP CONTAINER
 let SETUP = {
@@ -58,8 +59,8 @@ let MENU_main = null;
 let MENU_options = null;
 
 // initialising piece
-function init() {
-    UI.init();
+function init(IO) {
+    UI.init(IO);
 
     MENU_main = _new(Menu, ['root', 'menu', true]);
     MENU_options = _new(Menu, ['root', 'options', false]);
@@ -126,7 +127,18 @@ function init() {
 console.log('loaded board.js');
 
 document.addEventListener('DOMContentLoaded', function(){
-    setTimeout(init, 100);
+    console.log('DOM ready');
+
+    setTimeout(()=>{
+        console.log('init()');
+
+        io_module.then((module)=>{
+            init(module.IO);
+        }).catch((error)=>{
+            console.log('Error while loading IO module', error);
+        });
+
+    }, 100);
     window.bp = ()=>{debugger;}; // eslint-disable-line no-debugger
 });
 
