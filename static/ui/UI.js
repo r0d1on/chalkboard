@@ -174,7 +174,7 @@ let UI = {
 
     ,_setup_event_listeners : function() {
         // window size change listener
-        window.addEventListener('resize', ()=>{
+        UI.IO.add_event(window, 'resize', ()=>{
             UI.update_layers();
             UI.redraw();
         });

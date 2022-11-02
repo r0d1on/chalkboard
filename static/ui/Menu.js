@@ -136,11 +136,11 @@ let Menu = {
         dom_elem.style['height'] = Menu.SIZE + 'px';
         add_class(dom_elem, 'menu_item');
 
-        dom_elem.addEventListener('mousedown', this.onpush(id, false));
-        dom_elem.addEventListener('touchstart', this.onpush(id, true));
-        dom_elem.addEventListener('mouseup', this.onclick(id, onclick, false));
-        dom_elem.addEventListener('touchend', this.onclick(id, onclick, true));
-        dom_elem.addEventListener('contextmenu', e => {
+        UI.IO.add_event(dom_elem, 'mousedown', this.onpush(id, false));
+        UI.IO.add_event(dom_elem, 'touchstart', this.onpush(id, true));
+        UI.IO.add_event(dom_elem, 'mouseup', this.onclick(id, onclick, false));
+        UI.IO.add_event(dom_elem, 'touchend', this.onclick(id, onclick, true));
+        UI.IO.add_event(dom_elem, 'contextmenu', e => {
             e.stopPropagation();
             e.preventDefault();
             return false;
