@@ -192,7 +192,7 @@ let TexterTool = {
         inp.style['width'] = (Menu.SIZE-9) + 'px';
         inp.style['height'] = (Menu.SIZE-8) + 'px';
         inp.style['font-size'] = '40px';
-        inp.addEventListener('keydown',(e)=>{
+        UI.IO.add_event(inp, 'keydown',(e)=>{
             if ((e.key in {'Enter':1, 'Backspace':1})) {
                 this.on_key_down(e.key);
             } else if (('01234567890'.includes(e.key))) {
@@ -202,7 +202,7 @@ let TexterTool = {
             e.stopPropagation();
         });
 
-        inp.addEventListener('input', (e)=>{
+        UI.IO.add_event(inp, 'input', (e)=>{
             this.on_key_down(e.data);
             e.target.value = '';
             e.preventDefault();
