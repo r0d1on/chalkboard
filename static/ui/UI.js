@@ -348,6 +348,8 @@ let UI = {
     }
 
     ,init : function(IO) {
+
+        IO.log = UI.log;
         UI.IO = IO;
 
         UI.log('IO type: ', UI.IO.type());
