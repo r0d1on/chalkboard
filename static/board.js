@@ -33,7 +33,7 @@ import {RedoTool} from './tools/RedoTool.js';
 import {SAVE} from './actions/SAVE.js';
 import {SLIDER} from './actions/SLIDER.js';
 
-const io_module = import('./ui/IO.js');
+const io_module = import('./ui/IO' + get_io_type() + '.js');
 
 // SETUP CONTAINER
 let SETUP = {
@@ -57,6 +57,15 @@ let SETUP = {
 
 let MENU_main = null;
 let MENU_options = null;
+
+function get_io_type() {
+    let [board_name, view_mode] = UI._hash_board_mode(window.location.hash.slice(1,)); // eslint-disable-line no-unused-vars
+    if (view_mode=='record') {
+        return '.record';
+    } else {
+        return '';
+    }
+}
 
 // initialising piece
 function init(IO) {
@@ -133,7 +142,9 @@ document.addEventListener('DOMContentLoaded', function(){
         console.log('init()');
 
         io_module.then((module)=>{
-            init(module.IO);
+            let IO = _new(module.IO);
+            console.log('IO type: ', IO.type);
+            init(IO);
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
         });

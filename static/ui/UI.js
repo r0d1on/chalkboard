@@ -335,14 +335,20 @@ let UI = {
 
     }
 
-    ,_parse_uri : function(uri) {
+    ,_hash_board_mode : function(hash) {
+        // index.html#tablename$viewmode
+        return [
+            hash.split('$')[0] // table name
+            ,hash.split('$')[1] // view mode
+        ];
+    }
+
+    ,_parse_hash : function(hash) {
         // board name
         let old_name = BOARD.board_name;
-        BOARD.board_name = uri.split('$')[0];
-
-        // UI view mode
         let old_view_mode = UI.view_mode;
-        UI.view_mode = uri.split('$')[1];
+
+        [BOARD.board_name, UI.view_mode] = UI._hash_board_mode(hash);
 
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
@@ -352,10 +358,8 @@ let UI = {
         IO.log = UI.log;
         UI.IO = IO;
 
-        UI.log('IO type: ', UI.IO.type());
-
         // parse out board name and view mode from location hash
-        UI._parse_uri(window.location.hash.slice(1,));
+        UI._parse_hash(window.location.hash.slice(1,));
 
         // generate view id
         UI.view_id = Number(Math.ceil(Math.random()*1000)).toString(36);
@@ -645,7 +649,7 @@ let UI = {
     }
 
     ,on_hash_change : function() {
-        if (UI._parse_uri(window.location.hash.slice(1,))) {
+        if (UI._parse_hash(window.location.hash.slice(1,))) {
             UI.log(window.location.hash.slice(1,));
             window.location.reload();
         }
