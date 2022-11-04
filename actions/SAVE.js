@@ -278,26 +278,14 @@ let SAVE = {
 
     }
 
-    ,_request : function(api_endpoint, message, cb, timeout) {
-        timeout = (timeout===undefined) ? 10*1000 : timeout;
-
-        let xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = ((xhr, message)=>{
-            return ()=>{
-                if (xhr.readyState == 4) {
-                    cb(xhr, message);
-                } else {
-                    //console.log("xhr:", xhr, "rs:", xhr.readyState);
-                }
-            };
-        })(xhr, message);
-
-        xhr.timeout = timeout;
-        xhr.ontimeout = ((xhr)=>{return ()=>{UI.log('timeout',xhr);};})(xhr);
-        xhr.open('POST', api_endpoint, true);
-        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-
-        xhr.send(JSON.stringify((message)));
+    ,_consume_message : function(str_json) {
+        let message_in = JSON.parse(str_json);
+        if ((message_in.resync)||(BOARD.locked)) {
+            UI.log('will resync:', message_in);
+        } else {
+            SAVE.sent_version = message_in.received_version;
+            SAVE.sync_message(message_in);
+        }
     }
 
     ,sync : function() {
@@ -333,17 +321,9 @@ let SAVE = {
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
 
         SAVE.is_syncing = true;
-        SAVE._request('/sync', message_out, (xhr, message)=>{
+        UI.IO.request('/sync', message_out, (xhr, message)=>{
             if (xhr.status == 200) {
-                let message_in = JSON.parse(xhr.responseText);
-                //console.log("sent: ", message.version, "L=", message.strokes.length, message);
-                if ((message_in.resync)||(BOARD.locked)) {
-                    UI.log('will resync:', message_in);
-                } else {
-                    //console.log("<= |upd|:", size(message_in.strokes), " ver:", message_in.received_version);
-                    SAVE.sent_version = message_in.received_version;
-                    SAVE.sync_message(message_in);
-                }
+                SAVE._consume_message(xhr.responseText);
             } else {
                 UI.log('could not send the data:', xhr);
                 UI.log('message:', message);
@@ -432,20 +412,27 @@ let SAVE = {
 
         document.getElementById('file-input').addEventListener('change', SAVE.handleFiles);
 
-        SAVE._request('/sync', {
+        let message_out = {
             name : BOARD.board_name
             ,version : -1
             ,strokes : {}
-        }, (xhr)=>{
+        };
+
+
+        SAVE.is_syncing = true;
+        UI.IO.request('/sync', message_out, (xhr)=>{
             if (xhr.status == 200) {
                 UI.log('backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
                 let ctx = SAVE.canvas_sync.getContext('2d');
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
+
+                SAVE._consume_message(xhr.responseText);
             } else {
                 UI.log('backend unavailable: ', xhr);
             }
-        }, 500);
+            SAVE.is_syncing = false;
+        }, 2000);
 
     }
 
