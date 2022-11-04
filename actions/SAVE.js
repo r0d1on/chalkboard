@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepcopy, size} from '../base/objects.js';
+import {deepcopy, sizeof} from '../base/objects.js';
 
 import {UI} from '../ui/UI.js';
 
@@ -64,7 +64,7 @@ let SAVE = {
                     stroke.commit_id = commit_id;
                     stroke.stroke_idx = stroke_idx;
 
-                    new_strokes[commit_id][size(new_strokes[commit_id])] = stroke;
+                    new_strokes[commit_id][sizeof(new_strokes[commit_id])] = stroke;
                 }
 
             }
@@ -83,7 +83,7 @@ let SAVE = {
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
         });
 
-        return [json, size(new_strokes)];
+        return [json, sizeof(new_strokes)];
     }
 
     ,save : function() {
@@ -92,11 +92,11 @@ let SAVE = {
         let [board_data, new_size] = SAVE._persist();
 
         if (old!=null) {
-            if (prompt('overwrite ' + size(old.strokes) + ' with ' + new_size + ' ?', 'no')!='yes')
+            if (prompt('overwrite ' + sizeof(old.strokes) + ' with ' + new_size + ' ?', 'no')!='yes')
                 return;
         }
 
-        UI.log('version', BOARD.version, ',saving', new_size, 'commits out of', size(BOARD.strokes));
+        UI.log('version', BOARD.version, ',saving', new_size, 'commits out of', sizeof(BOARD.strokes));
 
         localStorage.setItem('local_board_' + BOARD.board_name, board_data);
 
@@ -116,7 +116,7 @@ let SAVE = {
             for(let i in o.strokes) {
                 let stroke = o.strokes[i];
                 stroke.commit_id = commit_id;
-                stroke.stroke_idx = size(BOARD.strokes[commit_id]);
+                stroke.stroke_idx = sizeof(BOARD.strokes[commit_id]);
                 stroke.stroke_id = id;
                 BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
                 id = BOARD.id_next(id, 5);
@@ -133,7 +133,7 @@ let SAVE = {
                     if (stroke!==undefined) {
                         stroke.commit_id = commit_id;
                         stroke.stroke_id = id;
-                        stroke.stroke_idx = size(BOARD.strokes[commit_id]);
+                        stroke.stroke_idx = sizeof(BOARD.strokes[commit_id]);
                         BOARD.strokes[commit_id][stroke.stroke_idx] = stroke;
                         id = BOARD.id_next(id, 5);
                     }
@@ -256,7 +256,7 @@ let SAVE = {
             }
         }
 
-        if (size(msg.strokes) > 0) {
+        if (sizeof(msg.strokes) > 0) {
             BOARD.drop_redo();
 
             max_commit = max_commit.split('-')[0];
@@ -334,7 +334,7 @@ let SAVE = {
             SAVE.is_syncing = false;
         });
 
-        //console.log("=> |msg|:", size(message_out.strokes), " ver:", message_out.version);
+        //console.log("=> |msg|:", sizeof(message_out.strokes), " ver:", message_out.version);
     }
 
     ,sync_switch : function() {

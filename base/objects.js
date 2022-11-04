@@ -8,7 +8,7 @@ function copy(o) {
     return Object.assign({}, o);
 }
 
-function size(o) {
+function sizeof(o) {
     return Object.keys(o).length;
 }
 
@@ -172,4 +172,4 @@ function _new(T, params, dry) {
     return obj;
 }
 
-export {copy, size, deepcopy, extend, _class, _new};
+export {copy, sizeof, deepcopy, extend, _class, _new};

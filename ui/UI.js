@@ -1,63 +1,15 @@
 'use strict';
 
-import {copy} from '../base/objects.js';
+import {copy, _new} from '../base/objects.js';
 
 import {dst2 , sub, angle} from '../util/geometry.js';
+import {Toast} from '../util/Toast.js';
 
 import {BOARD} from './BOARD.js';
 import {BRUSH} from './BRUSH.js';
 import {GRID_MODE} from './GRID_MODE.js';
 import {TOOLS} from './TOOLS.js';
 
-let TOASTS = {};
-function toast(topic, text, lifespan) {
-
-    function drop(topic) {
-        document.body.removeChild(TOASTS[topic]['div']);
-        clearTimeout(TOASTS[topic]['timeout']);
-        delete TOASTS[topic];
-    }
-
-    function blur(topic) {
-        function handler() {
-            const tst = TOASTS[topic];
-            if (tst===undefined)
-                return;
-
-            if (tst['age'] >= tst['lifespan']) {
-                drop(topic);
-            } else {
-                tst['age'] += lifespan/10;
-                tst['div'].style.opacity = 1.0 - tst['age']/tst['lifespan'];
-                tst['timeout'] = setTimeout(blur(topic),lifespan/10);
-            }
-        }
-        return handler;
-    }
-
-    if (topic in TOASTS)
-        drop(topic);
-
-    const e = document.createElement('div');
-    e.innerHTML = text;
-    e.style.position = 'absolute';
-    e.style['background-color'] = '#3333';
-    e.style['padding'] = '10px';
-    e.style['border'] = '1px solid black';
-    e.style['border-radius'] = '15px';
-    e.style['pointer-events'] = 'none';
-
-    document.body.appendChild(e);
-    e.style.top = '' + ((UI.window_height - e.clientHeight)>>1) + 'px';
-    e.style.left = '' + ((UI.window_width - e.clientWidth)>>1) + 'px';
-
-    TOASTS[topic] = {
-        'div' : e
-        ,'lifespan' : lifespan
-        ,'age' : 0
-        ,'timeout' : setTimeout(blur(topic),lifespan/10)
-    };
-}
 
 let LOG=[];
 function log(...args) {
@@ -127,7 +79,7 @@ let UI = {
 
         if (maketoast) {
             const zoom_prc = Math.round(1000*((UI.viewpoint.scale>=1)?UI.viewpoint.scale:-1/UI.viewpoint.scale))/10;
-            toast('viewpoint', '( '+Math.round(UI.viewpoint.dx)+' , '+Math.round(UI.viewpoint.dy)+') :: <b>'+zoom_prc+'%</b>', 700);
+            UI.toast('viewpoint', '( '+Math.round(UI.viewpoint.dx)+' , '+Math.round(UI.viewpoint.dy)+') :: <b>'+zoom_prc+'%</b>', 700);
         }
     }
 
@@ -142,7 +94,7 @@ let UI = {
         UI.viewpoint.scale *= scale;
 
         const zoom_prc = Math.round(1000*((UI.viewpoint.scale>=1)?UI.viewpoint.scale:-1/UI.viewpoint.scale))/10;
-        toast('viewpoint','ZOOM: <b>' + zoom_prc + '%</b>', 700);
+        UI.toast('viewpoint', 'ZOOM: <b>' + zoom_prc + '%</b>', 700);
 
         let p1 = UI.local_to_global(center);
 
@@ -923,7 +875,7 @@ let UI = {
     }
 
     ,toast : function(topic, text, lifespan) {
-        return toast(topic, text, lifespan);
+        return _new(Toast, [topic, text, lifespan]);
     }
 
     ,log : function(...args) {

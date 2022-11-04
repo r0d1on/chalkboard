@@ -150,6 +150,8 @@ document.addEventListener('DOMContentLoaded', function(){
         });
 
     }, 100);
+
     window.bp = ()=>{debugger;}; // eslint-disable-line no-debugger
+    window.ui = UI;
 });
 

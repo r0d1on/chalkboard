@@ -1,18 +1,9 @@
 'use strict';
 
 import {_class} from '../base/objects.js';
+import {add_class} from '../util/html.js';
 
 import {UI} from './UI.js';
-
-function has_class(dom_elem, className) {
-    return (dom_elem.className.split(/ /g).indexOf(className)>=0);
-}
-
-function add_class(dom_elem, className) {
-    if (!has_class(dom_elem, className)) {
-        dom_elem.className = dom_elem.className + ' ' + className;
-    }
-}
 
 let Menu = {
 
