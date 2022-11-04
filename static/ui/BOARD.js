@@ -1,6 +1,6 @@
 'use strict';
 
-import {size} from '../base/objects.js';
+import {sizeof} from '../base/objects.js';
 
 import {dst2} from '../util/geometry.js';
 
@@ -69,7 +69,7 @@ let BOARD = {
         stroke.stroke_id = BOARD.stroke_id;
         BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
 
-        let idx = size(BOARD.strokes[BOARD.commit_id]);
+        let idx = sizeof(BOARD.strokes[BOARD.commit_id]);
         BOARD.strokes[BOARD.commit_id][idx] = stroke;
     }
 

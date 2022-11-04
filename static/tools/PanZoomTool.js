@@ -32,7 +32,7 @@ let PanZoomTool = { // background tool
     }
 
     ,on_move : function(lp) {
-        if (this.activated) {
+        if ((this.activated)&&(this.last_point!=null)) {
             UI.viewpoint_shift(
                 (this.last_point.X - lp.X) / UI.viewpoint.scale
                 ,(this.last_point.Y - lp.Y) / UI.viewpoint.scale

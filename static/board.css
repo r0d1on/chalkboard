@@ -55,3 +55,25 @@ canvas.layer {
 .menu_chldrn_b_v {
     border-top: 3px solid black;
 }
+
+
+
+
+.toast {
+    position: absolute;
+    border-top: 1px solid black;
+    background-color: #3333;
+    padding: 10px;
+    border-radius: 15px;
+    font-size: 20px;
+    font-family: arial;
+    pointer-events: none;
+}
+
+
+
+
+
+
+
+
