@@ -67,7 +67,7 @@ function get_io_type() {
     }
 }
 
-// initialising piece
+// init everything
 function init(IO) {
     UI.init(IO);
 

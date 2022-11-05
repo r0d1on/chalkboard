@@ -32,7 +32,7 @@ let SelectorTool = {
     ,NAME : 'selector'
 
     ,SelectorTool : function() {
-        DrawToolBase.init.call(this, SelectorTool.NAME, false, ['Control', 's']);
+        DrawToolBase.init.call(this, SelectorTool.NAME, false, [['Control', 's'], ['Control', 'a'], ['Meta', 'a']]);
         this.is_capturing = true;
     }
 
@@ -266,9 +266,10 @@ let SelectorTool = {
         this.mode = SelectorModes.SELECTING;
         this._selection_reset();
 
-        if (this._activated_by > 0) { // if activated as an alt tool
+        if ((this._activated_by > 0)||(this._activated_by_key == 'a')) { // if activated as an alt tool, or
             this.activated = false;
             this._activated_by = null;
+            this._activated_by_key = null;
             TOOLS.reactivate_default(); // return control to the main tool
         }
     }
@@ -717,6 +718,11 @@ let SelectorTool = {
                 BOARD.hide_commit(this._selected_strokes());
                 handled = true;
 
+            } else if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='a')) {
+                this.start_point = {X:Number.NEGATIVE_INFINITY,Y:Number.NEGATIVE_INFINITY};
+                this.stop_selecting({X:Number.POSITIVE_INFINITY,Y:Number.POSITIVE_INFINITY});
+                handled = true;
+
             } else if (key in keymap) {
                 let dxdy = keymap[key];
                 let scale = (UI.keys['Control'])?1:5;
@@ -754,10 +760,21 @@ let SelectorTool = {
         }
     }
 
+
+    ,on_activated : function() {
+        DrawToolBase.super.on_activated.call(this); // TODO: DrawToolBase.call('on_activated',this)
+        if (this._activated_by_key == 'a') {
+            this.start_point = {X:Number.NEGATIVE_INFINITY,Y:Number.NEGATIVE_INFINITY};
+            this.stop_selecting({X:Number.POSITIVE_INFINITY,Y:Number.POSITIVE_INFINITY});
+        }
+    }
+
     ,on_deactivated : function() {
         this.activated = false;
         //DrawToolBase.on_deactivated.call(this);
     }
+
+
 
     ,DELETE : { // background tool
         icon : [null,[24,55],[21,54],[17,53],null,[43,53],[41,54],[38,55],[34,55],[29,55],[24,55],null,[25,27],[21,27],[16,27],[14,26],[16,24],[19,23],[23,23],[29,23],[34,23],[39,23],[43,24],[45,24],[42,27],[37,27],[32,27],[28,27],[25,27],null,[24,16],[20,16],[16,15],[14,15],[16,13],[19,12],[23,12],[28,11],[33,11],[38,12],[41,12],[44,13],[40,16],[36,16],[32,16],[27,16],[24,16],null,[14,26],[17,53],null,[45,24],[43,53],null,[21,54],[21,27],null,[24,55],[25,27],null,[29,55],[30,28],null,[34,55],[35,28],null,[42,27],[38,55],null,[16,27],[17,53],null,[21,27],[24,55],null,[28,27],[29,55],null,[37,27],[38,55],null,[45,24],[43,53],null,[19,12],[39,14],null,[22,7],[23,12],[22,7],[37,7],null,[22,7],[30,5],[37,7],[38,12],[37,7],null,[23,12],[38,12],null,[14,26],[19,23],null,[23,23],[29,23],null,[31,22],[39,23],[45,24]]
