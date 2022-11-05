@@ -82,7 +82,7 @@ let TOOLS = {
         UI.draw_glyph(tool.icon, ctx);
     }
 
-    ,activate : function(tool_name, background, button) {
+    ,activate : function(tool_name, background, button, key) {
         background = (background===undefined)?false:background;
         button = (button===undefined)?0:button;
 
@@ -104,9 +104,11 @@ let TOOLS = {
             TOOLS.show(tool);
         }
 
+        tool._activated_by = button;
+        tool._activated_by_key = key;
+
         if (tool.on_activated!==undefined)
             tool.on_activated();
-        tool._activated_by = button;
 
         if (background) {
             TOOLS.background = tool;
@@ -187,12 +189,17 @@ let TOOLS = {
         }
     }
 
-    ,_key_match : function(key, background_key) {
-        if (background_key == key) { // key itself
+    ,_key_match : function(key, combo_list) {
+        if (combo_list == key) { // key itself
             return true;
-        } else if (Array.isArray(background_key)) { // list of key combos
-            for(let i=0; i<background_key.length; i++) {
-                if ((UI.keys[background_key[i][0]])&&(background_key[i][1] == key))
+        } else if (Array.isArray(combo_list)) { // list of key combos
+            if (!Array.isArray(combo_list[0]))
+                combo_list = [combo_list];
+            for(let i = 0; i < combo_list.length; i++) {
+                const combo = combo_list[i];
+                if (combo===undefined)
+                    continue;
+                if ((UI.keys[combo[0]])&&(combo[1] == key))
                     return true;
             }
         }
@@ -223,15 +230,15 @@ let TOOLS = {
         if (TOOLS._tools_handle('on_key_down', [key]))
             return true;
 
-        for (const tool_name in TOOLS.tools) {
+        for (const tool_name in TOOLS.tools) { // check hot-keys
             const tool = TOOLS.tools[tool_name];
 
             if (TOOLS._key_match(key, tool.background_key)) {
-                TOOLS.activate(tool_name, true, -1); // activate as a background tool
+                TOOLS.activate(tool_name, true, -1, key); // activate as a background tool
                 return true;
 
-            } else if ((tool.shortcut!==undefined)&&(UI.keys[tool.shortcut[0]])&&(tool.shortcut[1] == key)) {
-                TOOLS.activate(tool_name, false, 0); // activate as a foreground
+            } else if (TOOLS._key_match(key, tool.shortcut)) {
+                TOOLS.activate(tool_name, false, 0, key); // activate as a foreground
                 return true;
             }
         }
