@@ -17,7 +17,7 @@ let TOOLS = {
 
     ,current : null
     ,background : null
-    ,alt_tools : {} // tools assigned to alt mouse buttons
+    ,binding : {} // mouse button -> tool name
 
     ,MENU_main : null
     ,MENU_options : null
@@ -86,11 +86,20 @@ let TOOLS = {
         background = (background===undefined)?false:background;
         button = (button===undefined)?0:button;
 
-        if (!(button in TOOLS.alt_tools))
-            TOOLS.alt_tools[button] = tool_name;
+        if (!(button in TOOLS.binding))
+            TOOLS.binding[button] = tool_name;
+
+        for(let b in TOOLS.binding) {
+            let toast = UI.toast('binding_' + b, null, null, null, null);
+            if (toast!=null)
+                toast.set_bold(b==button);
+        }
 
         let tool = TOOLS.tools[tool_name];
         let prev = TOOLS.current;
+
+        tool._activated_by = button;
+        tool._activated_by_key = key;
 
         if (tool==prev)
             return;
@@ -103,9 +112,6 @@ let TOOLS = {
         } else {
             TOOLS.show(tool);
         }
-
-        tool._activated_by = button;
-        tool._activated_by_key = key;
 
         if (tool.on_activated!==undefined)
             tool.on_activated();
@@ -125,7 +131,7 @@ let TOOLS = {
     }
 
     ,reactivate_default : function() {
-        TOOLS.activate(TOOLS.alt_tools[0], false, 0);
+        TOOLS.activate(TOOLS.binding[0], false, 0);
         BRUSH.activate_color(0);
     }
 
@@ -161,13 +167,22 @@ let TOOLS = {
         UI.addEventListener('on_focus', TOOLS.on_focus);
     }
 
-    ,_tool_activator : function(tool_name) {
+    ,_tool_selected : function(tool_name) {
         return (e, id, long)=>{ // eslint-disable-line no-unused-vars
-            TOOLS.alt_tools[e.button] = tool_name;
+            TOOLS.binding[e.button] = tool_name;
             if (e.button==0)
-                TOOLS.activate(tool_name, false, 0); // immediately activate selected tool
-            else
-                UI.toast('tools', e.button + ' => ' + tool_name, 1000); // assign alt button to activate the tool
+                TOOLS.activate(tool_name, false, 0); // immediately activate default tool
+            else {
+                // for alternative tool - create / update binding description toast
+                let toast = UI.toast(
+                    'binding_' + e.button
+                    ,e.button + ' :: ' + tool_name
+                    ,-1 // permanent
+                    ,2 // bottom right
+                    ,false // do not reset
+                );
+                toast.set_text(e.button + ' :: ' + tool_name);
+            }
             return true;
         };
     }
@@ -181,7 +196,7 @@ let TOOLS = {
             [tool.div, tool.canvas] = this.MENU_main.add(
                 'tools'
                 , tool.name
-                , TOOLS._tool_activator(tool.name)
+                , TOOLS._tool_selected(tool.name)
                 , 'canvas', title
             );
 
@@ -276,8 +291,8 @@ let TOOLS = {
         } else {
             if (button!=0) {
                 BRUSH.activate_color(button);
-                if (button in TOOLS.alt_tools)
-                    TOOLS.activate(TOOLS.alt_tools[button], false, button);
+                if (button in TOOLS.binding)
+                    TOOLS.activate(TOOLS.binding[button], false, button);
             }
             handled = ((TOOLS.current.on_start!=undefined)&&(TOOLS.current.on_start(point, button)));
         }

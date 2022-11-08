@@ -18,18 +18,27 @@ let Toast = {
     ,TOASTS : {}
     ,TOPICS : [[], [], []]
 
-    ,Toast : function(topic, text, lifespan, align) {
+    ,Toast : function(topic, text, lifespan, align, reset) {
         align = (align===undefined)?Toast.ALIGN.CENTER:align;
+        reset = (reset===undefined)?true:reset;
 
-        if (topic in Toast.TOASTS)
-            Toast.TOASTS[topic].drop();
+        if (topic in Toast.TOASTS) {
+            if (reset)
+                Toast.TOASTS[topic].drop();
+            else
+                return Toast.TOASTS[topic];
+        } else {
+            if (reset===null)
+                return null;
+        }
 
         this.align = align;
+        this.text = text;
 
         this.div = document.createElement('div');
         add_class(this.div, 'toast');
         this.div.id = topic;
-        this.div.innerHTML = text;
+        this.div.innerHTML = this.text;
         document.body.appendChild(this.div);
 
         this.ix = 0;
@@ -74,8 +83,25 @@ let Toast = {
     }
 
     ,set_text : function(text) {
-        this.div.innerHTML = text;
+        let align = this.align;
+        this.text = text;
+        this.align = Toast.ALIGN.CENTER;
         this.set_position();
+        this.div.innerHTML = text;
+        this.align = align;
+        this.set_position();
+    }
+
+    ,set_bold : function(on) {
+        let text = this.text.replace('<b>','').replace('</b>','');
+        if (on)
+            this.set_text('<b>'+text+'</b>');
+        else
+            this.set_text(text);
+    }
+
+    ,set_bg_color : function(color) {
+        this.div.style['background-color'] = color;
     }
 
     ,shift : function() {

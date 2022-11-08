@@ -129,9 +129,7 @@ function _new(T, params, dry) {
     }
 
     // create instance of the object with constructor call
-    let obj = null;
-
-    obj = Object.create(_T.prototype);
+    let obj = Object.create(_T.prototype);
 
     if (!dry) {
 
@@ -166,7 +164,10 @@ function _new(T, params, dry) {
         });
 
         // run own constructor
-        _T.apply(obj, params);
+        let new_obj = _T.apply(obj, params);
+
+        if (new_obj!==undefined) // if have explicit result from constructor
+            obj = new_obj;
     }
 
     return obj;
