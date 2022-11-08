@@ -20,7 +20,7 @@ let BRUSH = {
     ]
 
     ,color_id : 0
-    ,alt_colors : {}
+    ,binding : {}
     ,size : 5
 
     ,div : null
@@ -31,8 +31,8 @@ let BRUSH = {
     ,activate_color : function(button) {
         button = (button===undefined)?0:button;
         UI.log('activate color :', button);
-        if (button in BRUSH.alt_colors)
-            BRUSH.select_color(BRUSH.alt_colors[button]);
+        if (button in BRUSH.binding)
+            BRUSH.select_color(BRUSH.binding[button]);
     }
 
     ,select_color : function(color_id) {
@@ -43,7 +43,18 @@ let BRUSH = {
     ,attach_color : function(color_id, button) {
         button = (button===undefined)?0:button;
         UI.log('attached color :', color_id, button);
-        BRUSH.alt_colors[button] = color_id;
+        BRUSH.binding[button] = color_id;
+
+        if (button>0) {
+            let toast = UI.toast(
+                'binding_' + button
+                ,button + ' :: ' + ' - '
+                ,-1 // permanent
+                ,2 // bottom right
+                ,false // do not reset
+            );
+            toast.set_bg_color(BRUSH.get_color('5', color_id));
+        }
 
         if (button==UI._last_button)
             BRUSH.select_color(color_id);
