@@ -874,8 +874,8 @@ let UI = {
 
     }
 
-    ,toast : function(topic, text, lifespan) {
-        return _new(Toast, [topic, text, lifespan]);
+    ,toast : function(topic, text, lifespan, align) {
+        return _new(Toast, [topic, text, lifespan, align]);
     }
 
     ,log : function(...args) {
