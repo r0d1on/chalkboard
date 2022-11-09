@@ -15,6 +15,7 @@ let BoxTool = {
 
     ,BoxTool : function() {
         DistortableDrawTool.init.call(this, 'box', true, ['Control', 'b']);
+        this.origin = 1; // set default origin mode to "top-left"
     }
 
     ,draw : function(cp, lp, func) {
