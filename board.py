@@ -28,6 +28,39 @@ def sync_message(loc, msg):
 
     return
 
+@app.route("/record.load", methods=['POST'])
+def http_record_load():
+    msg = flask.request.get_json(force=True)
+    msg = json.loads(msg);
+    print(">= rec:", msg['name'])
+
+    bname = msg['name'].split('!', 1)[0]
+    bfile = "records/brd_" + (re.sub("\\\|/|%|\.", "_", bname)) + ".json"
+
+    if (os.path.isfile(bfile)):
+        with open(bfile, 'rt') as f:
+            log = json.loads(f.read())
+    else:
+        log = []
+
+    return json.dumps(log)
+
+
+@app.route("/record.save", methods=['POST'])
+def http_record_save():
+    msg = flask.request.get_json(force=True)
+    msg = json.loads(msg);
+    print("<= rec:", msg['name'], len(msg['log']))
+
+    bname = msg['name'].split('!', 1)[0]
+    bfile = "records/brd_" + (re.sub("\\\|/|%|\.", "_", bname)) + ".json"
+
+    with open(bfile, 'wt') as f:
+        f.write(json.dumps(msg['log']))
+    
+    return json.dumps([])
+
+
 @app.route("/sync", methods=['POST'])
 def http_sync():
     msg = flask.request.get_json(force=True)

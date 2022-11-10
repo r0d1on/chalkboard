@@ -41,8 +41,8 @@ let SAVE = {
             for(let stroke_idx in BOARD.strokes[commit_id]) {
                 let stroke = deepcopy(BOARD.strokes[commit_id][stroke_idx]);
 
-                if (from_version===undefined) {
-                    if (stroke.gp[0]==null) { // erase, undo action
+                if (from_version === undefined) {
+                    if (stroke.gp[0] == null) { // erase, undo action
                         stroke = null;
 
                     } else if (BOARD.is_hidden(stroke)) {

@@ -53,7 +53,8 @@ let IO = {
     }
 
     ,add_event : function(target, event_type, event_handler) {
-        this.log('listener registered:', event_type, 'for', target);
+        let target_name = (target.tagName||(typeof(target)+':'+target)) + '.' + (target.id||'');
+        this.log('+listener:', target_name, ' :: ', event_type);
         const proxy = this.handler_proxy(target, event_type, event_handler);
 
         let target_type = (typeof(target)=='object')?target.constructor.name:typeof(target);

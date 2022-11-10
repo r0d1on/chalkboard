@@ -59,9 +59,9 @@ let MENU_main = null;
 let MENU_options = null;
 
 function get_io_type() {
-    let [board_name, view_mode] = UI._hash_board_mode(window.location.hash.slice(1,)); // eslint-disable-line no-unused-vars
-    if (view_mode=='record') {
-        return '.record';
+    let [board_name, view_mode] = UI._hash_board_mode(); // eslint-disable-line no-unused-vars
+    if (view_mode=='recorder') {
+        return '.recorder';
     } else {
         return '';
     }
