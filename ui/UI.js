@@ -138,7 +138,10 @@ let UI = {
             UI.log('ui.mousedown', e);
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
-            UI.on_start(lp, e.button);
+            if (UI.on_start(lp, e.button)) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
         });
         UI.IO.add_event(buffer_canvas, 'touchstart', e => {
             UI.log('ui.touchstart', e);
@@ -198,7 +201,10 @@ let UI = {
             UI.log('ui.mouseup', e);
             let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
             UI._last_point = lp;
-            UI.on_stop(lp);
+            if (UI.on_stop(lp)) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
         });
         UI.IO.add_event(buffer_canvas, 'touchend', e => {
             UI.log('ui.touchend', e);
@@ -287,7 +293,8 @@ let UI = {
 
     }
 
-    ,_hash_board_mode : function(hash) {
+    ,_hash_board_mode : function() {
+        let hash = window.location.hash.slice(1,);
         // index.html#tablename$viewmode
         return [
             hash.split('$')[0] // table name
@@ -295,23 +302,23 @@ let UI = {
         ];
     }
 
-    ,_parse_hash : function(hash) {
-        // board name
+    ,_parse_hash : function() {
         let old_name = BOARD.board_name;
         let old_view_mode = UI.view_mode;
 
-        [BOARD.board_name, UI.view_mode] = UI._hash_board_mode(hash);
+        [BOARD.board_name, UI.view_mode] = UI._hash_board_mode();
 
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
 
     ,init : function(IO) {
-
-        IO.log = UI.log;
         UI.IO = IO;
 
+        IO.log = UI.log;
+        IO.UI = UI;
+
         // parse out board name and view mode from location hash
-        UI._parse_hash(window.location.hash.slice(1,));
+        UI._parse_hash();
 
         // generate view id
         UI.view_id = Number(Math.ceil(Math.random()*1000)).toString(36);
@@ -601,7 +608,7 @@ let UI = {
     }
 
     ,on_hash_change : function() {
-        if (UI._parse_hash(window.location.hash.slice(1,))) {
+        if (UI._parse_hash()) {
             UI.log(window.location.hash.slice(1,));
             window.location.reload();
         }
