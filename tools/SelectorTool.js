@@ -182,7 +182,7 @@ let SelectorTool = {
 
         // draw selected center
         let lp = UI.global_to_local(this.selection_center);
-        UI.draw_stroke(lp, lp, SelectorTool.COLOR, W * 2, ctx);
+        UI.draw_stroke(lp, lp, SelectorTool.COLOR, W * 3, ctx);
         UI.draw_stroke(lp, lp, SelectorTool.COLOR_COPYPASTE, W, ctx);
 
         let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
@@ -327,7 +327,7 @@ let SelectorTool = {
             if (UI.is_mobile)
                 dst /= 3;
 
-            if (dst < W) {
+            if (dst < W * 3) {
                 this.start_mode(SelectorModes.MOVING);
                 return;
             }
