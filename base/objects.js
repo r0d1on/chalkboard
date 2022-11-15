@@ -20,9 +20,18 @@ function deepcopy(o) {
     } else if (o==null) {
         return null;
     } else if (typeof(o)=='object') {
-        let co = {};
-        for(const k in o)
-            co[k] = deepcopy(o[k]);
+        let obj = (''+o).split(/ |\[|\]/g)[2];
+        let co = null;
+        if (obj == 'Object') {
+            co = {};
+            for(const k in o)
+                co[k] = deepcopy(o[k]);
+        } else if (obj == 'HTMLImageElement') {
+            co = new Image();
+            co.src = o.src;
+        } else {
+            throw 'Don not know how to clone: '+obj;
+        }
         return co;
     }
 }

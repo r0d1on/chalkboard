@@ -223,7 +223,7 @@ let TexterTool = {
         this.MENU_main.drop('input');
     }
 
-    ,after_redraw : function() {
+    ,on_after_redraw : function() {
         this.draw_cursor(UI.global_to_local(this.cursor));
     }
 

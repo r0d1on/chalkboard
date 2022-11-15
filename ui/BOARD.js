@@ -135,9 +135,8 @@ let BOARD = {
                 erased.map((s)=>{
                     a.push(s);
                 });
-
+            //} else if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
             } else {
-
                 if (stroke.erased!=undefined) {
                     if (stroke.erased[0]=='-')
                         stroke.erased = stroke.erased.substr(1);
@@ -213,7 +212,7 @@ let BOARD = {
     }
 
 
-    ,get_strokes : function(rect, points) {
+    ,get_strokes : function(rect, points, special) {
         points = (points===undefined)?false:points;
 
         let pnt = null;
@@ -226,26 +225,40 @@ let BOARD = {
             let strokes_group = BOARD.strokes[commit_id];
 
             for(let stroke_idx in strokes_group) {
-                if (strokes_group[stroke_idx].gp[0]==null)
+                let stroke = strokes_group[stroke_idx];
+
+                if (BOARD.is_hidden(stroke))
                     continue;
 
-                if (BOARD.is_hidden(strokes_group[stroke_idx]))
-                    continue;
-
-                for(let pi=0; pi<2; pi++) {
-                    pnt = strokes_group[stroke_idx].gp[pi];
-
-                    if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
+                if (stroke.gp[0]==null) {
+                    if ((stroke.gp[1]==special)&&(
+                        (rect[0].Y > stroke.gp[2].rect[0].Y)&&(rect[0].Y < stroke.gp[2].rect[1].Y)&&
+                        (rect[0].X > stroke.gp[2].rect[0].X)&&(rect[0].X < stroke.gp[2].rect[1].X)
+                    )) {
                         ret.push({
                             commit_id : commit_id
                             ,stroke_idx : stroke_idx
-                            ,stroke_id : strokes_group[stroke_idx].stroke_id
-                            ,point_idx : pi
+                            ,stroke_id : stroke.stroke_id
+                            ,point_idx : null
                         });
-                        if (!(points))
-                            break;
+                    }
+                } else {
+                    for(let pi=0; pi<2; pi++) {
+                        pnt = stroke.gp[pi];
+
+                        if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
+                            ret.push({
+                                commit_id : commit_id
+                                ,stroke_idx : stroke_idx
+                                ,stroke_id : stroke.stroke_id
+                                ,point_idx : pi
+                            });
+                            if (!(points))
+                                break;
+                        }
                     }
                 }
+
             }
         }
 

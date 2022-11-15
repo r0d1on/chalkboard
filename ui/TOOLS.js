@@ -165,6 +165,10 @@ let TOOLS = {
         UI.addEventListener('on_paste_text', TOOLS.on_paste_text);
         UI.addEventListener('on_blur', TOOLS.on_blur);
         UI.addEventListener('on_focus', TOOLS.on_focus);
+        UI.addEventListener('on_file', TOOLS.on_file);
+
+        UI.addEventListener('on_before_redraw', TOOLS.on_before_redraw);
+        UI.addEventListener('on_after_redraw', TOOLS.on_after_redraw);
     }
 
     ,_tool_selected : function(tool_name) {
@@ -236,6 +240,9 @@ let TOOLS = {
 
         if (TOOLS._handled(TOOLS.current, event, args))
             return true;
+
+        for(let tool_name in  TOOLS.tools)
+            TOOLS._handled(TOOLS.tools[tool_name], event + '_resident', args);
 
         return false;
     }
@@ -332,6 +339,12 @@ let TOOLS = {
         return false;
     }
 
+    ,on_file : function(file) {
+        if (TOOLS._tools_handle('on_file', [file]))
+            return true;
+        return false;
+    }
+
     ,on_blur : function() {
         TOOLS.deactivate_backtool();
         TOOLS.deactivate();
@@ -342,6 +355,18 @@ let TOOLS = {
             return;
 
         TOOLS.current.on_activated();
+    }
+
+    ,on_after_redraw : function() {
+        if (TOOLS._tools_handle('on_after_redraw', []))
+            return true;
+        return false;
+    }
+
+    ,on_before_redraw : function() {
+        if (TOOLS._tools_handle('on_before_redraw', []))
+            return true;
+        return false;
     }
 
 };

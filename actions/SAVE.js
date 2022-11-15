@@ -42,14 +42,21 @@ let SAVE = {
                 let stroke = deepcopy(BOARD.strokes[commit_id][stroke_idx]);
 
                 if (from_version === undefined) {
-                    if (stroke.gp[0] == null) { // erase, undo action
+                    if ((stroke.gp[0] == null)&&(stroke.gp[1] == 'erase')) {
                         stroke = null;
 
                     } else if (BOARD.is_hidden(stroke)) {
                         stroke = null;
 
+                    } else if ((stroke.gp[0] == null)&&(stroke.gp[1] == 'image')) { // image
+                        stroke.gp[2] = {
+                            image : stroke.gp[2].image.src
+                            ,rect : stroke.gp[2].rect
+                        };
+
                     } else if (stroke.erased!==undefined) {
                         delete stroke.erased;
+
                     }
 
                 } else {
@@ -153,6 +160,12 @@ let SAVE = {
                 BOARD.stroke_id = (BOARD.stroke_id > stroke.stroke_id) ? BOARD.stroke_id : stroke.stroke_id;
                 let version = (stroke.version===undefined) ? 0 : stroke.version;
                 BOARD.version = (BOARD.version > version) ? BOARD.version : version;
+
+                if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
+                    let image = new Image();
+                    image.src = stroke.gp[2].image;
+                    stroke.gp[2].image = image;
+                }
             }
         }
 
