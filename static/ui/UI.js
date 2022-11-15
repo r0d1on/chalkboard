@@ -343,6 +343,8 @@ let UI = {
         UI._setup_event_listeners();
 
         UI._on_focus_change(true);
+
+        UI.addEventListener('on_file', UI._on_file);
     }
 
 
@@ -363,6 +365,9 @@ let UI = {
         ,'on_blur' : []
 
         ,'on_file' : []
+
+        ,'on_after_redraw' : []
+        ,'on_before_redraw' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -571,6 +576,37 @@ let UI = {
             UI.on_paste_strokes_default(strokes);
     }
 
+    ,_on_file : function(file) {
+        if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                const image = new Image();
+                image.title = file.name;
+                image.src = reader.result;
+                setTimeout(((image, p0)=>{
+                    return ()=>{
+                        BOARD.op_start();
+                        BOARD.add_stroke({gp:[null, 'image', {
+                            'image' : image
+                            ,'rect' : [
+                                UI.local_to_global(p0)
+                                ,UI.local_to_global({
+                                    X: p0.X + image.width
+                                    ,Y: p0.Y + image.height
+                                })
+                            ]
+                        }]});
+                        BOARD.op_commit();
+                        UI.redraw();
+                    };
+                })(image, UI._last_point), 10);
+            }, false);
+            reader.readAsDataURL(file);
+            return true;
+        }
+        return false;
+    }
+
     ,on_file : function(file) {
         let handled = UI._event_handlers['on_file'].reduce((handled, handler)=>{
             return handled||handler(file);
@@ -613,6 +649,20 @@ let UI = {
             window.location.reload();
         }
     }
+
+
+    ,on_before_redraw : function() {
+        UI._event_handlers['on_before_redraw'].reduce((handled, handler)=>{
+            return handled||handler();
+        }, false);
+    }
+
+    ,on_after_redraw : function() {
+        UI._event_handlers['on_after_redraw'].reduce((handled, handler)=>{
+            return handled||handler();
+        }, false);
+    }
+
 
     // Stroke handling
     ,global_to_local : function(point, viewpoint) {
@@ -819,6 +869,8 @@ let UI = {
         if (GRID_MODE.grid_active)
             UI.redraw_grid(ctx_back);
 
+        UI.on_before_redraw();
+
         for(let commit_id in BOARD.strokes) {
             if (commit_id > BOARD.commit_id)
                 break;
@@ -829,8 +881,20 @@ let UI = {
                 if (BOARD.is_hidden(stroke))
                     continue; // erased stroke
 
-                if (stroke.gp[0]==null)
+                if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase'))
                     continue; // erasure stroke
+
+                if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
+                    lp0 = UI.global_to_local(stroke.gp[2].rect[0]);
+                    lp1 = UI.global_to_local(stroke.gp[2].rect[1]);
+                    ctx.drawImage(stroke.gp[2].image
+                        ,lp0.X
+                        ,lp0.Y
+                        ,lp1.X - lp0.X
+                        ,lp1.Y - lp0.Y
+                    );
+                    continue;
+                }
 
                 lp0 = UI.global_to_local(stroke.gp[0], UI.viewpoint);
                 lp1 = UI.global_to_local(stroke.gp[1], UI.viewpoint);
@@ -845,9 +909,7 @@ let UI = {
             }
         }
 
-        if ((TOOLS.current!=null)&&(TOOLS.current.after_redraw!=undefined)) {
-            TOOLS.current.after_redraw();
-        }
+        UI.on_after_redraw();
 
         BRUSH.update_size();
     }

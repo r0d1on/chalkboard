@@ -12,38 +12,433 @@ import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 import {TOOLS} from '../ui/TOOLS.js';
 
-const SelectorModes = {
-    SELECTING : 0
-    ,SELECTED : 1
-    ,MOVING : 2
-    ,SCALING : 3
-    ,ROTATING : 4
-    ,OPTIMIZE : 5
-};
-
-let SelectorTool = {
+let SelectorBase = {
     super : DrawToolBase
 
-    ,icon : [null,[6,12],[6,18],null,[7,24],[6,30],null,[6,36],[7,42],null,[7,49],[6,55],null,[12,54],[18,54],null,[25,54],[30,55],null,[36,55],[42,54],null,[48,54],[54,54],null,[54,48],[54,42],null,[54,36],[54,30],null,[54,24],[54,18],null,[54,12],[54,6],null,[48,6],[42,6],null,[36,5],[30,5],null,[25,6],[18,6],null,[12,6],[7,6],null,[54,46],[54,54],[48,54],null,[55,55],[54,46],null,[12,54],[6,55],[11,54],null,[6,55],[6,49],null,[6,54],[7,49],null,[7,6],[12,6],null,[6,12],[6,6],[6,12],null,[55,6],[55,12],null,[48,6],[54,5],[48,6]]
     ,COLOR : '#F33A'
     ,COLOR_COPYPASTE : '#3F3A'
     ,WIDTH : 6
+    ,MODES : {
+        SELECTING : 0
+        ,SELECTED : 1
+        ,MOVING : 2
+        ,SCALING : 3
+        ,ROTATING : 4
+        ,OPTIMIZE : 5
+        ,COPY : 6
+    }
+
+
+    ,SelectorBase : function(allowed_modes) {
+        this.allowed_modes = new Set(allowed_modes);
+        this._selection_reset();
+        this.is_capturing = true;
+    }
+
+
+    ,_selection_reset : function() {
+        this.selection = [];
+        this.selection_keys = {};
+        this.selection_center = null;
+        this.selection_rect = null;
+        this.mode = SelectorBase.MODES.SELECTING;
+    }
+
+    ,_select_commit : function(commit_id, reset) {
+        commit_id = (commit_id===undefined)?BOARD.commit_id:commit_id;
+        reset = (reset===undefined)?true:reset;
+
+        if (reset)
+            this._selection_reset();
+
+        for(let stroke_idx in BOARD.strokes[commit_id]) {
+            let stroke = BOARD.strokes[commit_id][stroke_idx];
+
+            if (BOARD.is_hidden(stroke))
+                continue;
+
+            if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase'))
+                continue;
+
+            if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
+                this._add_selected_point(commit_id, stroke_idx, null);
+                continue;
+            }
+
+            if (stroke.gp[0]==null)
+                throw 'Unknown type of stroke :'+stroke.gp[1];
+
+            this._add_selected_point(commit_id, stroke_idx, 0);
+            this._add_selected_point(commit_id, stroke_idx, 1);
+        }
+
+        if (this.selection.length > 0) {
+            this.draw_selected();
+            this.mode = SelectorBase.MODES.SELECTED;
+        } else {
+            UI.reset_layer('overlay');
+            this.activated = false;
+        }
+
+    }
+
+    ,_selected_strokes : function() {
+        let was = new Set();
+        let selected_strokes = [];
+        this.selection.map((sel)=>{
+            if (!was.has(sel.stroke_id)) {
+                selected_strokes.push(BOARD.strokes[sel.commit_id][sel.stroke_idx]);
+                was.add(sel.stroke_id);
+            }
+        });
+        return selected_strokes;
+    }
+
+
+    ,get_selection_bounds : function() {
+        this.selection_rect = this._get_selection_rect();
+        this.selection_center = {X:0, Y:0};
+        this.selection_center.X = ( this.selection_rect[1].X + this.selection_rect[0].X ) / 2;
+        this.selection_center.Y = ( this.selection_rect[1].Y + this.selection_rect[0].Y ) / 2;
+    }
+
+    ,_add_selected_point : function(commit_id, stroke_idx, point_idx) {
+        let stroke_id = BOARD.strokes[commit_id][stroke_idx].stroke_id;
+        let sel_key = '' + commit_id + '/' + stroke_id + '/' + point_idx;
+        if (!(sel_key in this.selection_keys)) {
+            this.selection.push({
+                commit_id : commit_id
+                ,stroke_idx : stroke_idx
+                ,stroke_id : stroke_id
+                ,point_idx : point_idx
+            });
+            this.selection_keys[sel_key] = this.selection.length - 1;
+        }
+    }
+
+    ,draw_selected : function() {
+        this.get_selection_bounds();
+
+        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+        UI.reset_layer('overlay');
+
+        if (this.selection.length == 0) {
+            return;
+        }
+
+        let W = SelectorBase.WIDTH;
+        let S = BRUSH.get_local_width();
+        let lp;
+
+        let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
+        let box = [ // selection box figure
+            {X:rect[0].X-W-S, Y:rect[0].Y-W-S}, {X:rect[1].X+W+S, Y:rect[0].Y-W-S},
+            {X:rect[1].X+W+S, Y:rect[1].Y+W+S},
+            {X:rect[0].X-W-S, Y:rect[1].Y+W+S}
+        ];
+
+        let d = W * 2;
+        let brackets = [ // selection box brackets
+            [{X:box[0].X  , Y:box[0].Y+d}, box[0], {X:box[0].X+d, Y:box[0].Y  }]
+            ,[{X:box[1].X-d, Y:box[1].Y  }, box[1], {X:box[1].X  , Y:box[1].Y+d}]
+            ,[{X:box[2].X  , Y:box[2].Y-d}, box[2], {X:box[2].X-d, Y:box[2].Y  }]
+            ,[{X:box[3].X+d, Y:box[3].Y  }, box[3], {X:box[3].X  , Y:box[3].Y-d}]
+        ];
+
+        // draw rect
+        brackets.map((f)=>{
+            f.map((p,pi)=>{
+                if (pi < f.length-1)
+                    UI.draw_stroke(
+                        p
+                        ,f[(pi+1) % f.length]
+                        ,SelectorBase.COLOR
+                        ,W
+                        ,ctx
+                    );
+            });
+        });
+
+        // draw selected center
+        if (this.allowed_modes.has(SelectorBase.MODES.MOVING)) {
+            lp = UI.global_to_local(this.selection_center);
+            UI.draw_stroke(lp, lp, SelectorBase.COLOR, W * 3, ctx);
+            UI.draw_stroke(lp, lp, SelectorBase.COLOR_COPYPASTE, W, ctx);
+        }
+
+        // draw ancor mode selectors
+
+        // rotator
+        if (this.allowed_modes.has(SelectorBase.MODES.ROTATING)) {
+            lp = box[1];
+            ctx.beginPath();
+            ctx.arc(lp.X, lp.Y, d/2, Math.PI, Math.PI/2);
+            ctx.stroke();
+        }
+
+        // scaler
+        if (this.allowed_modes.has(SelectorBase.MODES.SCALING)) {
+            lp = box[2];
+            ctx.beginPath();
+            ctx.rect(lp.X-d/2, lp.Y-d/2, d, d);
+            ctx.stroke();
+        }
+
+        // optimizer
+        if (this.allowed_modes.has(SelectorBase.MODES.OPTIMIZE)) {
+            lp = {
+                X: box[1].X
+                ,Y:(box[1].Y + box[2].Y)/2
+            };
+            UI.draw_stroke({X:lp.X-d/2,Y:lp.Y-d/2},{X:lp.X+d/2,Y:lp.Y+d/2}, SelectorBase.COLOR_COPYPASTE, W, ctx);
+            UI.draw_stroke({X:lp.X+d/2,Y:lp.Y-d/2},{X:lp.X-d/2,Y:lp.Y+d/2}, SelectorBase.COLOR_COPYPASTE, W, ctx);
+        }
+
+        // copy
+        if (this.allowed_modes.has(SelectorBase.MODES.COPY)) {
+            lp = box[0];
+            UI.draw_stroke({X:lp.X,Y:lp.Y},{X:lp.X-d,Y:lp.Y-d}  ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+            UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X,Y:lp.Y-d},SelectorBase.COLOR_COPYPASTE, W, ctx);
+            UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X-d,Y:lp.Y},SelectorBase.COLOR_COPYPASTE, W, ctx);
+
+            // paste
+            if (this.clipboard.length) {
+                lp = box[3];
+                UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y+d}, SelectorBase.COLOR_COPYPASTE, W, ctx);
+                UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y}, SelectorBase.COLOR_COPYPASTE, W, ctx);
+                UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X,Y:lp.Y+d}, SelectorBase.COLOR_COPYPASTE, W, ctx);
+            }
+        }
+
+        return ctx;
+    }
+
+
+    ,draw_selecting : function(sp, lp) {
+        UI.reset_layer('overlay');
+
+        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+
+        let rect = UI.get_rect([sp, lp]);
+
+        let figure = [
+            rect[0], {X:rect[1].X, Y:rect[0].Y},
+            rect[1], {X:rect[0].X, Y:rect[1].Y}
+        ];
+
+        figure = UI.figure_split(figure, true, 2 * SelectorBase.WIDTH);
+
+        figure.map((p,pi)=>{
+            if (pi%2==0)
+                return;
+            UI.draw_stroke(p, figure[(pi+1) % figure.length]
+                , SelectorBase.COLOR, SelectorBase.WIDTH
+                , ctx);
+        });
+    }
+
+    ,move_scale : function(lp) {
+        if (this.activated) {
+            let lpc = UI.global_to_local(this.selection_center);
+            let cx = ( (lp.X - lpc.X) / (this.last_point.X - lpc.X) );
+            let cy = ( (lp.Y - lpc.Y) / (this.last_point.Y - lpc.Y) );
+
+            this._scale_selection(lpc, cx, cy);
+        }
+    }
+
+    ,move_moving : function(lp) {
+        if (this.activated) {
+            let dx = -(UI.local_to_global(this.last_point).X - UI.local_to_global(lp).X);
+            let dy = -(UI.local_to_global(this.last_point).Y - UI.local_to_global(lp).Y);
+            this._move_selection(dx, dy);
+        }
+    }
+
+    ,move_selecting : function(lp) {
+        if (this.activated) {
+            this.draw_selecting(this.start_point, lp);
+        }
+    }
+
+    ,on_move : function(lp) {
+        if (this.mode==SelectorBase.MODES.SELECTING) {
+            this.move_selecting(lp);
+        } else {
+            if (this.mode==SelectorBase.MODES.MOVING) {
+                this.move_moving(lp);
+            } else if (this.mode==SelectorBase.MODES.SCALING) {
+                this.move_scale(lp);
+            } else if (this.mode==SelectorBase.MODES.ROTATING) {
+                this.move_rotate(lp);
+            }
+            UI.redraw();
+        }
+        this.last_point = lp;
+    }
+
+
+    ,cancel_selection : function() {
+        this._selection_reset();
+
+        if ((this._activated_by > 0)||(this._activated_by_key == 'a')) { // if activated as an alt tool, or
+            this.activated = false;
+            this._activated_by = null;
+            this._activated_by_key = null;
+            TOOLS.reactivate_default(); // return control to the main tool
+        }
+    }
+
+    ,stop_selecting : function(lp) {
+        UI.reset_layer('overlay');
+        let sp = this.start_point;
+
+        let grect = UI.get_rect([sp, lp]).map((p)=>{
+            return UI.local_to_global(p);
+        });
+
+        let points = this._get_selection_points(grect);
+
+        points.map((pnt)=>{
+            this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
+        });
+
+        if (this.selection.length > 0) {
+            this.draw_selected();
+            this.mode = SelectorBase.MODES.SELECTED;
+        }
+    }
+
+    ,_replace_changed : function() {
+        let new_strokes = [];
+        let old_strokes = [];
+        for(let id in this.original_strokes) {
+            let old_stroke = this.original_strokes[id];
+            // capture changed strokes
+            if (!(BOARD.is_hidden(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx])))
+                new_strokes.push(deepcopy(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx]));
+            // return original strokes back
+            BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx] = old_stroke;
+            old_strokes.push(old_stroke);
+        }
+
+        // delete original strokes
+        BOARD.hide_strokes(old_strokes, BOARD.stroke_id);
+        BOARD.add_stroke({gp:[null, 'erase']});
+
+        // add new strokes
+        BOARD.flush(new_strokes, false);
+    }
+
+    ,on_key_point_stop : function(mode) { // eslint-disable-line no-unused-vars
+        this._replace_changed();
+        this.mode = SelectorBase.MODES.SELECTED;
+        BOARD.op_commit();
+        this._select_commit();
+    }
+
+    ,on_stop : function(lp) {
+        if (this.mode==SelectorBase.MODES.SELECTING) {
+            this.stop_selecting(lp);
+
+        } else if (this.mode==SelectorBase.MODES.SELECTED) { // this mode is transient, should not happen
+        } else {
+            this.on_key_point_stop(this.mode);
+
+        }
+
+        this.activated = false;
+    }
+
+
+    ,on_key_point_start : function(mode) {
+        BOARD.op_start();
+        this._save_selected();
+        this.mode = mode;
+    }
+
+    ,on_start : function(lp) {
+        DrawToolBase.on_start.call(this, lp);
+
+        if (this.mode==SelectorBase.MODES.SELECTED) {
+            let W = SelectorBase.WIDTH;
+            let S = BRUSH.get_local_width();
+
+            let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
+            let key_points = [
+                [UI.global_to_local(this.selection_center), SelectorBase.MODES.MOVING],
+                [{X:rect[1].X+W+S, Y:rect[0].Y-W-S}, SelectorBase.MODES.ROTATING],
+                [{X:rect[1].X+W+S, Y:rect[1].Y+W+S}, SelectorBase.MODES.SCALING],
+                [{X:rect[0].X-W-S, Y:rect[0].Y-W-S}, SelectorBase.MODES.COPY], // copy
+                [{X:rect[0].X-W-S, Y:rect[1].Y+W+S},-SelectorBase.MODES.COPY], // paste
+                [{X:rect[1].X+W+S, Y:(rect[0].Y+rect[1].Y)/2}, SelectorBase.MODES.OPTIMIZE]
+            ];
+
+            let anchor_i = null;
+            key_points.map((p, pi)=>{
+                let dst = Math.sqrt(dst2(lp, p[0]));
+                if (UI.is_mobile)
+                    dst /= 3;
+                if ((anchor_i == null)&&(this.allowed_modes.has(p[1]))&&(dst < W * 3)) {
+                    anchor_i = pi;
+                }
+            });
+
+            if (anchor_i != null) {
+                this.on_key_point_start(key_points[anchor_i][1]);
+            } else {
+                this.cancel_selection();
+                UI.redraw();
+            }
+
+            return anchor_i;
+        }
+    }
+
+
+    ,on_after_redraw : function() {
+        if ((this.mode==SelectorBase.MODES.SELECTED)
+            ||(this.mode==SelectorBase.MODES.MOVING)) {
+            this.draw_selected();
+        }
+    }
+
+    ,on_activated : function() {
+        DrawToolBase.super.on_activated.call(this);
+        // TODO: DrawToolBase.call('on_activated',this)
+    }
+
+    ,on_deactivated : function() {
+        this.activated = false;
+        //DrawToolBase.on_deactivated.call(this);
+    }
+
+};
+
+SelectorBase = _class('SelectorBase', SelectorBase);
+
+
+let SelectorTool = {
+    super : SelectorBase
+
+    ,icon : [null,[6,12],[6,18],null,[7,24],[6,30],null,[6,36],[7,42],null,[7,49],[6,55],null,[12,54],[18,54],null,[25,54],[30,55],null,[36,55],[42,54],null,[48,54],[54,54],null,[54,48],[54,42],null,[54,36],[54,30],null,[54,24],[54,18],null,[54,12],[54,6],null,[48,6],[42,6],null,[36,5],[30,5],null,[25,6],[18,6],null,[12,6],[7,6],null,[54,46],[54,54],[48,54],null,[55,55],[54,46],null,[12,54],[6,55],[11,54],null,[6,55],[6,49],null,[6,54],[7,49],null,[7,6],[12,6],null,[6,12],[6,6],[6,12],null,[55,6],[55,12],null,[48,6],[54,5],[48,6]]
     ,USE_SYSTEM_CLIPBOARD : true
     ,NAME : 'selector'
 
     ,SelectorTool : function() {
         DrawToolBase.init.call(this, SelectorTool.NAME, false, [['Control', 's'], ['Control', 'a'], ['Meta', 'a']]);
-        this.is_capturing = true;
+        SelectorBase.init.call(this, [
+            SelectorBase.MODES.SCALING
+            ,SelectorBase.MODES.ROTATING
+            ,SelectorBase.MODES.OPTIMIZE
+            ,SelectorBase.MODES.MOVING
+            ,SelectorBase.MODES.COPY
+        ]);
+
+        this.original_strokes = {};
+        this.clipboard = [];
     }
 
-    ,mode : 0 // 0:selecting / 1:selected / 2:moving / 3:scale / 4:rotate
-
-    ,original_strokes : {}
-
-    ,selection : []
-    ,selection_keys : {}
-    ,selection_center : null
-    ,selection_rect : null
 
     ,init : function(MENU_main) {
         let ctx = MENU_main.add('root', 'delete', SelectorTool.DELETE.on_activated, 'canvas', 'delete selected[del]')[1].getContext('2d');
@@ -76,217 +471,42 @@ let SelectorTool = {
         });
     }
 
-    ,_selection_reset : function() {
-        this.selection = [];
-        this.selection_keys = {};
-        this.selection_center = null;
-        this.selection_rect = null;
-    }
 
-    ,_add_selected_point : function(commit_id, stroke_idx, point_idx) {
-        let stroke_id = BOARD.strokes[commit_id][stroke_idx].stroke_id;
-        let sel_key = '' + commit_id + '/' + stroke_id + '/' + point_idx;
-        if (!(sel_key in this.selection_keys)) {
-            this.selection.push({
-                commit_id : commit_id
-                ,stroke_idx : stroke_idx
-                ,stroke_id : stroke_id
-                ,point_idx : point_idx
-            });
-            this.selection_keys[sel_key] = this.selection.length - 1;
-        }
-    }
-
-    ,_select_commit : function(commit_id, reset) {
-        commit_id = (commit_id===undefined)?BOARD.commit_id:commit_id;
-        reset = (reset===undefined)?true:reset;
-
-        if (reset)
-            this._selection_reset();
-
-        for(let stroke_idx in BOARD.strokes[commit_id]) {
-            if (BOARD.strokes[commit_id][stroke_idx].gp[0]==null)
-                continue;
-
-            if (BOARD.is_hidden(BOARD.strokes[commit_id][stroke_idx]))
-                continue;
-
-            this._add_selected_point(commit_id, stroke_idx, 0);
-            this._add_selected_point(commit_id, stroke_idx, 1);
-        }
-
-        if (this.selection.length > 0) {
-            this.draw_selected();
-            this.mode = SelectorModes.SELECTED;
+    ,on_key_point_start : function(mode) {
+        if (mode == SelectorBase.MODES.COPY) {
+            this.copy();
+        } else if (mode == -SelectorBase.MODES.COPY) {
+            if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
+                if ((navigator.clipboard===undefined)||(navigator.clipboard==null)) {
+                    SelectorTool.USE_SYSTEM_CLIPBOARD = false;
+                    UI.toast('copy/paste', 'system clipboard is unavailable', 2000);
+                } else {
+                    navigator.clipboard.readText().then(text => {
+                        UI.on_paste(text, 'text/plain');
+                    });
+                }
+            } else {
+                this.paste(this.clipboard);
+            }
+        } else if (mode == SelectorBase.MODES.OPTIMIZE) {
+            BOARD.op_start();
+            this._save_selected();
+            this.mode = mode;
+            this.optimize();
+            this.on_key_point_stop(SelectorBase.MODES.OPTIMIZE);
         } else {
-            UI.reset_layer('overlay');
-            this.activated = false;
-        }
-
-    }
-
-    ,_replace_changed : function() {
-        let new_strokes = [];
-        let old_strokes = [];
-        for(let id in this.original_strokes) {
-            let old_stroke = this.original_strokes[id];
-            // capture changed strokes
-            if (!(BOARD.is_hidden(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx])))
-                new_strokes.push(deepcopy(BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx]));
-            // return original strokes back
-            BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx] = old_stroke;
-            old_strokes.push(old_stroke);
-        }
-
-        // delete original strokes
-        BOARD.hide_strokes(old_strokes, BOARD.stroke_id);
-        BOARD.add_stroke({gp:[null, 'erase']});
-
-        // add new strokes
-        BOARD.flush(new_strokes, false);
-    }
-
-    ,draw_selecting : function(sp, lp) {
-        UI.reset_layer('overlay');
-
-        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
-
-        let rect = UI.get_rect([sp, lp]);
-
-        let figure = [
-            rect[0], {X:rect[1].X, Y:rect[0].Y},
-            rect[1], {X:rect[0].X, Y:rect[1].Y}
-        ];
-
-        figure = UI.figure_split(figure, true, 2*SelectorTool.WIDTH);
-
-        figure.map((p,pi)=>{
-            if (pi%2==0)
-                return;
-            UI.draw_stroke(p, figure[(pi+1) % figure.length], SelectorTool.COLOR, SelectorTool.WIDTH, ctx);
-        });
-    }
-
-    ,draw_selected : function() {
-        this.get_selection_bounds();
-
-        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
-        UI.reset_layer('overlay');
-
-        if (this.selection.length == 0) {
-            return;
-        }
-
-        let W = SelectorTool.WIDTH;
-        let S = BRUSH.get_local_width();
-
-        // draw selected center
-        let lp = UI.global_to_local(this.selection_center);
-        UI.draw_stroke(lp, lp, SelectorTool.COLOR, W * 3, ctx);
-        UI.draw_stroke(lp, lp, SelectorTool.COLOR_COPYPASTE, W, ctx);
-
-        let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
-        let box = [ // selection box figure
-            {X:rect[0].X-W-S, Y:rect[0].Y-W-S}, {X:rect[1].X+W+S, Y:rect[0].Y-W-S},
-            {X:rect[1].X+W+S, Y:rect[1].Y+W+S},
-            {X:rect[0].X-W-S, Y:rect[1].Y+W+S}
-        ];
-
-        let d = W * 2;
-        let brackets = [ // selection box brackets
-            [{X:box[0].X  , Y:box[0].Y+d}, box[0], {X:box[0].X+d, Y:box[0].Y  }]
-            ,[{X:box[1].X-d, Y:box[1].Y  }, box[1], {X:box[1].X  , Y:box[1].Y+d}]
-            ,[{X:box[2].X  , Y:box[2].Y-d}, box[2], {X:box[2].X-d, Y:box[2].Y  }]
-            ,[{X:box[3].X+d, Y:box[3].Y  }, box[3], {X:box[3].X  , Y:box[3].Y-d}]
-        ];
-
-        // draw rect
-        brackets.map((f)=>{
-            f.map((p,pi)=>{
-                if (pi < f.length-1)
-                    UI.draw_stroke(
-                        p
-                        ,f[(pi+1) % f.length]
-                        ,SelectorTool.COLOR
-                        ,W
-                        ,ctx
-                    );
-            });
-        });
-
-        // draw ancor mode selectors
-        // rotator
-        lp = box[1];
-        ctx.beginPath();
-        ctx.arc(lp.X, lp.Y, d/2, Math.PI, Math.PI/2);
-        ctx.stroke();
-
-        // scaler
-        lp = box[2];
-        ctx.beginPath();
-        ctx.rect(lp.X-d/2, lp.Y-d/2, d, d);
-        ctx.stroke();
-
-        // optimizer
-        lp = {
-            X: box[1].X
-            ,Y:(box[1].Y + box[2].Y)/2
-        };
-        UI.draw_stroke({X:lp.X-d/2,Y:lp.Y-d/2},{X:lp.X+d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
-        UI.draw_stroke({X:lp.X+d/2,Y:lp.Y-d/2},{X:lp.X-d/2,Y:lp.Y+d/2}, SelectorTool.COLOR_COPYPASTE, W, ctx);
-
-        // copy
-        lp = box[0];
-        UI.draw_stroke({X:lp.X,Y:lp.Y},{X:lp.X-d,Y:lp.Y-d}  ,SelectorTool.COLOR_COPYPASTE, W, ctx);
-        UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X,Y:lp.Y-d},SelectorTool.COLOR_COPYPASTE, W, ctx);
-        UI.draw_stroke({X:lp.X-d,Y:lp.Y-d},{X:lp.X-d,Y:lp.Y},SelectorTool.COLOR_COPYPASTE, W, ctx);
-
-        // paste
-        if (this.clipboard.length) {
-            lp = box[3];
-            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
-            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X-d,Y:lp.Y}, SelectorTool.COLOR_COPYPASTE, W, ctx);
-            UI.draw_stroke({X:lp.X,Y:lp.Y}, {X:lp.X,Y:lp.Y+d}, SelectorTool.COLOR_COPYPASTE, W, ctx);
-        }
-
-        // draw over selected points
-        this._selected_strokes().map((s)=>{
-            UI.draw_stroke(
-                UI.global_to_local(s.gp[0])
-                ,UI.global_to_local(s.gp[1])
-                ,'#F335'
-                ,s.width * UI.viewpoint.scale * 1.3
-                ,ctx
-            );
-        });
-
-    }
-
-    ,cancel_selection : function() {
-        this.mode = SelectorModes.SELECTING;
-        this._selection_reset();
-
-        if ((this._activated_by > 0)||(this._activated_by_key == 'a')) { // if activated as an alt tool, or
-            this.activated = false;
-            this._activated_by = null;
-            this._activated_by_key = null;
-            TOOLS.reactivate_default(); // return control to the main tool
+            // SelectorBase.MODES.MOVING
+            // SelectorBase.MODES.ROTATING
+            // SelectorBase.MODES.SCALING
+            SelectorBase.on_key_point_start.call(this, mode);
         }
     }
 
-    ,start_mode : function(mode) {
-        BOARD.op_start();
-        this._save_selected();
-        this.mode = mode;
-    }
-
-    ,on_start : function(lp) {
-        DrawToolBase.on_start.call(this, lp);
-
+    ,_try_select : function(lp) {
         if (UI.keys['Shift']||UI.keys['Alt']) {
             // Shift - select / unselect
             // Alt - select / unselect figure
-            let W = SelectorTool.WIDTH;
+            let W = SelectorBase.WIDTH;
             let S = BRUSH.get_local_width();
 
             let points = BOARD.get_strokes(
@@ -310,110 +530,44 @@ let SelectorTool = {
                 this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
             });
 
-            this.draw_selected();
-            this.mode = SelectorModes.SELECTED;
-            return;
-        }
-
-        if (this.mode==SelectorModes.SELECTING) {
-            return;
-        }
-
-        if (this.mode==SelectorModes.SELECTED) {
-            let dst = Math.sqrt(dst2(lp, UI.global_to_local(this.selection_center)));
-            let W = SelectorTool.WIDTH;
-            let S = BRUSH.get_local_width();
-
-            if (UI.is_mobile)
-                dst /= 3;
-
-            if (dst < W * 3) {
-                this.start_mode(SelectorModes.MOVING);
-                return;
+            if (this.selection.length > 0) {
+                this.draw_selected();
+                this.mode = SelectorBase.MODES.SELECTED;
             }
-
-            let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
-            let figure = [
-                {X:rect[0].X-W-S, Y:rect[0].Y-W-S}, // copy
-                {X:rect[1].X+W+S, Y:rect[0].Y-W-S}, // rotate
-                {X:rect[1].X+W+S, Y:rect[1].Y+W+S}, // scale
-                {X:rect[0].X-W-S, Y:rect[1].Y+W+S}, // paste
-
-                {X:rect[1].X+W+S, Y:(rect[0].Y+rect[1].Y)/2} // optimize
-            ];
-
-            let anchor_i = null;
-            figure.map((p, pi)=>{
-                dst = Math.sqrt(dst2(lp, p));
-
-                if (UI.is_mobile)
-                    dst /= 3;
-
-                if (dst < W) {
-                    anchor_i = pi;
-                }
-            });
-
-            if (anchor_i == null) {
-                this.cancel_selection();
-                UI.redraw();
-                return;
-            }
-
-            if (anchor_i==0) { // copy
-                this.copy();
-
-            } else if (anchor_i==1) {
-                this.start_mode(SelectorModes.ROTATING);
-
-            } else if (anchor_i==2) {
-                this.start_mode(SelectorModes.SCALING);
-
-            } else if (anchor_i==3) { // paste
-                if (SelectorTool.USE_SYSTEM_CLIPBOARD) {
-                    if ((navigator.clipboard===undefined)||(navigator.clipboard==null)) {
-                        SelectorTool.USE_SYSTEM_CLIPBOARD = false;
-                        UI.toast('copy/paste', 'system clipboard is unavailable', 2000);
-                    } else {
-                        navigator.clipboard.readText().then(text => {
-                            UI.on_paste(text, 'text/plain');
-                        });
-                    }
-                } else {
-                    this.paste(this.clipboard);
-                }
-
-            } else if (anchor_i==4) { // optimize
-                this.start_mode(SelectorModes.OPTIMIZE);
-                this.optimize();
-                this.stop_mode(SelectorModes.OPTIMIZE);
-
-            }
+            return true;
         }
+        return false;
+    }
 
+    ,on_start : function(lp) {
+        if (!this._try_select(lp)) {
+            SelectorBase.on_start.call(this, lp);
+        }
     }
 
 
-    ,move_scale : function(lp) {
-        if (this.activated) {
-            let lpc = UI.global_to_local(this.selection_center);
-            let cx = ( (lp.X - lpc.X) / (this.last_point.X - lpc.X) );
-            let cy = ( (lp.Y - lpc.Y) / (this.last_point.Y - lpc.Y) );
-
-            this.selection.map((sel)=>{
-                let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
-                pnt.X -= this.selection_center.X;
-                pnt.Y -= this.selection_center.Y;
-
-                pnt.X *= cx;
-                pnt.Y *= cy;
-
-                pnt.X += this.selection_center.X;
-                pnt.Y += this.selection_center.Y;
-            });
-
-        }
+    ,_move_selection : function(dx, dy) {
+        this.selection.map((sel)=>{
+            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
+            pnt.X += dx;
+            pnt.Y += dy;
+        });
     }
+
+    ,_scale_selection : function(lpc, cx, cy) {
+        this.selection.map((sel)=>{
+            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
+            pnt.X -= this.selection_center.X;
+            pnt.Y -= this.selection_center.Y;
+
+            pnt.X *= cx;
+            pnt.Y *= cy;
+
+            pnt.X += this.selection_center.X;
+            pnt.Y += this.selection_center.Y;
+        });
+    }
+
 
     ,move_rotate : function(lp) {
         if (this.activated) {
@@ -440,119 +594,36 @@ let SelectorTool = {
                 pnt.X += this.selection_center.X;
                 pnt.Y += this.selection_center.Y;
             });
-
         }
     }
 
-    ,_selected_strokes : function() {
-        let was = new Set();
-        let selected_strokes = [];
-        this.selection.map((sel)=>{
-            if (!was.has(sel.stroke_id)) {
-                selected_strokes.push(BOARD.strokes[sel.commit_id][sel.stroke_idx]);
-                was.add(sel.stroke_id);
-            }
-        });
-        return selected_strokes;
+
+    ,_get_selection_points : function(grect) {
+        return BOARD.get_strokes(grect, true); // selected points
     }
 
-    ,_move_selection : function(dx, dy) {
-        this.selection.map((sel)=>{
-            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
-            pnt.X += dx;
-            pnt.Y += dy;
-        });
-
-        this.selection_center.X += dx;
-        this.selection_center.Y += dy;
-
-        this.selection_rect[0].X += dx;
-        this.selection_rect[1].X += dx;
-        this.selection_rect[0].Y += dy;
-        this.selection_rect[1].Y += dy;
-    }
-
-    ,move_moving : function(lp) {
-        if (this.activated) {
-            let dx = -(UI.local_to_global(this.last_point).X - UI.local_to_global(lp).X);
-            let dy = -(UI.local_to_global(this.last_point).Y - UI.local_to_global(lp).Y);
-            this._move_selection(dx, dy);
-        }
-    }
-
-    ,move_selecting : function(lp) {
-        if (this.activated) {
-            this.draw_selecting(this.start_point, lp);
-        }
-    }
-
-    ,on_move : function(lp) {
-        if (this.mode==SelectorModes.SELECTING) {
-            this.move_selecting(lp);
-        } else {
-            if (this.mode==SelectorModes.MOVING) {
-                this.move_moving(lp);
-            } else if (this.mode==SelectorModes.SCALING) {
-                this.move_scale(lp);
-            } else if (this.mode==SelectorModes.ROTATING) {
-                this.move_rotate(lp);
-            }
-            UI.redraw();
-        }
-        this.last_point = lp;
-    }
-
-
-    ,get_selection_bounds : function() {
-        this.selection_rect = UI.get_rect(
+    ,_get_selection_rect : function() {
+        return UI.get_rect(
             this.selection.map((sel)=>{
                 return BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[sel.point_idx];
             })
         );
-
-        this.selection_center = {X:0, Y:0};
-        this.selection_center.X = ( this.selection_rect[1].X + this.selection_rect[0].X ) / 2;
-        this.selection_center.Y = ( this.selection_rect[1].Y + this.selection_rect[0].Y ) / 2;
     }
 
-    ,stop_selecting : function(lp) {
-        UI.reset_layer('overlay');
-        let sp = this.start_point;
 
-        let points = BOARD.get_strokes(UI.get_rect([sp, lp]).map((p)=>{
-            return UI.local_to_global(p);
-        }), true); // selected points
-
-        points.map((pnt)=>{
-            this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
+    ,draw_selected : function() {
+        let ctx = SelectorBase.draw_selected.call(this);
+        // draw over selected points
+        this._selected_strokes().map((s)=>{
+            UI.draw_stroke(
+                UI.global_to_local(s.gp[0])
+                ,UI.global_to_local(s.gp[1])
+                ,'#F335'
+                ,s.width * UI.viewpoint.scale * 1.3
+                ,ctx
+            );
         });
-
-        if (this.selection.length > 0) {
-            this.draw_selected();
-            this.mode = SelectorModes.SELECTED;
-        }
     }
-
-    ,stop_mode : function(mode) { // eslint-disable-line no-unused-vars
-        this._replace_changed();
-        this.mode = SelectorModes.SELECTED;
-        BOARD.op_commit();
-        this._select_commit();
-    }
-
-    ,on_stop : function(lp) {
-        if (this.mode==SelectorModes.SELECTING) {
-            this.stop_selecting(lp);
-
-        } else if (this.mode==SelectorModes.SELECTED) { // this mode is transient, should not happen
-        } else {
-            this.stop_mode(this.mode); // stopped moving / scaling
-
-        }
-
-        this.activated = false;
-    }
-
 
     ,clipboard : []
 
@@ -621,7 +692,7 @@ let SelectorTool = {
         this.draw_selected();
 
         this.clipboard = [];
-        this.mode = SelectorModes.SELECTED;
+        this.mode = SelectorBase.MODES.SELECTED;
     }
 
 
@@ -646,8 +717,7 @@ let SelectorTool = {
                 }
             }
         }
-        UI.log('Squeezed: ',squeezed);
-
+        UI.log('Squeezed: ', squeezed);
 
         // delete dots - strokes of length 0
         let deleted = this.selection.reduce((a, s0)=>{
@@ -708,7 +778,7 @@ let SelectorTool = {
             handled = true;
         }
 
-        if (this.mode==SelectorModes.SELECTED) {
+        if (this.mode==SelectorBase.MODES.SELECTED) {
             if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='c')) {
                 this.copy();
                 handled = true;
@@ -754,26 +824,14 @@ let SelectorTool = {
         return true;
     }
 
-    ,after_redraw : function() {
-        if ((this.mode==SelectorModes.SELECTED)||(this.mode==SelectorModes.MOVING)) {
-            this.draw_selected();
-        }
-    }
-
-
     ,on_activated : function() {
-        DrawToolBase.super.on_activated.call(this); // TODO: DrawToolBase.call('on_activated',this)
+        // TODO: DrawToolBase.call('on_activated',this)
+        SelectorBase.on_activated.call(this);
         if (this._activated_by_key == 'a') {
             this.start_point = {X:Number.NEGATIVE_INFINITY,Y:Number.NEGATIVE_INFINITY};
             this.stop_selecting({X:Number.POSITIVE_INFINITY,Y:Number.POSITIVE_INFINITY});
         }
     }
-
-    ,on_deactivated : function() {
-        this.activated = false;
-        //DrawToolBase.on_deactivated.call(this);
-    }
-
 
 
     ,DELETE : { // background tool
@@ -787,10 +845,9 @@ let SelectorTool = {
 
         ,on_activated : function() {
             let that = SelectorTool.DELETE.selector;
-            if (that.mode==SelectorModes.SELECTED) {
+            if (that.mode==SelectorBase.MODES.SELECTED) {
                 BOARD.hide_commit(that._selected_strokes());
 
-                SelectorTool.DELETE.selector.mode = SelectorModes.SELECTING;
                 SelectorTool.DELETE.selector._selection_reset();
 
                 UI.redraw();
@@ -802,4 +859,4 @@ let SelectorTool = {
 
 SelectorTool = _class('SelectorTool', SelectorTool);
 
-export {SelectorTool};
+export {SelectorBase, SelectorTool};

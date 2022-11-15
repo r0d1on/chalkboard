@@ -23,7 +23,9 @@ let ToolBase = {
         UI.log(this.name, ' - deactivated');
     }
 
-    ,after_redraw : function() {}
+    ,on_before_redraw : function() {}
+
+    ,on_after_redraw : function() {}
 
     ,on_wheel : function() {}
 

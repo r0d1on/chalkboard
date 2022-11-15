@@ -19,6 +19,7 @@ import {TOOLS} from './ui/TOOLS.js';
 import {PenTool} from './tools/PenTool.js';
 import {EraserTool} from './tools/EraserTool.js';
 import {SelectorTool} from './tools/SelectorTool.js';
+import {ImageManipulatorTool} from './tools/ImageManipulatorTool.js';
 import {TexterTool} from './tools/TexterTool.js';
 import {LineTool} from './tools/LineTool.js';
 import {BoxTool} from './tools/BoxTool.js';
@@ -101,6 +102,7 @@ function init(IO) {
     TOOLS.add_tool(_new(LineTool, []), true, '[l]ine, arrow');
     let selector = _new(SelectorTool, []);
     TOOLS.add_tool(selector, true, '[s]elect - scale, rotate, copy, paste');
+    TOOLS.add_tool(_new(ImageManipulatorTool, []), true, 'image manipulator tool');
     TOOLS.activate('pen', false, 0);
 
     // config menu item
