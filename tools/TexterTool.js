@@ -2,6 +2,8 @@
 
 import {_class} from '../base/objects.js';
 
+import {Point} from '../util/Point.js';
+
 import {DrawToolBase} from './Base.js';
 
 import {Menu} from '../ui/Menu.js';
@@ -26,7 +28,7 @@ let TexterTool = {
     ,MENU_main : null
 
     ,TexterTool : function(MENU_main) {
-        DrawToolBase.init.call(this, 'texter', false, ['Control', 'i']);
+        DrawToolBase.__init__.call(this, 'texter', false, ['Control', 'i']);
         this.MENU_main = MENU_main;
         this.is_capturing = true;
     }
@@ -47,8 +49,8 @@ let TexterTool = {
 
             if ((a!=null)&&(b!=null)) {
                 draw_fun(
-                    {'X':a[0] * scale + bx, 'Y':a[1] * scale + by}
-                    ,{'X':b[0] * scale + bx, 'Y':b[1] * scale + by}
+                    Point.new(a[0] * scale + bx, a[1] * scale + by)
+                    ,Point.new(b[0] * scale + bx, b[1] * scale + by)
                 );
             }
 
@@ -67,10 +69,10 @@ let TexterTool = {
         let w = 2.2 * BRUSH.get_local_width();
 
         let figure = [
-            {'X':lp.X  , 'Y':lp.Y}
-            ,{'X':lp.X+w, 'Y':lp.Y-2.6*w}
-            ,{'X':lp.X  , 'Y':lp.Y-2.6*w}
-            ,{'X':lp.X+w, 'Y':lp.Y}
+            Point.new(lp.x, lp.y)
+            ,Point.new(lp.x+w, lp.y-2.6*w)
+            ,Point.new(lp.x, lp.y-2.6*w)
+            ,Point.new(lp.x+w, lp.y)
         ];
 
         figure.map((p, pi)=>{
@@ -79,8 +81,8 @@ let TexterTool = {
     }
 
     ,on_start : function(lp) {
-        this.cursor = UI.local_to_global({X:lp.X, Y:lp.Y});
-        this.paragraph = UI.local_to_global({X:lp.X, Y:lp.Y});
+        this.cursor = UI.local_to_global(Point.new(lp.x, lp.y));
+        this.paragraph = UI.local_to_global(Point.new(lp.x, lp.y));
         this.draw_cursor(lp);
     }
 
@@ -102,7 +104,7 @@ let TexterTool = {
         let lcursor = UI.global_to_local(this.cursor);
 
         if (key==' ') {
-            lcursor.X += 3.0 * BRUSH.get_local_width();
+            lcursor.x += 3.0 * BRUSH.get_local_width();
 
         } else if (key=='Control') {
             return false;
@@ -121,7 +123,7 @@ let TexterTool = {
 
         } else if (key=='Tab') {
             if (UI.keys['Shift']) {
-                lcursor.X += 3 * BRUSH.get_local_width() * 4;
+                lcursor.x += 3 * BRUSH.get_local_width() * 4;
             } else {
                 return false;
             }
@@ -148,20 +150,20 @@ let TexterTool = {
             });
 
             let mx = 3 * 2 * BRUSH.get_local_width();
-            lcursor.X = rect[0].X;
-            lcursor.Y -= (Math.floor( (lcursor.Y - rect[1].Y) / mx )) * mx;
+            lcursor.x = rect[0].x;
+            lcursor.y -= (Math.floor( (lcursor.y - rect[1].y) / mx )) * mx;
 
         } else if ((key=='Enter')||(key=='\n')) {
             let lparagraph = UI.global_to_local(this.paragraph);
-            lcursor.X = lparagraph.X;
-            lcursor.Y += 3 * 2 * BRUSH.get_local_width();
+            lcursor.x = lparagraph.x;
+            lcursor.y += 3 * 2 * BRUSH.get_local_width();
 
         } else if (key in ALPHABET) {
-            lcursor.X += this.put_char(key, lcursor.X, lcursor.Y);
-            lcursor.X += BRUSH.get_local_width();
+            lcursor.x += this.put_char(key, lcursor.x, lcursor.y);
+            lcursor.x += BRUSH.get_local_width();
 
         } else {
-            lcursor.X += 3 * BRUSH.get_local_width();
+            lcursor.x += 3 * BRUSH.get_local_width();
 
         }
 

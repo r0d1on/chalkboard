@@ -1,8 +1,8 @@
 'use strict';
 
-import {copy, _new} from '../base/objects.js';
+import {copy} from '../base/objects.js';
 
-import {dst2 , sub, angle} from '../util/geometry.js';
+import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
 
 import {BOARD} from './BOARD.js';
@@ -98,8 +98,8 @@ let UI = {
 
         let p1 = UI.local_to_global(center);
 
-        let dx = (p0.X - p1.X);
-        let dy = (p0.Y - p1.Y);
+        let dx = (p0.x - p1.x);
+        let dy = (p0.y - p1.y);
 
         UI.viewpoint_shift(dx, dy, false);
     }
@@ -136,7 +136,7 @@ let UI = {
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
             UI.log('ui.mousedown', e);
-            let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
+            let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_start(lp, e.button)) {
                 e.stopPropagation();
@@ -163,7 +163,7 @@ let UI = {
                 UI.on_key_down('Control'); // activate zoom / pan
             }
 
-            UI.on_start({X:lp.X, Y:lp.Y, D:lp.D}, 0);
+            UI.on_start(lp.copy(), 0);
             e.preventDefault();
         });
 
@@ -175,7 +175,7 @@ let UI = {
 
         // tool move events
         UI.IO.add_event(buffer_canvas, 'mousemove', e => {
-            let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
+            let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             UI.on_move(lp);
         });
@@ -192,14 +192,14 @@ let UI = {
             */
 
             UI._last_point = lp;
-            UI.on_move({X:lp.X, Y:lp.Y, D:lp.D});
+            UI.on_move(lp.copy());
             e.preventDefault();
         });
 
         // tool usage stop events
         UI.IO.add_event(buffer_canvas, 'mouseup', e => {
             UI.log('ui.mouseup', e);
-            let lp = {X:e.offsetX*1.0, Y:e.offsetY*1.0};
+            let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_stop(lp)) {
                 e.stopPropagation();
@@ -220,7 +220,7 @@ let UI = {
             */
 
             if (lp!=null) {
-                UI.on_stop({X:lp.X, Y:lp.Y});
+                UI.on_stop(lp.copy());
                 if (lp.D!=undefined)
                     UI.on_key_up('Control');
                 UI._last_point = null;
@@ -380,22 +380,23 @@ let UI = {
 
     ,get_touch : function(canvasDom, e) {
         const rect = canvasDom.getBoundingClientRect();
-        let p0 = {
-            X: e.touches[0].clientX - rect.left
-            ,Y: e.touches[0].clientY - rect.top
-        };
+        let p0 = Point.new(
+            e.touches[0].clientX - rect.left
+            ,e.touches[0].clientY - rect.top
+        );
 
         if (e.touches.length>1) {
-            let p1 = {
-                X: e.touches[1].clientX - rect.left
-                ,Y: e.touches[1].clientY - rect.top
-            };
-            p0 = {
-                X: (p0.X + p1.X) / 2
-                ,Y: (p0.Y + p1.Y) / 2
-                ,D: Math.sqrt(dst2(p0 , p1))
-                ,P: [p0, p1]
-            };
+            let p1 = Point.new(
+                e.touches[1].clientX - rect.left
+                ,e.touches[1].clientY - rect.top
+            );
+
+            p0 = Point.new(
+                (p0.x + p1.x) / 2
+                ,(p0.y + p1.y) / 2
+                ,Math.sqrt(p0.dst2(p1))
+                ,[p0, p1]
+            );
         }
         return p0;
     }
@@ -590,10 +591,10 @@ let UI = {
                             'image' : image
                             ,'rect' : [
                                 UI.local_to_global(p0)
-                                ,UI.local_to_global({
-                                    X: p0.X + image.width
-                                    ,Y: p0.Y + image.height
-                                })
+                                ,UI.local_to_global(Point.new(
+                                    p0.x + image.width
+                                    ,p0.y + image.height
+                                ))
                             ]
                         }]});
                         BOARD.op_commit();
@@ -668,19 +669,19 @@ let UI = {
     ,global_to_local : function(point, viewpoint) {
         if (point==null) return null;
         let vp = (viewpoint===undefined)?UI.viewpoint:viewpoint;
-        return {
-            X : (point.X - vp.dx) * vp.scale
-            ,Y : (point.Y - vp.dy) * vp.scale
-        };
+        return Point.new(
+            (point.x - vp.dx) * vp.scale
+            ,(point.y - vp.dy) * vp.scale
+        );
     }
 
     ,local_to_global : function(point) {
         if (point==null) return null;
         let vp = UI.viewpoint;
-        return {
-            X : (point.X / vp.scale) + vp.dx
-            ,Y : (point.Y / vp.scale) + vp.dy
-        };
+        return Point.new(
+            (point.x / vp.scale) + vp.dx
+            ,(point.y / vp.scale) + vp.dy
+        );
     }
 
     ,figure_split : function(figure, cyclic, max_length) {
@@ -699,21 +700,27 @@ let UI = {
                 break;
 
             if (max_length===undefined) {
-                ret.push({X:(p0.X+p1.X)/2, Y:(p0.Y+p1.Y)/2});
+                ret.push(Point.new(
+                    (p0.x + p1.x) / 2
+                    ,(p0.y + p1.y) / 2
+                ));
 
             } else {
-                let dv = sub(p1, p0);
-                let dx = dv.X * max_length / Math.sqrt(dst2(p0, p1));
-                let dy = dv.Y * max_length / Math.sqrt(dst2(p0, p1));
+                let dst = p0.dst2(p1);
+                let max_length2 = max_length * max_length;
+                let dv = p1.sub(p0);
+                let dx = dv.x * max_length / Math.sqrt(dst);
+                let dy = dv.y * max_length / Math.sqrt(dst);
 
-                while(dst2(p0, p1) > max_length*max_length) {
-                    if (dst2(p0, p1) > 2*max_length*max_length) {
-                        p0.X += dx;
-                        p0.Y += dy;
-                    } else {
-                        p0.X += dx;
-                        p0.Y += dy;
+                while(dst > max_length2) {
+                    if (dst > 2 * max_length2) {
+                        p0.x += dx;
+                        p0.y += dy;
+                    } else { // TODO: check need of that
+                        p0.x += dx;
+                        p0.y += dy;
                     }
+                    dst = p0.dst2(p1);
                     ret.push(copy(p0));
                 }
 
@@ -746,23 +753,23 @@ let UI = {
                 return p;
             }
 
-            let v = sub(p0, p);
+            let v = p0.sub(p);
 
-            let dx = angle({X:Math.abs(v.X), Y:0}, v);
-            let dy = angle({X:0, Y:Math.abs(v.Y)}, v);
+            let dx = Point.new(Math.abs(v.x), 0).angle(v);
+            let dy = Point.new(0, Math.abs(v.y)).angle(v);
 
             let dphi = Math.sin((2 * Math.PI) * (t / (w * 80)));
 
             let phi = (2 * Math.PI) * (1 / (w * 60)) * (t + 10 * w * dphi);
 
-            t += Math.sqrt(dst2(p, p0));
+            t += Math.sqrt(p.dst2(p0));
 
             p0 = copy(p);
 
-            return {
-                X : p.X + Math.sin(phi) * w * ((dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2)))
-                ,Y : p.Y + Math.sin(phi) * w * ((dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2)))
-            };
+            return Point.new(
+                p.x + Math.sin(phi) * w * ((dx*Math.cos(Math.PI/2) - dy*Math.sin(Math.PI/2)))
+                ,p.y + Math.sin(phi) * w * ((dx*Math.sin(Math.PI/2) + dy*Math.cos(Math.PI/2)))
+            );
 
             /*
               X : p.X + Math.sin(phi+dphi*t) * w * ((dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2)))
@@ -795,8 +802,8 @@ let UI = {
                 a = b;
 
             if ((a!=null)&&(b!=null)) {
-                let pa = {'X':a[0], 'Y':a[1]};
-                let pb = {'X':b[0], 'Y':b[1]};
+                let pa = Point.new(a[0], a[1]);
+                let pb = Point.new(b[0], b[1]);
                 UI.draw_gstroke(pa, pb, color, 4, ctx, viewpoint);
             }
 
@@ -821,8 +828,8 @@ let UI = {
         ctx.lineWidth = width;
         ctx.strokeStyle = color;
         ctx.lineCap = 'round';
-        ctx.moveTo(lp0.X, lp0.Y);
-        ctx.lineTo(lp1.X, lp1.Y);
+        ctx.moveTo(lp0.x, lp0.y);
+        ctx.lineTo(lp1.x, lp1.y);
         ctx.stroke();
         ctx.closePath();
     }
@@ -838,14 +845,14 @@ let UI = {
 
 
     ,get_rect : function(points) {
-        const rect = [{X:1e10,Y:1e10}, {X:-1e10,Y:-1e10}];
+        const rect = [Point.new(1e10, 1e10), Point.new(-1e10, -1e10)];
         points.map((point)=>{
             if (point!=null) {
-                rect[0].X = Math.min(rect[0].X, point.X);
-                rect[1].X = Math.max(rect[1].X, point.X);
+                rect[0].x = Math.min(rect[0].x, point.x);
+                rect[1].x = Math.max(rect[1].x, point.x);
 
-                rect[0].Y = Math.min(rect[0].Y, point.Y);
-                rect[1].Y = Math.max(rect[1].Y, point.Y);
+                rect[0].y = Math.min(rect[0].y, point.y);
+                rect[1].y = Math.max(rect[1].y, point.y);
             }
         });
         return rect;
@@ -888,10 +895,10 @@ let UI = {
                     lp0 = UI.global_to_local(stroke.gp[2].rect[0]);
                     lp1 = UI.global_to_local(stroke.gp[2].rect[1]);
                     ctx.drawImage(stroke.gp[2].image
-                        ,lp0.X
-                        ,lp0.Y
-                        ,lp1.X - lp0.X
-                        ,lp1.Y - lp0.Y
+                        ,lp0.x
+                        ,lp0.y
+                        ,lp1.x - lp0.x
+                        ,lp1.y - lp0.y
                     );
                     continue;
                 }
@@ -919,8 +926,8 @@ let UI = {
         let y = - (UI.viewpoint.dy % UI.GRID) * UI.viewpoint.scale;
         while (y < UI.window_height) {
             UI.draw_stroke(
-                {'Y' : y, 'X' : 0}
-                ,{'Y' : y, 'X' : UI.window_width}
+                Point.new(0, y)
+                ,Point.new(UI.window_width, y)
                 ,(Math.abs(y / UI.viewpoint.scale + UI.viewpoint.dy)>0.1)?'#CCC':'#333'
                 ,1
                 ,ctx
@@ -932,8 +939,8 @@ let UI = {
         let x = - (UI.viewpoint.dx % UI.GRID) * UI.viewpoint.scale;
         while (x < UI.window_width) {
             UI.draw_stroke(
-                {'X' : x, 'Y' : 0}
-                ,{'X' : x, 'Y' : UI.window_height}
+                Point.new(x, 0)
+                ,Point.new(x, UI.window_height)
                 ,(Math.abs(x / UI.viewpoint.scale + UI.viewpoint.dx)>0.1)?'#CCC':'#333'
                 ,1
                 ,ctx
@@ -944,7 +951,7 @@ let UI = {
     }
 
     ,toast : function(topic, text, lifespan, align, reset) {
-        return _new(Toast, [topic, text, lifespan, align, reset]);
+        return Toast.new(topic, text, lifespan, align, reset);
     }
 
     ,log : function(...args) {

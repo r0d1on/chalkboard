@@ -41,7 +41,7 @@ let IO = {
     ,position : null
 
     ,IO : function() {
-        BaseIO.init.call(this);
+        BaseIO.__init__.call(this);
         this.ts = (+new Date());
         this.events_log = [];
         this.status = IO.STATUSES.PASS;

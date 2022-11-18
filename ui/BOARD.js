@@ -2,7 +2,7 @@
 
 import {sizeof} from '../base/objects.js';
 
-import {dst2} from '../util/geometry.js';
+import {Point} from '../util/Point.js';
 
 import {UI} from './UI.js';
 import {BRUSH} from './BRUSH.js';
@@ -94,10 +94,10 @@ let BOARD = {
         }, []));
 
         ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
-        ctx.clearRect(brect[0].X-maxw
-            , brect[0].Y-maxw
-            , brect[1].X-brect[0].X+2*maxw
-            , brect[1].Y-brect[0].Y+2*maxw
+        ctx.clearRect(brect[0].x - maxw
+            , brect[0].y - maxw
+            , brect[1].x - brect[0].x + 2*maxw
+            , brect[1].y - brect[0].y + 2*maxw
         );
 
         if (clear)
@@ -232,8 +232,8 @@ let BOARD = {
 
                 if (stroke.gp[0]==null) {
                     if ((stroke.gp[1]==special)&&(
-                        (rect[0].Y > stroke.gp[2].rect[0].Y)&&(rect[0].Y < stroke.gp[2].rect[1].Y)&&
-                        (rect[0].X > stroke.gp[2].rect[0].X)&&(rect[0].X < stroke.gp[2].rect[1].X)
+                        (rect[0].y > stroke.gp[2].rect[0].y)&&(rect[0].y < stroke.gp[2].rect[1].y)&&
+                        (rect[0].x > stroke.gp[2].rect[0].x)&&(rect[0].x < stroke.gp[2].rect[1].x)
                     )) {
                         ret.push({
                             commit_id : commit_id
@@ -246,7 +246,7 @@ let BOARD = {
                     for(let pi=0; pi<2; pi++) {
                         pnt = stroke.gp[pi];
 
-                        if ((rect[0].Y<=pnt.Y)&&(pnt.Y<=rect[1].Y)&&(rect[0].X<=pnt.X)&&(pnt.X<=rect[1].X)) {
+                        if ((rect[0].y<=pnt.y)&&(pnt.y<=rect[1].y)&&(rect[0].x<=pnt.x)&&(pnt.x<=rect[1].x)) {
                             ret.push({
                                 commit_id : commit_id
                                 ,stroke_idx : stroke_idx
@@ -282,7 +282,7 @@ let BOARD = {
                     let pi;
                     for (pi=0; pi<2; pi++)
                         for (let ci=0; ci<2; ci++) {
-                            if (dst2(prev[pi], cur[ci])==0) {
+                            if (prev[pi].dst2(cur[ci])==0) {
                                 a.push(prev[1-pi], prev[pi], cur[1-ci]);
                                 pi=9;
                                 break;
@@ -295,9 +295,9 @@ let BOARD = {
                     }
 
                 } else {
-                    if (dst2(prev, cur[0])==0) {
+                    if (prev.dst2(cur[0])==0) {
                         a.push(prev, cur[1]);
-                    } else if (dst2(prev, cur[1])==0) {
+                    } else if (prev.dst2(cur[1])==0) {
                         a.push(prev, cur[0]);
                     } else {
                         a.push(prev, null, cur);
@@ -323,8 +323,8 @@ let BOARD = {
 
         while(blanks>0) {
             let glyph = BOARD.get_strokes([
-                {X:(col+0)*ddx, Y:(row+0)*ddy}
-                ,{X:(col+1)*ddx, Y:(row+1)*ddy}
+                Point.new((col+0)*ddx, (row+0)*ddy)
+                ,Point.new((col+1)*ddx, (row+1)*ddy)
             ]);
 
             if ((glyph.length==0)) {
@@ -337,7 +337,7 @@ let BOARD = {
 
             glyph = glyph.map((gs)=>{
                 return BOARD.strokes[gs.commit_id][gs.stroke_idx].gp.map((p)=>{
-                    return {X:p.X-(col+0)*ddx, Y:p.Y-(row+0)*ddy};
+                    return Point.new(p.x-(col+0)*ddx, p.y-(row+0)*ddy);
                 });
             });
 
@@ -348,14 +348,14 @@ let BOARD = {
 
             glyph = glyph.map((ps)=>{
                 return ps.map((p)=>{
-                    return {X:p.X, Y:p.Y};
+                    return Point.new(p.x, p.y);
                 });
             });
 
-            rect[0].X -= col*ddx;
-            rect[1].X -= col*ddx;
-            rect[0].Y -= row*ddy;
-            rect[1].Y -= row*ddy;
+            rect[0].x -= col*ddx;
+            rect[1].x -= col*ddx;
+            rect[0].y -= row*ddy;
+            rect[1].y -= row*ddy;
 
             glyph = linearize(glyph);
 
@@ -363,7 +363,7 @@ let BOARD = {
                 if (p==null) {
                     return p;
                 } else {
-                    return [p.X, p.Y];
+                    return [p.x, p.y];
                 }
             });
 

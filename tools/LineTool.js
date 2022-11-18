@@ -2,7 +2,7 @@
 
 import {_class} from '../base/objects.js';
 
-import {sub, angle} from '../util/geometry.js';
+import {Point} from '../util/Point.js';
 
 import {DistortableDrawTool} from './Base.js';
 
@@ -17,7 +17,7 @@ let LineTool = {
     ,icon : [null,[8,51],[49,11],null,[8,53],[51,13]]
 
     ,LineTool : function() {
-        DistortableDrawTool.init.call(this, 'line', false, ['Control', 'l']);
+        DistortableDrawTool.__init__.call(this, 'line', false, ['Control', 'l']);
 
         this.arrows = 0;
         this.options['arrows'] = {
@@ -35,20 +35,20 @@ let LineTool = {
     }
 
     ,draw_arrow : function(sp, lp, func) {
-        let v = sub(lp, sp);
-        let dx = angle({X:Math.abs(v.X), Y:0}, v);
-        let dy = angle({X:0, Y:Math.abs(v.Y)}, v);
+        let v = lp.sub(sp);
+        let dx = Point.new(Math.abs(v.x), 0).angle(v);
+        let dy = Point.new(0, Math.abs(v.y)).angle(v);
         let t = BRUSH.size * UI.viewpoint.scale;
 
-        func(lp,{
-            X:(lp.X-dx*t) + t*(dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2))
-            ,Y:(lp.Y-dy*t) + t*(dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2))
-        });
+        func(lp, Point.new(
+            (lp.x-dx*t) + t*(dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2))
+            ,(lp.y-dy*t) + t*(dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2))
+        ));
 
-        func(lp,{
-            X:(lp.X-dx*t) + t*(dx*Math.cos(3*Math.PI/2)-dy*Math.sin(3*Math.PI/2))
-            ,Y:(lp.Y-dy*t) + t*(dx*Math.sin(3*Math.PI/2)+dy*Math.cos(3*Math.PI/2))
-        });
+        func(lp, Point.new(
+            (lp.x-dx*t) + t*(dx*Math.cos(3*Math.PI/2)-dy*Math.sin(3*Math.PI/2))
+            ,(lp.y-dy*t) + t*(dx*Math.sin(3*Math.PI/2)+dy*Math.cos(3*Math.PI/2))
+        ));
     }
 
     ,draw : function(sp, lp, func) {
