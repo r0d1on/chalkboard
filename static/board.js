@@ -1,7 +1,5 @@
 'use strict';
 
-import {_new} from './base/objects.js';
-
 import {Menu} from './ui/Menu.js';
 
 import {UI} from './ui/UI.js';
@@ -72,8 +70,8 @@ function get_io_type() {
 function init(IO) {
     UI.init(IO);
 
-    MENU_main = _new(Menu, ['root', 'menu', true]);
-    MENU_options = _new(Menu, ['root', 'options', false]);
+    MENU_main = Menu.new('root', 'menu', true);
+    MENU_options = Menu.new('root', 'options', false);
 
     // brush color/size menu item
     BRUSH.init(MENU_main, MENU_options);
@@ -83,26 +81,26 @@ function init(IO) {
     TOOLS.init(MENU_main, MENU_options);
 
     // background tools
-    TOOLS.add_tool(_new(PanZoomTool, []), false); // "Control" pan & zoom tool handler
+    TOOLS.add_tool(PanZoomTool.new(), false); // "Control" pan & zoom tool handler
 
-    let undo = _new(UndoTool, []);
+    let undo = UndoTool.new();
     TOOLS.add_tool(undo, false); // "Backspace" undo handler
 
-    let redo = _new(RedoTool, []);
+    let redo = RedoTool.new();
     TOOLS.add_tool(redo, false); // Shift+"Backspace" redo handler
 
     TOOLS.add_tool(SelectorTool.DELETE, false); // "Delete" deleter handler
 
     // foreground tools
-    TOOLS.add_tool(_new(PenTool, []), true, '[p]en');
-    TOOLS.add_tool(_new(EraserTool, []), true, '[e]raser');
-    TOOLS.add_tool(_new(TexterTool, [MENU_main]), true, 'text [i]nput');
-    TOOLS.add_tool(_new(BoxTool, []), true, '[b]ox');
-    TOOLS.add_tool(_new(CircleTool, []), true, '[c]ircle/ellipse');
-    TOOLS.add_tool(_new(LineTool, []), true, '[l]ine, arrow');
-    let selector = _new(SelectorTool, []);
+    TOOLS.add_tool(PenTool.new(), true, '[p]en');
+    TOOLS.add_tool(EraserTool.new(), true, '[e]raser');
+    TOOLS.add_tool(TexterTool.new(MENU_main), true, 'text [i]nput');
+    TOOLS.add_tool(BoxTool.new(), true, '[b]ox');
+    TOOLS.add_tool(CircleTool.new(), true, '[c]ircle/ellipse');
+    TOOLS.add_tool(LineTool.new(), true, '[l]ine, arrow');
+    let selector = SelectorTool.new();
     TOOLS.add_tool(selector, true, '[s]elect - scale, rotate, copy, paste');
-    TOOLS.add_tool(_new(ImageManipulatorTool, []), true, 'image manipulator tool');
+    TOOLS.add_tool(ImageManipulatorTool.new(), true, 'image manipulator tool');
     TOOLS.activate('pen', false, 0);
 
     // config menu item
@@ -144,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function(){
         console.log('init()');
 
         io_module.then((module)=>{
-            let IO = _new(module.IO);
+            let IO = module.IO.new();
             console.log('IO type: ', IO.type);
             init(IO);
         }).catch((error)=>{

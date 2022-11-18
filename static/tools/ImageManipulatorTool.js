@@ -16,8 +16,8 @@ let ImageManipulatorTool = {
     ,icon : [null,[8,52],[8,10],[8,52],null,[8,10],[51,10],[8,10],null,[51,52],[8,52],[51,52],[51,10],[51,52],null,[22,33],[41,49],null,[25,30],[49,49],null,[32,29],[49,43],null,[36,26],[50,37],null,[34,49],[19,37],null,[26,49],[15,41],null,[19,49],[12,44],null,[11,49],[49,49],[50,37],null,[11,49],[12,44],null,[10,45],[25,30],null,[29,33],[36,26],null,[38,28],[48,35],null,[19,23],[19,23],[17,22],[17,22],[16,20],[16,20],[17,17],[17,17],[19,16],[19,16],[21,16],[21,16],[23,17],[23,17],[24,20],[24,20],[23,22],[23,22],[21,23],[19,23],[19,23],null,[20,19],[20,19]]
 
     ,ImageManipulatorTool : function() {
-        DrawToolBase.init.call(this, 'imager', false, []);
-        SelectorBase.init.call(this, [
+        DrawToolBase.__init__.call(this, 'imager', false, []);
+        SelectorBase.__init__.call(this, [
             SelectorBase.MODES.SCALING
             //,SelectorBase.MODES.ROTATING
             //,SelectorBase.MODES.OPTIMIZE
@@ -30,8 +30,8 @@ let ImageManipulatorTool = {
         this.selection.map((sel)=>{
             let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[2];
             pnt.rect.map((p)=>{
-                p.X += dx;
-                p.Y += dy;
+                p.x += dx;
+                p.y += dy;
             });
         });
     }
@@ -40,14 +40,14 @@ let ImageManipulatorTool = {
         this.selection.map((sel)=>{
             let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].gp[2];
             pnt.rect.map((p)=>{
-                p.X -= this.selection_center.X;
-                p.Y -= this.selection_center.Y;
+                p.x -= this.selection_center.x;
+                p.y -= this.selection_center.y;
 
-                p.X *= cx;
-                p.Y *= cy;
+                p.x *= cx;
+                p.y *= cy;
 
-                p.X += this.selection_center.X;
-                p.Y += this.selection_center.Y;
+                p.x += this.selection_center.x;
+                p.y += this.selection_center.y;
             });
         });
     }

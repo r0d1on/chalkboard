@@ -5,7 +5,13 @@ function has(obj, prop) {
 }
 
 function copy(o) {
-    return Object.assign({}, o);
+    let r;
+    if (typeof(o['copy']) == 'function') {
+        r = o.copy();
+    } else {
+        r = Object.assign({}, o);
+    }
+    return r;
 }
 
 function sizeof(o) {
@@ -23,9 +29,13 @@ function deepcopy(o) {
         let obj = (''+o).split(/ |\[|\]/g)[2];
         let co = null;
         if (obj == 'Object') {
-            co = {};
-            for(const k in o)
-                co[k] = deepcopy(o[k]);
+            if (typeof(o['copy']) == 'function') {
+                co = o.copy();
+            } else {
+                co = {};
+                for(const k in o)
+                    co[k] = deepcopy(o[k]);
+            }
         } else if (obj == 'HTMLImageElement') {
             co = new Image();
             co.src = o.src;
@@ -46,7 +56,9 @@ function extend(target, source) {
 function getConstructor(T) {
     let _T = null;
     // get constructor
-    if ( (T.__classname in T) && (typeof(T[T.__classname]) == 'function') ) {
+    if (typeof(T['__konstructor']) == 'function') {
+        _T = T['__konstructor'];
+    } else if (typeof(T[T.__classname]) == 'function') {
         _T = T[T.__classname];
     } else {
         for(const prop in T) {
@@ -90,6 +102,7 @@ function allFieldNames(T) {
 
 function _class(name, def) {
     def.__classname = name;
+    _new(def, [], true);
     return def;
 }
 
@@ -129,7 +142,12 @@ function _new(T, params, dry) {
         });
 
         // own constructor
-        T.init = _T;
+        T.__init__ = _T;
+
+        // constructor shortcuts
+        T['__konstructor'] = _T;
+        T.new = (...args)=>{return _new(T, args);};
+        T[T.__classname] = (...args)=>{return _new(T, args);};
 
         _T['__@__'] = at;
 
@@ -165,10 +183,10 @@ function _new(T, params, dry) {
         });
 
         // run mixin initializers
-        obj._mixins = {};
+        obj.__mixins = {};
         at.mixins.map((M)=>{
             let _M = getConstructor(M);
-            obj._mixins[_M.name] = M;
+            obj.__mixins[_M.name] = M;
             _M.call(obj);
         });
 

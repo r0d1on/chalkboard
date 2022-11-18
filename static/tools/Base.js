@@ -38,7 +38,7 @@ let DrawToolBase = {
     super : ToolBase
 
     ,DrawToolBase : function(name, cyclic, shortcut) {
-        ToolBase.init.call(this, name);
+        ToolBase.__init__.call(this, name);
 
         this.cyclic = cyclic;
         this.shortcut = shortcut;
@@ -100,7 +100,7 @@ let DistortableDrawTool = {
     super : DrawToolBase
 
     ,DistortableDrawTool : function(name, cyclic, shortcut) {
-        DrawToolBase.init.call(this, name, cyclic, shortcut);
+        DrawToolBase.__init__.call(this, name, cyclic, shortcut);
         this.distorted = 0;
         this.mode = 0;
         this.options = extend(this.options, {

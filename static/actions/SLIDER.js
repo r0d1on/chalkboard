@@ -1,5 +1,7 @@
 'use strict';
 
+import {Point} from '../util/Point.js';
+
 import {UI} from '../ui/UI.js';
 
 import {Menu} from '../ui/Menu.js';
@@ -24,11 +26,11 @@ let SLIDER = {
 
     ,get_current_frame : function() {
         return [
-            UI.local_to_global({X: 0
-                ,Y: 0})
-            ,UI.local_to_global({X: UI.window_width - UI.CANVAS_MARGIN * 2
-                ,Y: UI.window_height - UI.CANVAS_MARGIN * 2
-            })
+            UI.local_to_global(Point.new(0, 0))
+            ,UI.local_to_global(Point.new(
+                UI.window_width - UI.CANVAS_MARGIN * 2
+                ,UI.window_height - UI.CANVAS_MARGIN * 2
+            ))
         ];
     }
 
@@ -58,7 +60,7 @@ let SLIDER = {
     ,move_to : function(rect) {
         let rect0 = SLIDER.get_current_frame();
 
-        if ((rect0[0].X==rect[0].X)&&(rect0[0].Y==rect[0].Y)
+        if ((rect0[0].x==rect[0].x)&&(rect0[0].y==rect[0].y)
         //&&(rect0[1].X==rect[1].X)&&(rect0[1].Y==rect[1].Y)
         )
             return;
@@ -71,20 +73,20 @@ let SLIDER = {
 
         function interpolate(p0, p1, step, steps, time) {
             const d = [
-                p1[0].X - p0[0].X, p1[0].Y - p0[0].Y
-                ,p1[1].X - p0[1].X, p1[1].Y - p0[1].Y
+                p1[0].x - p0[0].x, p1[0].y - p0[0].y
+                ,p1[1].x - p0[1].x, p1[1].y - p0[1].y
             ];
             const k = step / steps;
 
             UI.viewpoint_set(
-                p0[0].X + d[0] * k
-                ,p0[0].Y + d[1] * k
-                ,LDX / ((p0[1].X + d[2] * k) - UI.viewpoint.dx)
+                p0[0].x + d[0] * k
+                ,p0[0].y + d[1] * k
+                ,LDX / ((p0[1].x + d[2] * k) - UI.viewpoint.dx)
             );
 
             if (step==steps) {
                 SLIDER._timer = null;
-                UI.viewpoint_set(p1[0].X, p1[0].Y, LDX / (p1[1].X - p1[0].X));
+                UI.viewpoint_set(p1[0].x, p1[0].y, LDX / (p1[1].x - p1[0].x));
 
             } else {
                 SLIDER._timer = setTimeout(((p0, p1, step, steps, time)=>{
@@ -156,12 +158,11 @@ let SLIDER = {
     }
 
     ,slide_home : function() {
-        SLIDER.move_to([
-            {X:0,Y:0}
-            ,{
-                X : UI.window_width  - UI.CANVAS_MARGIN*2
-                ,Y : UI.window_height - UI.CANVAS_MARGIN*2
-            }
+        SLIDER.move_to([Point.new(0, 0)
+            ,Point.new(
+                UI.window_width  - UI.CANVAS_MARGIN*2
+                ,UI.window_height - UI.CANVAS_MARGIN*2
+            )
         ]);
 
         if (SLIDER.current_ix!=null)

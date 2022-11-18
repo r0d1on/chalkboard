@@ -2,8 +2,6 @@
 
 import {_class} from '../base/objects.js';
 
-import {dst2seg} from '../util/geometry.js';
-
 import {DrawToolBase} from './Base.js';
 
 import {UI} from '../ui/UI.js';
@@ -18,12 +16,12 @@ let EraserTool = {
     ,icon : [null,[35,10],[24,26],[39,36],[50,20],[35,10],null,[15,40],[21,31],[36,42],null,[44,21],[36,16],[30,25],[38,30],[44,21],null,[39,21],[35,25],null,[50,20],[35,10],[24,26],[39,36],[50,20],null,[42,27],[32,20],null,[41,18],[34,29],null,[45,20],[37,31],null,[38,15],[30,26],null,[15,40],[24,46],null,[36,42],[33,46],[24,46],null,[18,36],[33,46],null,[25,34],[19,43],null,[29,37],[24,45],null,[33,40],[29,46],null,[5,51],[22,51],null,[35,51],[54,51],null,[5,51],[16,51],null,[54,51],[41,51]]
 
     ,EraserTool : function() {
-        DrawToolBase.init.call(this, 'eraser', false, ['Control', 'e']);
+        DrawToolBase.__init__.call(this, 'eraser', false, ['Control', 'e']);
     }
 
     ,touches : function(gp, stroke) {
-        let dst = dst2seg(gp
-            ,stroke.gp[0]
+        let dst = gp.dst2seg(
+            stroke.gp[0]
             ,stroke.gp[1]
         );
         return (dst < ((BRUSH.size + stroke.width)/2.0));
