@@ -26,7 +26,7 @@ function deepcopy(o) {
     } else if (o==null) {
         return null;
     } else if (typeof(o)=='object') {
-        let obj = (''+o).split(/ |\[|\]/g)[2];
+        let obj = ('' + o).split(/ |\[|\]/g)[2];
         let co = null;
         if (obj == 'Object') {
             if (typeof(o['copy']) == 'function') {
@@ -40,7 +40,7 @@ function deepcopy(o) {
             co = new Image();
             co.src = o.src;
         } else {
-            throw 'Don not know how to clone: '+obj;
+            throw 'Don not know how to clone: ' + obj;
         }
         return co;
     }
@@ -200,4 +200,4 @@ function _new(T, params, dry) {
     return obj;
 }
 
-export {copy, sizeof, deepcopy, extend, _class, _new};
+export {copy, sizeof, deepcopy, extend, _class, _new, has};

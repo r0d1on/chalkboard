@@ -1,7 +1,5 @@
 'use strict';
 
-import {copy} from '../base/objects.js';
-
 import {BRUSH} from './BRUSH.js';
 import {UI} from './UI.js';
 
@@ -289,7 +287,7 @@ let TOOLS = {
     }
 
     ,on_start : function(lp, button) {
-        const point = copy(lp);
+        const point = lp.copy();
         const background = (TOOLS.background!=null)&&(TOOLS.background.on_start!=undefined);
         let handled = false;
 
@@ -307,13 +305,13 @@ let TOOLS = {
     }
 
     ,on_move : function(lp) {
-        if (TOOLS._tools_handle('on_move', [copy(lp)]))
+        if (TOOLS._tools_handle('on_move', [lp.copy()]))
             return true;
         return false;
     }
 
     ,on_stop : function(lp) {
-        const point = copy(lp);
+        const point = lp.copy();
         const background = (TOOLS.background!=null)&&(TOOLS.background.on_stop!=undefined);
         let handled = false;
 

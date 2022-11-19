@@ -39,8 +39,8 @@ let PanZoomTool = { // background tool
             );
         }
 
-        if ((lp.D!=undefined)&&(this.last_point.D!=undefined))
-            UI.viewpoint_zoom(lp.D / this.last_point.D, this.last_point);
+        if ((lp.d!=undefined)&&(this.last_point.d!=undefined))
+            UI.viewpoint_zoom(lp.d / this.last_point.d, this.last_point);
 
         this.last_point = lp;
         return true;

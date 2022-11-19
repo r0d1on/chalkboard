@@ -1,6 +1,6 @@
 'use strict';
 
-import {_class, copy, deepcopy} from '../base/objects.js';
+import {_class, deepcopy} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
 
@@ -720,7 +720,7 @@ let SelectorTool = {
                 let to = (BOARD.strokes[s0.commit_id][s0.stroke_idx].width + BOARD.strokes[s1.commit_id][s1.stroke_idx].width)/2.0;
                 let d = lp0.dst2(lp1);
                 if (( d < to ) && ( d > 0 )) {
-                    BOARD.strokes[s1.commit_id][s1.stroke_idx].gp[s1.point_idx] = copy(p0);
+                    BOARD.strokes[s1.commit_id][s1.stroke_idx].gp[s1.point_idx] = p0.copy();
                     squeezed += 1;
                 }
             }

@@ -1,7 +1,5 @@
 'use strict';
 
-import {copy} from '../base/objects.js';
-
 import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
 
@@ -221,7 +219,7 @@ let UI = {
 
             if (lp!=null) {
                 UI.on_stop(lp.copy());
-                if (lp.D!=undefined)
+                if (lp.d!=undefined)
                     UI.on_key_up('Control');
                 UI._last_point = null;
             }
@@ -380,16 +378,11 @@ let UI = {
 
     ,get_touch : function(canvasDom, e) {
         const rect = canvasDom.getBoundingClientRect();
-        let p0 = Point.new(
-            e.touches[0].clientX - rect.left
-            ,e.touches[0].clientY - rect.top
-        );
+        let client_origin = Point.new(rect.left, rect.top);
+        let p0 = Point.new(e.touches[0].clientX, e.touches[0].clientY).sub(client_origin);
 
         if (e.touches.length>1) {
-            let p1 = Point.new(
-                e.touches[1].clientX - rect.left
-                ,e.touches[1].clientY - rect.top
-            );
+            let p1 = Point.new(e.touches[1].clientX, e.touches[1].clientY).sub(client_origin);
 
             p0 = Point.new(
                 (p0.x + p1.x) / 2
@@ -437,20 +430,20 @@ let UI = {
 
     ,on_start : function(lp, button) {
         UI._event_handlers['on_start'].reduce((handled, handler)=>{
-            return handled||handler(copy(lp), button);
+            return handled||handler(lp.copy(), button);
         }, false);
         UI._last_button = button;
     }
 
     ,on_move : function(lp) {
         UI._event_handlers['on_move'].reduce((handled, handler)=>{
-            return handled||handler(copy(lp));
+            return handled||handler(lp.copy());
         }, false);
     }
 
     ,on_stop : function(lp) {
         UI._event_handlers['on_stop'].reduce((handled, handler)=>{
-            return handled||handler(copy(lp));
+            return handled||handler(lp.copy());
         }, false);
     }
 
@@ -691,10 +684,10 @@ let UI = {
 
         let i =0;
         while (i < figure.length) {
-            p0 = copy(figure[i]);
+            p0 = figure[i].copy();
             p1 = figure[(i+1)%figure.length];
 
-            ret.push(copy(p0));
+            ret.push(p0.copy());
 
             if ((!cyclic)&&(i==figure.length-1))
                 break;
@@ -721,7 +714,7 @@ let UI = {
                         p0.y += dy;
                     }
                     dst = p0.dst2(p1);
-                    ret.push(copy(p0));
+                    ret.push(p0.copy());
                 }
 
             }
@@ -749,7 +742,7 @@ let UI = {
 
         let distortion = (p, i)=>{
             if ((i==0)&&(t==0)) {
-                p0 = copy(p);
+                p0 = p.copy();
                 return p;
             }
 
@@ -764,7 +757,7 @@ let UI = {
 
             t += Math.sqrt(p.dst2(p0));
 
-            p0 = copy(p);
+            p0 = p.copy();
 
             return Point.new(
                 p.x + Math.sin(phi) * w * ((dx*Math.cos(Math.PI/2) - dy*Math.sin(Math.PI/2)))
