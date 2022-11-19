@@ -1,6 +1,6 @@
 'use strict';
 
-import {_class} from '../base/objects.js';
+import {_class, has} from '../base/objects.js';
 
 let Point = {
 
@@ -56,6 +56,15 @@ let Point = {
 
     ,copy : function() {
         return Point.new(this.x, this.y, this.d, this.p);
+    }
+
+    ,str : function() {
+        let ret = [];
+        for(const k in this) {
+            if ((has(this, k))&&(!k.startsWith('__'))&&(this[k]!==undefined))
+                ret.push(k + ':' + this[k]);
+        }
+        return '<' + ret.join(' , ') + '>';
     }
 };
 
