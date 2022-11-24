@@ -1,6 +1,8 @@
 'use strict';
 
-import {_class} from '../base/objects.js';
+import {_class, is_instance_of} from '../base/objects.js';
+
+import {ErasureStroke} from '../util/Strokes.js';
 
 import {ToolBase} from './Base.js';
 
@@ -22,13 +24,12 @@ let UndoTool = { // background tool
     ,on_activated : function() {
         let undone = BOARD.undo();
         for(let i in undone) {
-            if ((undone[i].gp[0]==null)&&(undone[i].gp[1]=='erase')) {
+            if (is_instance_of(undone[i], ErasureStroke)) {
                 BOARD.version += 1;
-                BOARD.hide_strokes([undone[i]]);
+                undone[i].flip_by();
             }
         }
         UI.redraw();
-
     }
 
 };

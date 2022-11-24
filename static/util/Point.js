@@ -38,8 +38,14 @@ let Point = {
         return Math.sqrt(this.dst2seg2(a, b));
     }
 
-    ,sub : function(other) {
-        return Point.new(this.x - other.x, this.y - other.y);
+    ,add : function(other, scale) {
+        scale = (scale===undefined)?1:scale;
+        return this.sub(other, -scale);
+    }
+
+    ,sub : function(other, scale) {
+        scale = (scale===undefined)?1:scale;
+        return Point.new(this.x - other.x*scale, this.y - other.y*scale);
     }
 
     ,angle : function(other) {
@@ -56,6 +62,17 @@ let Point = {
 
     ,copy : function() {
         return Point.new(this.x, this.y, this.d, this.p);
+    }
+
+    ,to_json : function() {
+        return {
+            x : this.x
+            ,y : this.y
+        };
+    }
+
+    ,from_json : function(json) {
+        return Point.new(json.x, json.y);
     }
 
     ,str : function() {

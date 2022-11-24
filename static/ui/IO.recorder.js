@@ -4,11 +4,6 @@ import {_class} from '../base/objects.js';
 
 import {IO as BaseIO} from './IO.js';
 
-/*
-localStorage.setItem('record', JSON.stringify(UI.IO.events_log));
-UI.IO.events_log = JSON.parse(localStorage.getItem('record'));
-UI.IO.replay_events();
-*/
 
 let IO = {
     super: BaseIO

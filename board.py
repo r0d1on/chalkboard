@@ -101,38 +101,52 @@ def http_sync():
             ,"p" : bpass
         }
         changed = True
+        
+    if loc.get("PERSISTENCE_VERSION",None) is None:
+        loc["PERSISTENCE_VERSION"] = 2
 
     auth = ((bpass=="") or (loc['p']==bpass))
 
     # process the request (ingest remote updates)
-    if (msg.get("lead", 0)) and (auth):
+    
+    if (msg.get("lead", 0)) and (auth): # someone's leading - update the view
         loc["view_rect"] = msg["view_rect"]
         changed = True
 
-    if (loc["version"] < msg["version"]) and (auth):
+    if (loc["version"] < msg["version"]) and (auth): # new version incoming
         loc["version"] = msg["version"]
         loc["view_rect"] = msg["view_rect"]
         loc["slides"] = msg["slides"]
         loc["p"] = bpass
         changed = True
 
-    if (len(msg["strokes"]) > 0) and (auth):
-        if (msg["refresh"] == 1):
+    if (len(msg["strokes"]) > 0) and (auth): # have some strokes incoming
+        
+        if (loc["PERSISTENCE_VERSION"] < msg["PERSISTENCE_VERSION"]): # format update
+            msg["refresh"] = 1
+        
+        if (msg["refresh"] == 1): # full reset requested
             loc["version"] = 0
-            loc["strokes"] = {}
-
-        sync_message(loc, msg)
+            loc["strokes"] = {} 
+        
+        sync_message(loc, msg) # sync in the data
         changed = True
 
     if changed:
+        loc["PERSISTENCE_VERSION"] = max(loc["PERSISTENCE_VERSION"], msg["PERSISTENCE_VERSION"])
         with open(bfile, 'wt') as f:
             f.write(json.dumps(loc))
         print("updated board:", bfile)
 
-    # prepare response with local
+    # prepare response with local updates
     upd = {}
     for loc_commit, loc_strokes in loc['strokes'].items():
         for loc_idx, loc_stroke in loc_strokes.items():
+            if (loc_stroke.get('version', None) is None):
+                print('loc: ',loc_stroke)
+            if (msg.get('version', None) is None):
+                print('msg: ',msg)
+                
             if (loc_stroke['version'] > msg['version']):
                 upd[loc_commit] = upd.get(loc_commit, {})
                 upd[loc_commit][loc_idx] = loc_stroke
@@ -145,6 +159,7 @@ def http_sync():
          ,"received_version" : msg["version"]
          ,"view_rect" : loc.get("view_rect", None)
          ,"slides" : loc.get("slides", [])
+         ,"PERSISTENCE_VERSION" : loc["PERSISTENCE_VERSION"]
     })
 
 

@@ -1,16 +1,18 @@
 'use strict';
 
-import {deepcopy, sizeof} from '../base/objects.js';
+import {deepcopy, sizeof, has, is_instance_of} from '../base/objects.js';
+
+import {Point} from '../util/Point.js';
+import {Stroke, ErasureStroke} from '../util/Strokes.js';
 
 import {UI} from '../ui/UI.js';
-
 import {BOARD} from '../ui/BOARD.js';
 import {SLIDER} from './SLIDER.js';
 
 
 // SAVE ITEMS
 let SAVE = {
-    PERSISTENCE_VERSION : 2
+    PERSISTENCE_VERSION : 3
 
     ,icon : [null,[8,7],[8,11],[8,13],[7,17],[8,19],[7,23],[8,25],[7,28],[8,30],[7,34],[8,36],[7,40],[8,42],[7,45],[8,47],[7,51],[8,53],[10,54],[14,53],[16,54],[19,53],[21,54],[25,53],[27,54],[31,53],[33,54],[36,53],[38,54],[42,53],[44,54],[48,53],[50,54],[53,53],[53,51],[53,48],[53,45],[54,42],[53,39],[53,36],[53,34],[53,30],[53,26],[53,22],[53,18],null,[44,8],[40,8],[36,7],[33,8],[30,8],[27,8],[25,8],[22,8],[19,7],[16,8],[13,8],[10,8],[8,7],null,[53,18],[44,8],[53,18],null,[15,10],[15,21],[37,21],[37,9],[37,21],[15,21],[15,10],null,[14,51],[14,31],[14,51],null,[14,31],[42,30],[42,51],[42,30],[14,31],null,[20,36],[35,36],null,[21,45],[35,45],null,[19,12],[33,12],null,[17,17],[33,16]]
     ,icon_save : [null,[16,12],[16,15],[16,19],[16,24],null,[16,34],[16,36],[16,41],[16,45],[18,47],[20,46],[25,46],[29,46],[33,47],[37,47],[41,47],[46,47],[49,46],[49,43],[50,40],[50,38],[49,36],[49,32],[49,29],[49,26],[49,23],[49,20],null,[43,13],[40,13],[37,12],[35,12],[31,13],[27,13],[24,12],[22,12],[16,12],null,[49,20],[43,13],[49,20],null,[22,12],[21,20],[37,20],[37,12],[37,20],[21,20],[22,12],null,[35,15],[24,15],[35,15],null,[25,35],[30,30],[25,25],null,[4,30],[30,30],[25,35],null,[25,25],[30,30],[4,30]]
@@ -26,71 +28,50 @@ let SAVE = {
     ,is_syncing : false
     ,canvas_sync : null
 
-    ,serialize : function(o) {
-        return JSON.stringify(o);
-    }
-
-    ,deserialize : function(json) {
-        return JSON.parse(json);
-    }
-
     ,_strokes_to_save : function(from_version) {
-        let new_strokes = {};
+        let out_strokes = {};
 
         for(let commit_id in BOARD.strokes) {
             for(let stroke_idx in BOARD.strokes[commit_id]) {
-                let stroke = deepcopy(BOARD.strokes[commit_id][stroke_idx]);
+                let stroke = BOARD.strokes[commit_id][stroke_idx];
 
                 if (from_version === undefined) {
-                    if ((stroke.gp[0] == null)&&(stroke.gp[1] == 'erase')) {
-                        stroke = null;
-
-                    } else if (BOARD.is_hidden(stroke)) {
-                        stroke = null;
-
-                    } else if ((stroke.gp[0] == null)&&(stroke.gp[1] == 'image')) { // image
-                        stroke.gp[2] = {
-                            image : stroke.gp[2].image.src
-                            ,rect : stroke.gp[2].rect
-                        };
-
-                    } else if (stroke.erased!==undefined) {
+                    if (stroke.is_hidden())
+                        continue;
+                    if (is_instance_of(stroke, ErasureStroke))
+                        continue;
+                    if (has(stroke, 'erased'))
                         delete stroke.erased;
-
-                    }
-
                 } else {
                     if (stroke.version < from_version)
-                        stroke = null;
+                        continue;
                 }
 
-                if (stroke!==null) {
-                    if (!(commit_id in new_strokes))
-                        new_strokes[commit_id] = {};
+                stroke.commit_id = commit_id;
+                stroke.stroke_idx = stroke_idx;
+                if (stroke.version===undefined)
+                    stroke.version = BOARD.version;
 
-                    stroke.commit_id = commit_id;
-                    stroke.stroke_idx = stroke_idx;
+                out_strokes[commit_id] = out_strokes[commit_id] || {};
 
-                    new_strokes[commit_id][sizeof(new_strokes[commit_id])] = stroke;
-                }
-
+                out_strokes[commit_id][sizeof(out_strokes[commit_id])] = stroke.to_json();
             }
         }
 
-        return new_strokes;
+        return out_strokes;
     }
 
     ,_persist : function() {
-        let new_strokes = SAVE._strokes_to_save();
+        let out_strokes = SAVE._strokes_to_save();
 
-        let json = SAVE.serialize({
-            strokes : new_strokes
+        let json = JSON.stringify({
+            strokes : out_strokes
             ,slides : SLIDER.slides
             ,view_rect : SLIDER.get_current_frame()
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
         });
 
-        return [json, sizeof(new_strokes)];
+        return [json, sizeof(out_strokes)];
     }
 
     ,save : function() {
@@ -112,76 +93,122 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
     }
 
-    ,_unpersist : function(json) {
-        let o = SAVE.deserialize(json);
+    ,_unpersist_message : function(msg) {
+        function convert_point(p) {
+            if ('X' in p)
+                return Point.new(p.X, p.Y);
+            else
+                return Point.new(p.x, p.y);
+        }
 
-        if (o.PERSISTENCE_VERSION===undefined) {
+        if (msg.PERSISTENCE_VERSION===undefined) {
             let commit_id = BOARD.id_next('0');
             let id = BOARD.id_next('0', 5);
-            BOARD.strokes = {};
-            BOARD.strokes[commit_id] = {};
-            for(let i in o.strokes) {
-                let stroke = o.strokes[i];
+            let tmp_msg = deepcopy(msg);
+            tmp_msg.strokes = {};
+            tmp_msg.strokes[commit_id] = {};
+            for(let i in msg.strokes) {
+                let stroke = msg.strokes[i];
                 stroke.commit_id = commit_id;
-                stroke.stroke_idx = sizeof(BOARD.strokes[commit_id]);
+                stroke.stroke_idx = sizeof(tmp_msg.strokes[commit_id]);
                 stroke.stroke_id = id;
-                BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
+                tmp_msg.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
                 id = BOARD.id_next(id, 5);
             }
+            msg = tmp_msg;
+            msg.PERSISTENCE_VERSION = 2;
 
-        } else if (o.PERSISTENCE_VERSION===1) {
+        } else if (msg.PERSISTENCE_VERSION===1) {
             let commit_id = BOARD.id_next('0');
             let id = BOARD.id_next('0', 5);
-            BOARD.strokes = {};
-            for(let commit in o.strokes) {
-                BOARD.strokes[commit_id] = {};
-                for(let i in o.strokes[commit]) {
-                    let stroke = deepcopy(o.strokes[commit][i]);
+            let tmp_msg = deepcopy(msg);
+            tmp_msg.strokes = {};
+            for(let commit in msg.strokes) {
+                tmp_msg.strokes[commit_id] = {};
+                for(let i in msg.strokes[commit]) {
+                    let stroke = deepcopy(msg.strokes[commit][i]);
                     if (stroke!==undefined) {
                         stroke.commit_id = commit_id;
                         stroke.stroke_id = id;
-                        stroke.stroke_idx = sizeof(BOARD.strokes[commit_id]);
-                        BOARD.strokes[commit_id][stroke.stroke_idx] = stroke;
+                        stroke.stroke_idx = sizeof(tmp_msg.strokes[commit_id]);
+                        tmp_msg.strokes[commit_id][stroke.stroke_idx] = stroke;
                         id = BOARD.id_next(id, 5);
                     }
                 }
                 commit_id = BOARD.id_next(commit_id);
             }
-
-        } else if (o.PERSISTENCE_VERSION===2) {
-            BOARD.strokes = o.strokes;
-
+            msg = tmp_msg;
+            msg.PERSISTENCE_VERSION = 2;
         }
+
+        if (msg.PERSISTENCE_VERSION===2) {
+            for(let commit in msg.strokes) {
+                for(let i in msg.strokes[commit]) {
+                    let stroke = msg.strokes[commit][i];
+                    stroke.c = stroke.color;
+                    delete stroke.color;
+
+                    stroke.w = stroke.width;
+                    delete stroke.width;
+
+                    if ((stroke.gp===undefined)||(stroke.gp==null)) {
+                        console.warn('invalid stroke: ', stroke);
+                    } else if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase')) {
+                        delete stroke.gp;
+                        stroke['@'] = 'd';
+                    } else {
+                        stroke.p = stroke.gp.map((p)=>{return {x:p.X, y:p.Y};});
+                        delete stroke.gp;
+                        stroke['@'] = 'l';
+                    }
+
+                    msg.strokes[commit][i] = stroke;
+                }
+            }
+            msg.PERSISTENCE_VERSION = 3;
+        }
+
+        if (msg.PERSISTENCE_VERSION===3) {
+            for(let commit in msg.strokes) {
+                for(let i in msg.strokes[commit]) {
+                    msg.strokes[commit][i] = Stroke.from_json(msg.strokes[commit][i]);
+                }
+            }
+        }
+
+        msg.slides = (msg.slides)&&(msg.slides.map((slide)=>{
+            return [slide[0], slide[1].map(convert_point)];
+        }));
+        msg.view_rect = (msg.view_rect)&&(msg.view_rect.map(convert_point));
+
+        return msg;
+    }
+
+    ,_unpersist_board : function(json) {
+        let msg = SAVE._unpersist_message(JSON.parse(json));
+
+        BOARD.strokes = msg.strokes;
 
         for(let commit_id in BOARD.strokes) {
             BOARD.commit_id = (BOARD.commit_id > commit_id) ? BOARD.commit_id : commit_id;
             for(let i in BOARD.strokes[commit_id]) {
                 let stroke = BOARD.strokes[commit_id][i];
-                BOARD.stroke_id = (BOARD.stroke_id > stroke.stroke_id) ? BOARD.stroke_id : stroke.stroke_id;
+                BOARD.stroke_id = (stroke.stroke_id===undefined)||(BOARD.stroke_id > stroke.stroke_id) ? BOARD.stroke_id : stroke.stroke_id;
                 let version = (stroke.version===undefined) ? 0 : stroke.version;
                 BOARD.version = (BOARD.version > version) ? BOARD.version : version;
-
-                if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
-                    let image = new Image();
-                    image.src = stroke.gp[2].image;
-                    stroke.gp[2].image = image;
-                }
             }
         }
-
         BOARD.max_commit_id = BOARD.commit_id;
 
-        SLIDER.slides = o.slides;
-        if (o.slides.length==0) {
+        SLIDER.slides = msg.slides;
+        if (msg.slides.length==0) {
             SLIDER.current_ix = null;
         } else {
             SLIDER.current_ix = 0;
         }
 
         SLIDER.update();
-
-        if (!((o.view_rect===undefined)||(o.view_rect==null)))
-            SLIDER.move_to(o.view_rect);
+        SLIDER.move_to(msg.view_rect);
     }
 
     ,load : function() {
@@ -189,7 +216,7 @@ let SAVE = {
         if (board_data==null)
             return;
 
-        SAVE._unpersist(board_data);
+        SAVE._unpersist_board(board_data);
 
         SAVE.sent_version = null; // reset remote watermark to update the whole board
 
@@ -251,6 +278,11 @@ let SAVE = {
     ,sync_message : function(msg) {
         let max_commit = '';
         let max_stroke_id = '';
+
+        if ((msg.PERSISTENCE_VERSION===undefined)||(msg.PERSISTENCE_VERSION===null))
+            msg.PERSISTENCE_VERSION = 2;
+
+        msg = SAVE._unpersist_message(msg);
 
         for(let in_commit in msg.strokes) {
             let in_strokes = msg.strokes[in_commit];
@@ -314,13 +346,13 @@ let SAVE = {
 
         let from_version = (SAVE.sent_version == null)? 0 : SAVE.sent_version + 1;
 
-        let new_strokes = SAVE._strokes_to_save(from_version);
+        let out_strokes = SAVE._strokes_to_save(from_version);
 
         let message_out = deepcopy({
             name : BOARD.board_name
 
             ,version : BOARD.version
-            ,strokes : new_strokes
+            ,strokes : out_strokes
 
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
 
@@ -383,7 +415,7 @@ let SAVE = {
                 return (ee)=>{
                     const board_data = ee.target.result;
                     UI.log('loaded file: ', name);
-                    SAVE._unpersist(board_data);
+                    SAVE._unpersist_board(board_data);
                     UI.redraw();
                 };
             })(file)
@@ -429,6 +461,7 @@ let SAVE = {
             name : BOARD.board_name
             ,version : -1
             ,strokes : {}
+            ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
         };
 
 

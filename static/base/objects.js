@@ -46,6 +46,19 @@ function deepcopy(o) {
     }
 }
 
+
+function is_instance_of(obj, classes) {
+    if (!Array.isArray(classes))
+        classes = [classes];
+    for(let i=0;i<classes.length; i++) {
+        let constr = (typeof(classes[i]['__konstructor'])=='function')?classes[i]['__konstructor']:classes[i];
+        if (obj instanceof constr)
+            return true;
+    }
+    return false;
+}
+
+
 function extend(target, source) {
     target = (target===undefined)?{}:target;
     for (const key in source)
@@ -200,4 +213,4 @@ function _new(T, params, dry) {
     return obj;
 }
 
-export {copy, sizeof, deepcopy, extend, _class, _new, has};
+export {copy, sizeof, deepcopy, extend, _class, _new, has, is_instance_of};

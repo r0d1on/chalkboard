@@ -59,11 +59,11 @@ let DrawToolBase = {
     ,on_move : function(lp) {
         if (this.activated) {
             UI.reset_layer('overlay');
-            this.draw(this.start_point, lp, UI.add_overlay_stroke);
+            this.draw(this.start_point, lp, UI.draw_overlay_stroke);
             this.last_point = lp;
         } else {
             UI.reset_layer('overlay');
-            UI.add_overlay_stroke(lp, lp, {
+            UI.draw_overlay_stroke(lp, lp, {
                 color : BRUSH.get_color('2')
             });
         }
@@ -72,7 +72,7 @@ let DrawToolBase = {
     ,on_stop : function(lp) {
         if (this.activated) {
             UI.reset_layer('overlay');
-            this.draw(this.start_point, lp, BOARD.add_buffer_stroke);
+            this.draw(this.start_point, lp, BOARD.add_line);
             BOARD.flush_commit();
         }
         this.activated = false;
@@ -149,14 +149,14 @@ let DistortableDrawTool = {
         return figure;
     }
 
-    ,_render : function(figure, func) {
+    ,_render : function(figure, draw_line_fun) {
         figure.map((p,pi)=>{
             if ((pi<figure.length-1)||(this.cyclic)) {
                 if ((this.mode==1)&&(pi%2==1))
                     return;
                 if ((this.mode==2)&&(pi%5!=0))
                     return;
-                func(
+                draw_line_fun(
                     p
                     ,figure[(pi+1) % figure.length]
                 );

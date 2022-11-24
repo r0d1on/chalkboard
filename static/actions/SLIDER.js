@@ -48,8 +48,8 @@ let SLIDER = {
         let bx = 5+(20-5*label.length);
 
         for(let ci=0; ci<label.length; ci++)
-            bx += TexterTool.put_char(label[ci], bx, Menu.SIZE-15, 0.6, (p0,p1)=>{
-                UI.draw_stroke(p0, p1, 'green', 5, ctx);
+            bx += TexterTool.put_char(label[ci], bx, Menu.SIZE-15, 0.6, (p0, p1)=>{
+                UI.draw_line(p0, p1, 'green', 5, ctx);
             }) + 5;
 
         if (refocus)
@@ -59,6 +59,9 @@ let SLIDER = {
     ,_timer : null
     ,move_to : function(rect) {
         let rect0 = SLIDER.get_current_frame();
+
+        if ((rect===undefined)||(rect==null))
+            return;
 
         if ((rect0[0].x==rect[0].x)&&(rect0[0].y==rect[0].y)
         //&&(rect0[1].X==rect[1].X)&&(rect0[1].Y==rect[1].Y)

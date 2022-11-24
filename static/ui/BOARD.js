@@ -1,29 +1,33 @@
 'use strict';
 
-import {sizeof} from '../base/objects.js';
+import {sizeof, is_instance_of} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
+import {LineStroke, ErasureStroke} from '../util/Strokes.js';
 
 import {UI} from './UI.js';
 import {BRUSH} from './BRUSH.js';
 
+
 let BOARD = {
     board_name : null
 
-    ,buffer : [] // globally positioned strokes on buffer layer and accumulated stroke buffer
-    ,add_buffer_stroke : function(lp0, lp1) {
+    ,buffer : [] // globally positioned strokes in buffer layer
+    ,add_line : function(lp0, lp1) {
         let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
+
         let color = BRUSH.get_color();
         let width = BRUSH.get_local_width();
 
-        if (lp0!=null)
-            UI.draw_stroke(lp0, lp1, color, width, ctx);
+        let stroke = LineStroke.new(
+            UI.local_to_global(lp0)
+            ,UI.local_to_global(lp1)
+            ,color
+            ,width / UI.viewpoint.scale
+        );
 
-        BOARD.buffer.push({
-            gp : [UI.local_to_global(lp0), UI.local_to_global(lp1)]
-            ,color : color
-            ,width : width / UI.viewpoint.scale
-        });
+        stroke.draw(ctx);
+        BOARD.buffer.push(stroke);
     }
 
     ,version : 0
@@ -63,15 +67,6 @@ let BOARD = {
         return iid + '-' + vid;
     }
 
-    ,add_stroke : function(stroke) {
-        stroke.version = BOARD.version;
-
-        stroke.stroke_id = BOARD.stroke_id;
-        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
-
-        let idx = sizeof(BOARD.strokes[BOARD.commit_id]);
-        BOARD.strokes[BOARD.commit_id][idx] = stroke;
-    }
 
     ,flush : function(buffer, clear) {
         clear = (clear===undefined)?true:clear;
@@ -79,17 +74,17 @@ let BOARD = {
         let maxw = -1e10;
 
         let brect = UI.get_rect(buffer.reduce((a, stroke)=>{
-            let lp0, lp1;
-            if (stroke.gp[0]!=null) {
-                lp0 = UI.global_to_local(stroke.gp[0], UI.viewpoint);
-                lp1 = UI.global_to_local(stroke.gp[1], UI.viewpoint);
-                UI.draw_stroke(lp0, lp1, stroke.color, stroke.width * UI.viewpoint.scale, ctx);
-            }
-            BOARD.add_stroke(stroke);
+            stroke.draw(ctx);
+
+            BOARD.commit_stroke(stroke);
 
             maxw = Math.max(stroke.width, maxw) * UI.viewpoint.scale;
 
-            a.push(lp0, lp1);
+            //a.push(lp0, lp1);
+            stroke.rect().map((point)=>{
+                a.push(UI.global_to_local(point));
+            });
+
             return a;
         }, []));
 
@@ -118,55 +113,10 @@ let BOARD = {
         return true;
     }
 
-    ,hide_strokes : function(strokes, eraser_id) {
-        return strokes.reduce((a, stroke)=>{
-
-            if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase')) {
-                let erased = [];
-                for(let commit_id in BOARD.strokes) {
-                    let strokes_group = BOARD.strokes[commit_id];
-                    for(let i in strokes_group) {
-                        if ((strokes_group[i].erased==stroke.stroke_id)||(strokes_group[i].erased=='-'+stroke.stroke_id))
-                            erased.push(strokes_group[i]);
-                    }
-                }
-
-                erased = BOARD.hide_strokes(erased, stroke.stroke_id);
-                erased.map((s)=>{
-                    a.push(s);
-                });
-            //} else if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
-            } else {
-                if (stroke.erased!=undefined) {
-                    if (stroke.erased[0]=='-')
-                        stroke.erased = stroke.erased.substr(1);
-                    else
-                        stroke.erased = '-' + stroke.erased;
-                } else {
-                    stroke.erased = eraser_id;
-                }
-
-                stroke.version = BOARD.version;
-                a.push(stroke);
-            }
-
-            return a;
-        }, []);
-    }
-
     ,hide_commit : function(strokes) {
         BOARD.op_start();
-        BOARD.hide_strokes(strokes, BOARD.stroke_id);
-        BOARD.add_stroke({gp:[null, 'erase']});
+        ErasureStroke.flip_strokes(strokes, BOARD.stroke_id, true);
         BOARD.op_commit();
-    }
-
-    ,is_hidden : function(stroke) {
-        return (
-            (stroke.erased!==undefined)&&
-            (stroke.erased!==null)&&
-            (stroke.erased[0]!='-')
-        );
     }
 
     ,undo : function() {
@@ -191,6 +141,7 @@ let BOARD = {
         }
     }
 
+
     ,op_start : function() {
         if (BOARD.locked)
             throw 'board is locked';
@@ -205,6 +156,20 @@ let BOARD = {
         BOARD.locked = true;
     }
 
+    ,commit_stroke : function(stroke) {
+        stroke.version = BOARD.version;
+
+        stroke.stroke_id = BOARD.stroke_id;
+        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
+
+        let idx = sizeof(BOARD.strokes[BOARD.commit_id]);
+        stroke.stroke_idx = idx;
+
+        stroke.commit_id = BOARD.commit_id;
+
+        BOARD.strokes[BOARD.commit_id][idx] = stroke;
+    }
+
     ,op_commit : function() {
         if (!BOARD.locked)
             throw 'board is not locked';
@@ -212,10 +177,7 @@ let BOARD = {
     }
 
 
-    ,get_strokes : function(rect, points, special) {
-        points = (points===undefined)?false:points;
-
-        let pnt = null;
+    ,get_points : function(rect, classes) {
         let ret = [];
 
         for(let commit_id in BOARD.strokes) {
@@ -227,38 +189,15 @@ let BOARD = {
             for(let stroke_idx in strokes_group) {
                 let stroke = strokes_group[stroke_idx];
 
-                if (BOARD.is_hidden(stroke))
+                if (stroke.is_hidden())
                     continue;
 
-                if (stroke.gp[0]==null) {
-                    if ((stroke.gp[1]==special)&&(
-                        (rect[0].y > stroke.gp[2].rect[0].y)&&(rect[0].y < stroke.gp[2].rect[1].y)&&
-                        (rect[0].x > stroke.gp[2].rect[0].x)&&(rect[0].x < stroke.gp[2].rect[1].x)
-                    )) {
-                        ret.push({
-                            commit_id : commit_id
-                            ,stroke_idx : stroke_idx
-                            ,stroke_id : stroke.stroke_id
-                            ,point_idx : null
-                        });
-                    }
-                } else {
-                    for(let pi=0; pi<2; pi++) {
-                        pnt = stroke.gp[pi];
+                if ((classes!==undefined)&&(!is_instance_of(stroke, classes)))
+                    continue;
 
-                        if ((rect[0].y<=pnt.y)&&(pnt.y<=rect[1].y)&&(rect[0].x<=pnt.x)&&(pnt.x<=rect[1].x)) {
-                            ret.push({
-                                commit_id : commit_id
-                                ,stroke_idx : stroke_idx
-                                ,stroke_id : stroke.stroke_id
-                                ,point_idx : pi
-                            });
-                            if (!(points))
-                                break;
-                        }
-                    }
-                }
-
+                stroke.selection(rect).map((sel)=>{
+                    ret.push(sel);
+                });
             }
         }
 
@@ -322,10 +261,17 @@ let BOARD = {
         let blanks = 2;
 
         while(blanks>0) {
-            let glyph = BOARD.get_strokes([
+            let was = new Set();
+            let glyph = BOARD.get_points([
                 Point.new((col+0)*ddx, (row+0)*ddy)
                 ,Point.new((col+1)*ddx, (row+1)*ddy)
-            ]);
+            ]).reduce((a, pnt)=>{ // dedup points -> strokes
+                if (!was.has(pnt.stroke_id)) {
+                    was.add(pnt.stroke_id);
+                    a.push(pnt);
+                }
+                return a;
+            }, []);
 
             if ((glyph.length==0)) {
                 row += 1;

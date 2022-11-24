@@ -18,7 +18,7 @@ let PenTool = {
 
     ,draw : function(sp, lp, func) { // eslint-disable-line no-unused-vars
         // TODO: if dist(PEN.last_point,p)*viewpoint.zoom > threshold
-        BOARD.add_buffer_stroke(this.last_point, lp);
+        BOARD.add_line(this.last_point, lp);
     }
 
     ,cancel : function() {
