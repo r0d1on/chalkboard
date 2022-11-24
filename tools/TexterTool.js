@@ -33,9 +33,9 @@ let TexterTool = {
         this.is_capturing = true;
     }
 
-    ,put_char : function(key, bx, by, scale, draw_fun) {
+    ,put_char : function(key, bx, by, scale, draw_line_fun) {
         scale = (scale===undefined)?(BRUSH.get_local_width()/10) : scale;
-        draw_fun = (draw_fun===undefined)?BOARD.add_buffer_stroke:draw_fun;
+        draw_line_fun = (draw_line_fun===undefined)?BOARD.add_line:draw_line_fun;
 
         let A = ALPHABET[key].A;
         let a,b,p = null;
@@ -48,7 +48,7 @@ let TexterTool = {
                 a = b;
 
             if ((a!=null)&&(b!=null)) {
-                draw_fun(
+                draw_line_fun(
                     Point.new(a[0] * scale + bx, a[1] * scale + by)
                     ,Point.new(b[0] * scale + bx, b[1] * scale + by)
                 );
@@ -76,7 +76,7 @@ let TexterTool = {
         ];
 
         figure.map((p, pi)=>{
-            UI.add_overlay_stroke(p, figure[(pi+1)%figure.length], params);
+            UI.draw_overlay_stroke(p, figure[(pi+1)%figure.length], params);
         });
     }
 

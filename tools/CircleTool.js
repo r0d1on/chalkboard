@@ -19,7 +19,7 @@ let CircleTool = {
         DistortableDrawTool.__init__.call(this, 'circle', true, ['Control', 'c']);
     }
 
-    ,draw : function(cp, lp, func) {
+    ,draw : function(cp, lp, draw_line_fun) {
 
         if (this.origin==1) {
             cp = Point.new(
@@ -30,8 +30,8 @@ let CircleTool = {
 
         let rect = UI.get_rect([cp, lp]);
 
-        if (func==UI.add_overlay_stroke)
-            func(cp, cp);
+        if (draw_line_fun==UI.draw_overlay_stroke)
+            draw_line_fun(cp, cp);
 
         let rx = (rect[1].x - rect[0].x);
         let ky = (rect[0].y - rect[1].y) / rx;
@@ -95,7 +95,7 @@ let CircleTool = {
 
         figure = this._pre_render(figure);
 
-        this._render(figure, func);
+        this._render(figure, draw_line_fun);
     }
 
     ,on_key_down : function(key) {

@@ -1,6 +1,8 @@
 'use strict';
 
-import {_class} from '../base/objects.js';
+import {_class, is_instance_of} from '../base/objects.js';
+
+import {ErasureStroke} from '../util/Strokes.js';
 
 import {ToolBase} from './Base.js';
 
@@ -24,15 +26,14 @@ let RedoTool = { // background tool
             return;
         }
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
-        let strokes_group = BOARD.strokes[BOARD.commit_id];
-        for(let i in strokes_group) {
-            if ((strokes_group[i].gp[0]==null)&&(strokes_group[i].gp[1]=='erase')) {
+        let redone = BOARD.strokes[BOARD.commit_id];
+        for(let i in redone) {
+            if (is_instance_of(redone[i], ErasureStroke)) {
                 BOARD.version += 1;
-                BOARD.hide_strokes([strokes_group[i]]);
+                redone[i].flip_by();
             }
         }
         UI.redraw();
-
     }
 
 };

@@ -2,13 +2,12 @@
 
 import {_class} from '../base/objects.js';
 
+import {ErasureStroke} from '../util/Strokes.js';
+
 import {DrawToolBase} from './Base.js';
 
 import {UI} from '../ui/UI.js';
-
 import {BOARD} from '../ui/BOARD.js';
-import {BRUSH} from '../ui/BRUSH.js';
-
 
 let EraserTool = {
     super : DrawToolBase
@@ -17,14 +16,6 @@ let EraserTool = {
 
     ,EraserTool : function() {
         DrawToolBase.__init__.call(this, 'eraser', false, ['Control', 'e']);
-    }
-
-    ,touches : function(gp, stroke) {
-        let dst = gp.dst2seg(
-            stroke.gp[0]
-            ,stroke.gp[1]
-        );
-        return (dst < ((BRUSH.size + stroke.width)/2.0));
     }
 
     ,on_start : function(lp) {
@@ -39,17 +30,13 @@ let EraserTool = {
         for(let commit_id in BOARD.strokes) {
             let strokes_group = BOARD.strokes[commit_id];
             for(let i in strokes_group) {
-                if (strokes_group[i].gp[0]==null)
+                let stroke = strokes_group[i];
+                if (stroke.is_hidden())
                     continue;
-
-                if (BOARD.is_hidden(strokes_group[i]))
-                    continue;
-
-                if (!(this.touches(gp, strokes_group[i])))
-                    continue;
-
-                strokes_group[i].erased = BOARD.stroke_id;
-                erased = true;
+                if (stroke.touched_by(gp)) {
+                    stroke.flip_by(BOARD.stroke_id);
+                    erased = true;
+                }
             }
         }
 
@@ -57,7 +44,7 @@ let EraserTool = {
             UI.redraw();
         }
 
-        UI.add_overlay_stroke(lp, lp, {color : '#9335'});
+        UI.draw_overlay_stroke(lp, lp, {color : '#9335'});
     }
 
     ,on_stop : function(lp) {
@@ -80,8 +67,7 @@ let EraserTool = {
         }
 
         if (erased.length>0) {
-            BOARD.hide_strokes(erased);
-            BOARD.add_stroke({gp:[null, 'erase']});
+            ErasureStroke.flip_strokes(erased, undefined, true);
         }
 
         BOARD.op_commit();

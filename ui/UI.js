@@ -2,6 +2,7 @@
 
 import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
+import {ImageStroke} from '../util/Strokes.js';
 
 import {BOARD} from './BOARD.js';
 import {BRUSH} from './BRUSH.js';
@@ -580,16 +581,11 @@ let UI = {
                 setTimeout(((image, p0)=>{
                     return ()=>{
                         BOARD.op_start();
-                        BOARD.add_stroke({gp:[null, 'image', {
-                            'image' : image
-                            ,'rect' : [
-                                UI.local_to_global(p0)
-                                ,UI.local_to_global(Point.new(
-                                    p0.x + image.width
-                                    ,p0.y + image.height
-                                ))
-                            ]
-                        }]});
+                        BOARD.commit_stroke(ImageStroke.new(
+                            image
+                            ,UI.local_to_global(p0)
+                            ,UI.local_to_global(p0.add(Point.new(image.width, image.height)))
+                        ));
                         BOARD.op_commit();
                         UI.redraw();
                     };
@@ -807,7 +803,7 @@ let UI = {
     ,draw_gstroke : function(gp0, gp1, color, width, ctx, viewpoint) {
         let lp0 = UI.global_to_local(gp0, viewpoint);
         let lp1 = UI.global_to_local(gp1, viewpoint);
-        UI.draw_stroke(
+        UI.draw_line(
             lp0
             ,lp1
             ,color
@@ -816,7 +812,7 @@ let UI = {
         );
     }
 
-    ,draw_stroke : function(lp0, lp1, color, width, ctx) {
+    ,draw_line : function(lp0, lp1, color, width, ctx) {
         ctx.beginPath();
         ctx.lineWidth = width;
         ctx.strokeStyle = color;
@@ -827,18 +823,21 @@ let UI = {
         ctx.closePath();
     }
 
-    ,add_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
+    ,draw_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
         const ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
         const {
             color:color = BRUSH.get_color()
             ,width:width = BRUSH.get_local_width()
         } = params||{};
-        UI.draw_stroke(lp0, lp1, color, width, ctx);
+        UI.draw_line(lp0, lp1, color, width, ctx);
     }
 
 
     ,get_rect : function(points) {
-        const rect = [Point.new(1e10, 1e10), Point.new(-1e10, -1e10)];
+        const rect = [
+            Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY),
+            Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)
+        ];
         points.map((point)=>{
             if (point!=null) {
                 rect[0].x = Math.min(rect[0].x, point.x);
@@ -855,7 +854,6 @@ let UI = {
     ,redraw : function(target_ctx) {
         let ctx = null;
         let ctx_back = null;
-        let lp0, lp1;
 
         if (target_ctx === undefined) {
             UI.update_layers(true);
@@ -877,35 +875,7 @@ let UI = {
 
             for(let i in BOARD.strokes[commit_id]) {
                 let stroke = BOARD.strokes[commit_id][i];
-
-                if (BOARD.is_hidden(stroke))
-                    continue; // erased stroke
-
-                if ((stroke.gp[0]==null)&&(stroke.gp[1]=='erase'))
-                    continue; // erasure stroke
-
-                if ((stroke.gp[0]==null)&&(stroke.gp[1]=='image')) {
-                    lp0 = UI.global_to_local(stroke.gp[2].rect[0]);
-                    lp1 = UI.global_to_local(stroke.gp[2].rect[1]);
-                    ctx.drawImage(stroke.gp[2].image
-                        ,lp0.x
-                        ,lp0.y
-                        ,lp1.x - lp0.x
-                        ,lp1.y - lp0.y
-                    );
-                    continue;
-                }
-
-                lp0 = UI.global_to_local(stroke.gp[0], UI.viewpoint);
-                lp1 = UI.global_to_local(stroke.gp[1], UI.viewpoint);
-
-                UI.draw_stroke(
-                    lp0
-                    ,lp1
-                    ,stroke.color
-                    ,stroke.width * UI.viewpoint.scale
-                    ,ctx
-                );
+                stroke.draw(ctx);
             }
         }
 
@@ -918,7 +888,7 @@ let UI = {
         //h
         let y = - (UI.viewpoint.dy % UI.GRID) * UI.viewpoint.scale;
         while (y < UI.window_height) {
-            UI.draw_stroke(
+            UI.draw_line(
                 Point.new(0, y)
                 ,Point.new(UI.window_width, y)
                 ,(Math.abs(y / UI.viewpoint.scale + UI.viewpoint.dy)>0.1)?'#CCC':'#333'
@@ -931,7 +901,7 @@ let UI = {
         //w
         let x = - (UI.viewpoint.dx % UI.GRID) * UI.viewpoint.scale;
         while (x < UI.window_width) {
-            UI.draw_stroke(
+            UI.draw_line(
                 Point.new(x, 0)
                 ,Point.new(x, UI.window_height)
                 ,(Math.abs(x / UI.viewpoint.scale + UI.viewpoint.dx)>0.1)?'#CCC':'#333'

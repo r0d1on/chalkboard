@@ -34,18 +34,18 @@ let LineTool = {
         };
     }
 
-    ,draw_arrow : function(sp, lp, func) {
+    ,draw_arrow : function(sp, lp, draw_line_fun) {
         let v = lp.sub(sp);
         let dx = Point.new(Math.abs(v.x), 0).angle(v);
         let dy = Point.new(0, Math.abs(v.y)).angle(v);
         let t = BRUSH.size * UI.viewpoint.scale;
 
-        func(lp, Point.new(
+        draw_line_fun(lp, Point.new(
             (lp.x-dx*t) + t*(dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2))
             ,(lp.y-dy*t) + t*(dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2))
         ));
 
-        func(lp, Point.new(
+        draw_line_fun(lp, Point.new(
             (lp.x-dx*t) + t*(dx*Math.cos(3*Math.PI/2)-dy*Math.sin(3*Math.PI/2))
             ,(lp.y-dy*t) + t*(dx*Math.sin(3*Math.PI/2)+dy*Math.cos(3*Math.PI/2))
         ));

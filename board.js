@@ -17,7 +17,6 @@ import {TOOLS} from './ui/TOOLS.js';
 import {PenTool} from './tools/PenTool.js';
 import {EraserTool} from './tools/EraserTool.js';
 import {SelectorTool} from './tools/SelectorTool.js';
-import {ImageManipulatorTool} from './tools/ImageManipulatorTool.js';
 import {TexterTool} from './tools/TexterTool.js';
 import {LineTool} from './tools/LineTool.js';
 import {BoxTool} from './tools/BoxTool.js';
@@ -100,7 +99,6 @@ function init(IO) {
     TOOLS.add_tool(LineTool.new(), true, '[l]ine, arrow');
     let selector = SelectorTool.new();
     TOOLS.add_tool(selector, true, '[s]elect - scale, rotate, copy, paste');
-    TOOLS.add_tool(ImageManipulatorTool.new(), true, 'image manipulator tool');
     TOOLS.activate('pen', false, 0);
 
     // config menu item
@@ -152,6 +150,12 @@ document.addEventListener('DOMContentLoaded', function(){
     }, 100);
 
     window.bp = ()=>{debugger;}; // eslint-disable-line no-debugger
-    window.ui = UI;
+
+    window.UI = UI;
+    window.BOARD = BOARD;
+    window.TOOLS = TOOLS;
+    window.SAVE = SAVE;
+    window.SLIDER = SLIDER;
+
 });
 
