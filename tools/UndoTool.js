@@ -23,12 +23,12 @@ let UndoTool = { // background tool
 
     ,on_activated : function() {
         let undone = BOARD.undo();
-        for(let i in undone) {
-            if (is_instance_of(undone[i], ErasureStroke)) {
+        undone.map((stroke)=>{
+            if (is_instance_of(stroke, ErasureStroke)) {
                 BOARD.version += 1;
-                undone[i].flip_by();
+                stroke.flip_by();
             }
-        }
+        });
         UI.redraw();
     }
 

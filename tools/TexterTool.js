@@ -1,8 +1,9 @@
 'use strict';
 
-import {_class} from '../base/objects.js';
+import {_class, is_instance_of} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
+import {LineStroke} from '../util/Strokes.js';
 
 import {DrawToolBase} from './Base.js';
 
@@ -137,13 +138,14 @@ let TexterTool = {
 
         } else if (key=='Backspace') {
             let symbol = BOARD.undo();
-            let strokes = [];
-            for(let i in symbol) {
-                if (symbol[i].gp[0]!=null) {
-                    strokes.push(symbol[i].gp[0], symbol[i].gp[1]);
+
+            let rect = UI.get_rect(symbol.reduce((a, stroke)=>{
+                if (is_instance_of(stroke, LineStroke)&&(!stroke.is_hidden())) {
+                    a.push(stroke.p0);
+                    a.push(stroke.p1);
                 }
-            }
-            let rect = UI.get_rect(strokes);
+                return a;
+            }, []));
 
             rect = rect.map((p)=>{
                 return UI.global_to_local(p);
