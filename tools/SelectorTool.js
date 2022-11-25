@@ -781,12 +781,7 @@ let SelectorTool = {
                 BOARD.hide_commit(this._selected_strokes());
                 handled = true;
 
-            } else if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='a')) {
-                this.start_point = Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
-                this.stop_selecting(Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY));
-                handled = true;
-
-            } else if (key in keymap) {
+            }  else if (key in keymap) {
                 let dxdy = keymap[key];
                 let scale = (UI.keys['Control'])?1:5;
                 scale = (UI.keys['Shift'])?30:scale;
@@ -803,6 +798,10 @@ let SelectorTool = {
                 this.paste(this.clipboard);
                 handled = true;
             }
+        } else if ((UI.keys['Control']||UI.keys['Meta'])&&(key=='a')) {
+            this.start_point = Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
+            this.stop_selecting(Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY));
+            handled = true;
         }
 
         if (handled)
