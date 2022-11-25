@@ -175,6 +175,18 @@ let SLIDER = {
         return true;
     }
 
+    ,on_key_down : function(key) {
+        if (key=='Home') {
+            SLIDER.slide_home();
+        } else if (key=='PageDown') {
+            SLIDER.slide_next();
+        } else if (key=='PageUp') {
+            SLIDER.slide_prev();
+        } else if (key=='End') {
+            SLIDER.slide_focus();
+        }
+    }
+
     ,init : function(MENU_main) {
         let ctx = MENU_main.add('root', 'slide_prev', SLIDER.slide_prev, 'canvas', '')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_prev, ctx);
@@ -197,6 +209,7 @@ let SLIDER = {
         ctx = MENU_main.add('slide_curr', 'slide_home', SLIDER.slide_home, 'canvas', 'focus on default viewpoint')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_home, ctx);
 
+        UI.addEventListener('on_key_down', SLIDER.on_key_down);
     }
 
 };
