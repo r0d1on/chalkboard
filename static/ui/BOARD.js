@@ -130,7 +130,11 @@ let BOARD = {
 
         UI.redraw();
 
-        return BOARD.strokes[commit_id];
+        let undone = [];
+        for (let i in BOARD.strokes[commit_id])
+            undone.push(BOARD.strokes[commit_id][i]);
+
+        return undone;
     }
 
     ,drop_redo : function() {
