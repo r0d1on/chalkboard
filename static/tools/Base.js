@@ -16,11 +16,11 @@ let ToolBase = {
     }
 
     ,on_activated : function() {
-        UI.log(this.name, ' - activated');
+        UI.log(1, this.name, ' - activated');
     }
 
     ,on_deactivated : function() {
-        UI.log(this.name, ' - deactivated');
+        UI.log(1, this.name, ' - deactivated');
     }
 
     ,on_before_redraw : function() {}
@@ -111,7 +111,7 @@ let DistortableDrawTool = {
                     ,[null,[46,26],[50,10],null,[8,53],[25,46],[27,30],[46,26]] // distorted 2
                 ]
                 ,'on_click' : ()=>{
-                    UI.log('fuzz');
+                    UI.log(1, 'fuzz');
                 }
                 ,'type' : 'count'
                 ,'tooltip' : 'hand-alike distortion mode'
@@ -123,7 +123,7 @@ let DistortableDrawTool = {
                     ,[null,[9,50],[11,49],null,[15,45],[16,43],null,[21,39],[22,38],null,[26,34],[28,33],null,[32,29],[33,27],null,[38,23],[39,22],null,[43,18],[45,17],null,[49,13],[50,11],null,[9,50],[11,49],null,[15,45],[16,43],null,[21,39],[22,38],null,[26,34],[28,33],null,[32,29],[33,27],null,[38,23],[39,22],null,[43,18],[45,17],null,[49,13],[50,11]]
                 ]
                 ,'on_click' : ()=>{
-                    UI.log('mode');
+                    UI.log(1, 'mode');
                 }
                 ,'type' : 'count'
                 ,'tooltip' : 'solid / dash / dotted'
@@ -198,7 +198,7 @@ let SwitchableOrigin = {
                     ,[null,[47,15],[52,10],[47,5],null,[9,10],[52,10],null,[5,48],[10,53],[15,48],null,[9,10],[10,53]] // origin = (click-current)/2
                 ]
                 ,'on_click' : ()=>{
-                    UI.log('origin');
+                    UI.log(1, 'origin');
                 }
                 ,'type' : 'count'
                 ,'tooltip' : 'origin mode'

@@ -62,7 +62,7 @@ let Menu = {
     ,onpush : function(id, touch) {
         let that = this;
         function handler(e) {
-            UI.log('menu.onpush', id, touch, e);
+            UI.log(1, 'menu.onpush', id, touch, e);
             if (touch) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -75,7 +75,7 @@ let Menu = {
     ,onclick : function(id, onclk, touch) {
         let that = this;
         function handler(e) {
-            UI.log('menu.onclick', id, touch, e);
+            UI.log(1, 'menu.onclick', id, touch, e);
             if (touch) {
                 e.stopPropagation();
                 e.preventDefault();

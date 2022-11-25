@@ -189,7 +189,7 @@ let TexterTool = {
         if (!UI.is_mobile)
             return;
 
-        UI.log('texter additional input activation');
+        UI.log(1, 'texter additional input activation');
 
         let inp = this.MENU_main.add('root', 'input', null, 'input')[1];
 
@@ -222,7 +222,7 @@ let TexterTool = {
         if (!UI.is_mobile)
             return;
 
-        UI.log('texter additional input deactivation');
+        UI.log(1, 'texter additional input deactivation');
 
         this.MENU_main.drop('input');
     }

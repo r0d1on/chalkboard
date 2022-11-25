@@ -11,11 +11,13 @@ import {TOOLS} from './TOOLS.js';
 
 
 let LOG=[];
-function log(...args) {
+function log(level, ...args) {
+    if (level > UI.log_level)
+        return;
     console.log(...args);
     if (BOARD.board_name=='debug') {
-        LOG.splice(0,0,args.join(' '));
-        LOG.slice(0,40);
+        LOG.splice(0, 0, args.join(' '));
+        LOG.slice(0, 40);
 
         UI.reset_layer('debug');
 
@@ -39,6 +41,8 @@ let UI = {
     ,CANVAS_MARGIN : 20
     ,GRID : 30.0
     ,LAYERS : ['background', 'debug', 'board', 'buffer', 'overlay']
+
+    ,log_level : 0
 
     ,_last_point : null
     ,_under_focus : false
@@ -134,7 +138,7 @@ let UI = {
         let buffer_canvas = UI.layers[UI.LAYERS.indexOf('buffer')];
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
-            UI.log('ui.mousedown', e);
+            UI.log(1, 'ui.mousedown', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_start(lp, e.button)) {
@@ -143,7 +147,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchstart', e => {
-            UI.log('ui.touchstart', e);
+            UI.log(1, 'ui.touchstart', e);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
 
@@ -197,7 +201,7 @@ let UI = {
 
         // tool usage stop events
         UI.IO.add_event(buffer_canvas, 'mouseup', e => {
-            UI.log('ui.mouseup', e);
+            UI.log(1, 'ui.mouseup', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_stop(lp)) {
@@ -206,7 +210,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchend', e => {
-            UI.log('ui.touchend', e);
+            UI.log(1, 'ui.touchend', e);
             UI.is_mobile = true;
             let lp = UI._last_point;
 
@@ -247,7 +251,7 @@ let UI = {
 
         // paste listener
         UI.IO.add_event(document, 'paste', e => {
-            UI.log('ui.paste: ', e);
+            UI.log(1, 'ui.paste: ', e);
             UI._handle_data(e.clipboardData);
         });
 
@@ -283,7 +287,7 @@ let UI = {
             UI._on_focus_change(UI._under_focus);
         });
         UI.IO.add_event(window, 'drop', e =>{
-            UI.log('ui.drop:', e);
+            UI.log(1, 'ui.drop:', e);
             e.stopPropagation();
             e.preventDefault();
             UI._handle_data(e.dataTransfer);
@@ -397,7 +401,7 @@ let UI = {
 
 
     ,on_key_down_default : function(key) {
-        UI.log('key_down:', key);
+        UI.log(1, 'key_down:', key);
 
         if (key == '+') {
             BRUSH.update_size(+5);
@@ -410,11 +414,11 @@ let UI = {
     }
 
     ,on_key_up_default : function(key) {
-        UI.log('key_up:', key);
+        UI.log(1, 'key_up:', key);
     }
 
     ,on_paste_strokes_default : function(strokes) {
-        UI.log('received strokes:', strokes);
+        UI.log(0, 'received strokes:', strokes);
     }
 
     ,on_wheel_default : function(delta, deltaX) {
@@ -456,7 +460,7 @@ let UI = {
     }
 
     ,on_key_down : function(key) {
-        UI.log('ui.key_down:', key);
+        UI.log(1, 'ui.key_down:', key);
 
         if (key in UI.keys) {
             UI.keys[key] = true;
@@ -474,7 +478,7 @@ let UI = {
     }
 
     ,on_key_up : function(key) {
-        UI.log('ui.key_up:', key);
+        UI.log(1, 'ui.key_up:', key);
 
         let handled = UI._event_handlers['on_key_up'].reduce((handled, handler)=>{
             return handled||handler(key);
@@ -490,7 +494,7 @@ let UI = {
     }
 
     ,on_wheel : function(delta, deltaX) {
-        UI.log('ui.on_wheel:', delta, deltaX);
+        UI.log(1, 'ui.on_wheel:', delta, deltaX);
 
         let handled = UI._event_handlers['on_wheel'].reduce((handled, handler)=>{
             return handled||handler(delta, deltaX);
@@ -526,7 +530,7 @@ let UI = {
                 UI.on_file(file);
 
             } else {
-                UI.log('Unknown data transfer kind received:', data_item.kind);
+                UI.log(0, 'Unknown data transfer kind received:', data_item.kind);
             }
         }
     }
@@ -539,7 +543,7 @@ let UI = {
             UI.on_paste_strokes(js.strokes);
             return;
         } catch (ex) {
-            UI.log('pasted text is not parseable:', ex);
+            UI.log(0, 'pasted text is not parseable:', ex);
         }
         UI.on_paste_text(text);
     }
@@ -603,7 +607,7 @@ let UI = {
         }, false);
 
         if (!handled)
-            UI.log('unhandled file transfer:', file);
+            UI.log(0, 'unhandled file transfer:', file);
     }
 
 
@@ -635,7 +639,7 @@ let UI = {
 
     ,on_hash_change : function() {
         if (UI._parse_hash()) {
-            UI.log(window.location.hash.slice(1,));
+            UI.log(1, 'new hash: ', window.location.hash.slice(1,));
             window.location.reload();
         }
     }

@@ -84,7 +84,7 @@ let SAVE = {
                 return;
         }
 
-        UI.log('version', BOARD.version, ',saving', new_size, 'commits out of', sizeof(BOARD.strokes));
+        UI.log(0, 'version', BOARD.version, ',saving', new_size, 'commits out of', sizeof(BOARD.strokes));
 
         localStorage.setItem('local_board_' + BOARD.board_name, board_data);
 
@@ -243,7 +243,7 @@ let SAVE = {
     }
 
     ,download_png : function(e, id, long) {
-        UI.log('saver.download_png: ', id, long, e);
+        UI.log(1, 'saver.download_png: ', id, long, e);
         let a = document.createElement('a');
         a.download = BOARD.board_name + '.png';
         if (long) {
@@ -326,7 +326,7 @@ let SAVE = {
     ,_consume_message : function(str_json) {
         let message_in = JSON.parse(str_json);
         if ((message_in.resync)||(BOARD.locked)) {
-            UI.log('will resync:', message_in);
+            UI.log(0, 'will resync:', message_in);
         } else {
             SAVE.sent_version = message_in.received_version;
             SAVE.sync_message(message_in);
@@ -335,12 +335,12 @@ let SAVE = {
 
     ,sync : function() {
         if (SAVE.is_syncing) {
-            UI.log('skipping sync() - already syncing');
+            UI.log(0, 'skipping sync() - already syncing');
             return;
         }
 
         if (BOARD.locked) {
-            UI.log('skipping sync() - board is locked');
+            UI.log(0, 'skipping sync() - board is locked');
             return;
         }
 
@@ -370,8 +370,8 @@ let SAVE = {
             if (xhr.status == 200) {
                 SAVE._consume_message(xhr.responseText);
             } else {
-                UI.log('could not send the data:', xhr);
-                UI.log('message:', message);
+                UI.log(0, 'could not send the data:', xhr);
+                UI.log(1, 'message:', message);
                 if (SAVE.autosync) {
                     SAVE.sync_switch();
                 }
@@ -385,7 +385,7 @@ let SAVE = {
     ,sync_switch : function() {
         function _sync() {
             if (SAVE.is_syncing) {
-                UI.log('skipping sync: already syncing');
+                UI.log(0, 'skipping sync: already syncing');
             } else {
                 SAVE.sync();
             }
@@ -414,7 +414,7 @@ let SAVE = {
                 let name = file.name;
                 return (ee)=>{
                     const board_data = ee.target.result;
-                    UI.log('loaded file: ', name);
+                    UI.log(0, 'loaded file: ', name);
                     SAVE._unpersist_board(board_data);
                     UI.redraw();
                 };
@@ -468,14 +468,14 @@ let SAVE = {
         SAVE.is_syncing = true;
         UI.IO.request('/sync', message_out, (xhr)=>{
             if (xhr.status == 200) {
-                UI.log('backend available: ', xhr);
+                UI.log(0, 'backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
                 let ctx = SAVE.canvas_sync.getContext('2d');
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
 
                 SAVE._consume_message(xhr.responseText);
             } else {
-                UI.log('backend unavailable: ', xhr);
+                UI.log(0, 'backend unavailable: ', xhr);
             }
             SAVE.is_syncing = false;
         }, 2000);
