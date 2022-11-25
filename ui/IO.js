@@ -13,7 +13,7 @@ let IO = {
         this.handlers = {};
     }
 
-    ,log : function(...args) {
+    ,log : function(level, ...args) {
         console.log(...args);
     }
 
@@ -34,7 +34,7 @@ let IO = {
         xhr.timeout = timeout;
         xhr.ontimeout = ((xhr)=>{
             return ()=>{
-                IO.log('timeout',xhr);
+                IO.log(0, 'timeout',xhr);
             };
         })(xhr);
         xhr.open('POST', api_endpoint, true);
@@ -54,7 +54,7 @@ let IO = {
 
     ,add_event : function(target, event_type, event_handler) {
         let target_name = (target.tagName||(typeof(target)+':'+target)) + '.' + (target.id||'');
-        this.log('+listener:', target_name, ' :: ', event_type);
+        this.log(2, '+listener:', target_name, ' :: ', event_type);
         const proxy = this.handler_proxy(target, event_type, event_handler);
 
         let target_type = (typeof(target)=='object')?target.constructor.name:typeof(target);

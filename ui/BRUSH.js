@@ -30,7 +30,7 @@ let BRUSH = {
 
     ,activate_color : function(button) {
         button = (button===undefined)?0:button;
-        UI.log('activate color :', button);
+        UI.log(1, 'activate color :', button);
         if (button in BRUSH.binding)
             BRUSH.select_color(BRUSH.binding[button]);
     }
@@ -42,7 +42,7 @@ let BRUSH = {
 
     ,attach_color : function(color_id, button) {
         button = (button===undefined)?0:button;
-        UI.log('attached color :', color_id, button);
+        UI.log(1, 'attached color :', color_id, button);
         BRUSH.binding[button] = color_id;
 
         if (button>0) {
@@ -61,7 +61,7 @@ let BRUSH = {
     }
 
     ,oncolor : function(e, id, long) { // eslint-disable-line no-unused-vars
-        UI.log('brush.oncolor :', id, long, e);
+        UI.log(1, 'brush.oncolor :', id, long, e);
         const color_id = id.split('_')[1]*1;
         let button = (long)?1:e.button;
         BRUSH.attach_color(color_id, button);

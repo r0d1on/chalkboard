@@ -27,7 +27,7 @@ let LineTool = {
                 ,[null,[49,19],[48,12],[41,12],null,[12,42],[12,49],[19,49],null,[12,49],[48,12]] // double arrow
             ]
             ,'on_click' : ()=>{
-                UI.log('arrow');
+                UI.log(1, 'arrow');
             }
             ,'type' : 'count'
             ,'tooltip' : 'line / arrow / double arrow'

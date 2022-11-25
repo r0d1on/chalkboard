@@ -46,7 +46,7 @@ let TOOLS = {
 
     ,options_enable : function(tool) {
         if (tool.options!==undefined) {
-            UI.log('enabling options for:', tool);
+            UI.log(1, 'enabling options for:', tool);
 
             for(const option_name in tool.options) {
                 let option = tool.options[option_name];

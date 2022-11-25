@@ -134,7 +134,13 @@ function init(IO) {
         document.title = BOARD.board_name;
     }
 
-    UI.log('board.js initialised', BOARD.board_name);
+    if (BOARD.board_name=='debug') {
+        UI.log_level = 2;
+    } else if (BOARD.board_name.startsWith('test')) {
+        UI.log_level = 1;
+    }
+
+    UI.log(0, 'board.js initialised', BOARD.board_name);
 }
 
 console.log('loaded board.js');
