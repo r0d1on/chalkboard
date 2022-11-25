@@ -120,14 +120,11 @@ let BOARD = {
     }
 
     ,undo : function() {
-        if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id)) {
-            return {};
-        }
+        if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id))
+            return [];
 
         let commit_id = BOARD.commit_id;
-
         BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
-
         UI.redraw();
 
         let undone = [];
