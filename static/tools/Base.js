@@ -4,9 +4,74 @@ import {_class, extend} from '../base/objects.js';
 
 import {UI} from '../ui/UI.js';
 
+import {Point} from '../util/Point.js';
+
 import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
+
+function figure_distort(figure, mode, cyclic) { // eslint-disable-line no-unused-vars
+    mode = (mode===undefined) ? 1 : mode;
+    //cyclic = (cyclic===undefined) ? true : cyclic;
+
+    let w = BRUSH.get_local_width();
+
+    if (mode==1) {
+        w *= 1.6;
+    } else if (mode==2) {
+        w *= 1.0;
+    }
+
+    let p0 = null;
+    let t = 0;
+
+    let distortion = (p, i)=>{
+        if (p==null)
+            return p;
+
+        if ((i==0)&&(t==0)) {
+            p0 = p.copy();
+            return p;
+        }
+
+        let v = p0.sub(p);
+
+        let dx = Point.new(Math.abs(v.x), 0).angle(v);
+        let dy = Point.new(0, Math.abs(v.y)).angle(v);
+
+        let dphi = Math.sin((2 * Math.PI) * (t / (w * 80)));
+
+        let phi = (2 * Math.PI) * (1 / (w * 60)) * (t + 10 * w * dphi);
+
+        t += Math.sqrt(p.dst2(p0));
+
+        p0 = p.copy();
+
+        return Point.new(
+            p.x + Math.sin(phi) * w * ((dx*Math.cos(Math.PI/2) - dy*Math.sin(Math.PI/2)))
+            ,p.y + Math.sin(phi) * w * ((dx*Math.sin(Math.PI/2) + dy*Math.cos(Math.PI/2)))
+        );
+
+        /*
+          X : p.X + Math.sin(phi+dphi*t) * w * ((dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2)))
+         ,Y : p.Y + Math.sin(phi+dphi*t) * w * ((dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2)))
+        */
+
+    };
+
+    figure = figure.map(distortion);
+
+    if (mode==2) {
+        if (!cyclic)
+            figure.push(null);
+        figure.map(distortion).map((p)=>{
+            if (p!=null)
+                figure.push(p);
+        });
+    }
+
+    return figure;
+}
 
 let ToolBase = {
 
@@ -131,30 +196,34 @@ let DistortableDrawTool = {
         });
     }
 
-    ,_pre_render : function(figure) {
+    ,_pre_render : function(figure, split_mode) {
+        split_mode = (split_mode===undefined)?this.mode:split_mode;
         let w = BRUSH.get_local_width();
 
-        if (this.mode == 0) {
+        if (split_mode == 0) {
             // no splitting - use sraight lines
-        } else if (this.mode == 1) {
+        } else if (split_mode == 1) {
             figure = UI.figure_split(figure, this.cyclic, w*5);
-        } else if (this.mode == 2) {
+        } else if (split_mode == 2) {
             figure = UI.figure_split(figure, this.cyclic, w);
         }
 
         if (this.distorted > 0) {
-            figure = UI.figure_distort(figure, this.distorted, this.cyclic);
+            figure = figure_distort(figure, this.distorted, this.cyclic);
         }
 
         return figure;
     }
 
-    ,_render : function(figure, draw_line_fun) {
-        figure.map((p,pi)=>{
-            if ((pi<figure.length-1)||(this.cyclic)) {
-                if ((this.mode==1)&&(pi%2==1))
+    ,_render : function(figure, draw_line_fun, split_mode) {
+        split_mode = (split_mode===undefined)?this.mode:split_mode;
+        figure.map((p, pi)=>{
+            if ( (pi < figure.length-1) || (this.cyclic) ) {
+                if ( (split_mode==1) && (pi%2==1) )
                     return;
-                if ((this.mode==2)&&(pi%5!=0))
+                if ( (split_mode==2) && (pi%5!=0) )
+                    return;
+                if ((p==null)||(figure[(pi+1) % figure.length]==null))
                     return;
                 draw_line_fun(
                     p
