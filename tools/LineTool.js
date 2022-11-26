@@ -34,24 +34,30 @@ let LineTool = {
         };
     }
 
-    ,draw_arrow : function(sp, lp, draw_line_fun) {
+    ,arrow_tip : function(sp, lp) {
         let v = lp.sub(sp);
         let dx = Point.new(Math.abs(v.x), 0).angle(v);
         let dy = Point.new(0, Math.abs(v.y)).angle(v);
-        let t = BRUSH.size * UI.viewpoint.scale;
+        let t = 2 * BRUSH.size * UI.viewpoint.scale;
 
-        draw_line_fun(lp, Point.new(
+        let tip = [];
+
+        tip.push(Point.new(
             (lp.x-dx*t) + t*(dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2))
             ,(lp.y-dy*t) + t*(dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2))
         ));
 
-        draw_line_fun(lp, Point.new(
+        tip.push(lp);
+
+        tip.push(Point.new(
             (lp.x-dx*t) + t*(dx*Math.cos(3*Math.PI/2)-dy*Math.sin(3*Math.PI/2))
             ,(lp.y-dy*t) + t*(dx*Math.sin(3*Math.PI/2)+dy*Math.cos(3*Math.PI/2))
         ));
+
+        return tip;
     }
 
-    ,draw : function(sp, lp, func) {
+    ,draw : function(sp, lp, draw_line_fun) {
         let figure = [sp, lp];
 
         figure = this._pre_render(figure);
@@ -59,13 +65,19 @@ let LineTool = {
         let a0 = [figure[figure.length-2], figure[figure.length-1]];
         let a1 = [figure[1], figure[0]];
 
-        if (this.arrows > 0)
-            this.draw_arrow(a0[0], a0[1], func);
+        if (this.arrows > 0) {
+            let tip = this.arrow_tip(a0[0], a0[1]);
+            tip = this._pre_render(tip, 0);
+            this._render(tip, draw_line_fun, 0);
+        }
 
-        if (this.arrows > 1)
-            this.draw_arrow(a1[0], a1[1], func);
+        if (this.arrows > 1) {
+            let tip = this.arrow_tip(a1[0], a1[1]);
+            tip = this._pre_render(tip, 0);
+            this._render(tip, draw_line_fun, 0);
+        }
 
-        this._render(figure, func);
+        this._render(figure, draw_line_fun);
     }
 
     ,on_key_down : function(key) {

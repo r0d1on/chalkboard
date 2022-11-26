@@ -692,27 +692,22 @@ let UI = {
             if ((!cyclic)&&(i==figure.length-1))
                 break;
 
-            if (max_length===undefined) {
+            let max_length2 = max_length * max_length;
+            let dst = p0.dst2(p1);
+
+            if (max_length===undefined) { // ||(p0.dst2(p1)*2 <= max_length2)
                 ret.push(Point.new(
                     (p0.x + p1.x) / 2
                     ,(p0.y + p1.y) / 2
                 ));
-
             } else {
-                let dst = p0.dst2(p1);
-                let max_length2 = max_length * max_length;
                 let dv = p1.sub(p0);
                 let dx = dv.x * max_length / Math.sqrt(dst);
                 let dy = dv.y * max_length / Math.sqrt(dst);
 
                 while(dst > max_length2) {
-                    if (dst > 2 * max_length2) {
-                        p0.x += dx;
-                        p0.y += dy;
-                    } else { // TODO: check need of that
-                        p0.x += dx;
-                        p0.y += dy;
-                    }
+                    p0.x += dx;
+                    p0.y += dy;
                     dst = p0.dst2(p1);
                     ret.push(p0.copy());
                 }
@@ -723,64 +718,6 @@ let UI = {
         }
 
         return ret;
-    }
-
-    ,figure_distort : function(figure, mode, cyclic) { // eslint-disable-line no-unused-vars
-        mode = (mode===undefined) ? 1 : mode;
-        //cyclic = (cyclic===undefined) ? true : cyclic;
-
-        let w = BRUSH.get_local_width();
-
-        if (mode==1) {
-            w *= 1.6;
-        } else if (mode==2) {
-            w *= 1.0;
-        }
-
-        let p0 = null;
-        let t = 0;
-
-        let distortion = (p, i)=>{
-            if ((i==0)&&(t==0)) {
-                p0 = p.copy();
-                return p;
-            }
-
-            let v = p0.sub(p);
-
-            let dx = Point.new(Math.abs(v.x), 0).angle(v);
-            let dy = Point.new(0, Math.abs(v.y)).angle(v);
-
-            let dphi = Math.sin((2 * Math.PI) * (t / (w * 80)));
-
-            let phi = (2 * Math.PI) * (1 / (w * 60)) * (t + 10 * w * dphi);
-
-            t += Math.sqrt(p.dst2(p0));
-
-            p0 = p.copy();
-
-            return Point.new(
-                p.x + Math.sin(phi) * w * ((dx*Math.cos(Math.PI/2) - dy*Math.sin(Math.PI/2)))
-                ,p.y + Math.sin(phi) * w * ((dx*Math.sin(Math.PI/2) + dy*Math.cos(Math.PI/2)))
-            );
-
-            /*
-              X : p.X + Math.sin(phi+dphi*t) * w * ((dx*Math.cos(Math.PI/2)-dy*Math.sin(Math.PI/2)))
-             ,Y : p.Y + Math.sin(phi+dphi*t) * w * ((dx*Math.sin(Math.PI/2)+dy*Math.cos(Math.PI/2)))
-            */
-
-        };
-
-        figure = figure.map(distortion);
-
-        if (mode==2) {
-            // if not cyclic push invisible stroke to transit from p[-1] to p[0]
-            figure.map(distortion).map((p)=>{
-                figure.push(p);
-            });
-        }
-
-        return figure;
     }
 
     ,draw_glyph : function(glyph, ctx, viewpoint, color) {
