@@ -138,7 +138,7 @@ let UI = {
         let buffer_canvas = UI.layers[UI.LAYERS.indexOf('buffer')];
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
-            UI.log(1, 'ui.mousedown', e);
+            UI.log(2, 'ui.mousedown', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_start(lp, e.button)) {
@@ -147,7 +147,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchstart', e => {
-            UI.log(1, 'ui.touchstart', e);
+            UI.log(2, 'ui.touchstart', e);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
 
@@ -169,6 +169,18 @@ let UI = {
             UI.on_start(lp.copy(), 0);
             e.preventDefault();
         });
+        UI.IO.add_event(buffer_canvas, 'pointerdown', e => {
+            UI.log(2, 'ui.pointerdown', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
+            if (e.pointerType=='pen') {
+                let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
+                UI._last_point = lp;
+                if (UI.on_start(lp, e.button)) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+            }
+        });
+
 
         UI.IO.add_event(buffer_canvas, 'contextmenu', e => {
             e.stopPropagation();
@@ -177,12 +189,22 @@ let UI = {
         });
 
         // tool move events
-        UI.IO.add_event(buffer_canvas, 'mousemove', e => {
+        UI.IO.add_event(buffer_canvas, 'pointermove', e => { // mousemove
+            //UI.log(3, 'ui.mousemove', e);
+            UI.log(3, 'ui.pointermove', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
-            UI._last_point = lp;
+
+            if ((UI._last_point!=null)&&((e.pointerType=='pen'))) {
+                let S = BRUSH.get_local_width();
+                let dst2 = lp.dst2(UI._last_point);
+                if ((dst2 <= 1)||(dst2 <= S*S/10))
+                    return;
+            }
             UI.on_move(lp);
+            UI._last_point = lp;
         });
         UI.IO.add_event(buffer_canvas, 'touchmove', e => {
+            UI.log(3, 'ui.touchmove', e, e.pointerId, '=>', e.pointerType,' | ',e.bubbles,' | ',e.cancelable);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
 
@@ -201,7 +223,7 @@ let UI = {
 
         // tool usage stop events
         UI.IO.add_event(buffer_canvas, 'mouseup', e => {
-            UI.log(1, 'ui.mouseup', e);
+            UI.log(2, 'ui.mouseup', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_stop(lp)) {
@@ -210,7 +232,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchend', e => {
-            UI.log(1, 'ui.touchend', e);
+            UI.log(2, 'ui.touchend', e);
             UI.is_mobile = true;
             let lp = UI._last_point;
 
@@ -229,6 +251,19 @@ let UI = {
                 UI._last_point = null;
             }
             e.preventDefault();
+        });
+        UI.IO.add_event(buffer_canvas, 'pointerup', e => {
+            UI.log(2, 'ui.pointerup', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
+            if (e.pointerType=='pen') {
+                let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
+                UI._last_point = lp;
+                if (UI.on_stop(lp)) {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    return false;
+                }
+            }
         });
 
         // mouse wheel listener
@@ -294,6 +329,21 @@ let UI = {
             UI._on_focus_change(true);
         });
 
+    }
+
+    ,_sel_loglevel : function(level) {
+        if (level!==undefined) {
+            UI.log_level = level;
+            return;
+        }
+
+        if (BOARD.board_name=='debug') {
+            UI.log_level = (UI.view_mode=='debug')?3:2;
+        } else if (BOARD.board_name.startsWith('test')) {
+            UI.log_level = 1;
+        } else {
+            UI.log_level = 0;
+        }
     }
 
     ,_hash_board_mode : function() {
