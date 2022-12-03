@@ -171,7 +171,7 @@ let UI = {
         });
         UI.IO.add_event(buffer_canvas, 'pointerdown', e => {
             UI.log(2, 'ui.pointerdown', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
-            if (e.pointerType=='pen') {
+            if (e.pointerType=='pen') { // only process start events from pen here
                 let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
                 UI._last_point = lp;
                 if (UI.on_start(lp, e.button)) {
@@ -180,7 +180,6 @@ let UI = {
                 }
             }
         });
-
 
         UI.IO.add_event(buffer_canvas, 'contextmenu', e => {
             e.stopPropagation();
@@ -192,6 +191,10 @@ let UI = {
         UI.IO.add_event(buffer_canvas, 'pointermove', e => { // mousemove
             //UI.log(3, 'ui.mousemove', e);
             UI.log(3, 'ui.pointermove', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
+
+            if (e.pointerType!='pen')
+                return false; // ignore touch events here (handled in touchmove())
+
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
 
             if ((UI._last_point!=null)&&((e.pointerType=='pen'))) {
