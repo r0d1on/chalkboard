@@ -192,7 +192,7 @@ let UI = {
             //UI.log(3, 'ui.mousemove', e);
             UI.log(3, 'ui.pointermove', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
 
-            if (e.pointerType!='pen')
+            if (!((e.pointerType=='pen')||(e.pointerType=='mouse')))
                 return false; // ignore touch events here (handled in touchmove())
 
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
@@ -340,13 +340,18 @@ let UI = {
             return;
         }
 
-        if (BOARD.board_name=='debug') {
-            UI.log_level = (UI.view_mode=='debug')?3:2;
-        } else if (BOARD.board_name.startsWith('test')) {
+        UI.log_level = 0;
+
+        if (BOARD.board_name.startsWith('test'))
             UI.log_level = 1;
-        } else {
-            UI.log_level = 0;
-        }
+
+        if (BOARD.board_name=='debug')
+            UI.log_level = 2;
+
+        if (UI.view_mode=='debug')
+            UI.log_level += 2;
+
+        UI.log(1, 'log_level:', UI.log_level);
     }
 
     ,_hash_board_mode : function() {
@@ -401,6 +406,8 @@ let UI = {
         UI._on_focus_change(true);
 
         UI.addEventListener('on_file', UI._on_file);
+
+        UI._last_point = Point.new(UI.window_width/2, UI.window_height/2);
     }
 
 
