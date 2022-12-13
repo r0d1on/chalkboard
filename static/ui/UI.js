@@ -401,6 +401,8 @@ let UI = {
         UI._on_focus_change(true);
 
         UI.addEventListener('on_file', UI._on_file);
+
+        UI._last_point = Point.new(UI.window_width/2, UI.window_height/2);
     }
 
 
