@@ -86,7 +86,11 @@ let SAVE = {
 
         UI.log(0, 'version', BOARD.version, ',saving', new_size, 'commits out of', sizeof(BOARD.strokes));
 
-        localStorage.setItem('local_board_' + BOARD.board_name, board_data);
+        try {
+            localStorage.setItem('local_board_' + BOARD.board_name, board_data);
+        } catch (error) {
+            alert('Can\'t save board to local storage: ' + error);
+        }
 
         SAVE.sent_version = null; // reset remote watermark to update the whole board
 
