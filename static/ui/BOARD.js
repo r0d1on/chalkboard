@@ -283,8 +283,8 @@ let BOARD = {
             }
 
             glyph = glyph.map((gs)=>{
-                return BOARD.strokes[gs.commit_id][gs.stroke_idx].gp.map((p)=>{
-                    return Point.new(p.x-(col+0)*ddx, p.y-(row+0)*ddy);
+                return [0,1].map((point_idx)=>{
+                    return BOARD.strokes[gs.commit_id][gs.stroke_idx].get_point(point_idx).sub(Point.new(col*ddx, row*ddy));
                 });
             });
 

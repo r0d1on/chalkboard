@@ -104,6 +104,7 @@ function init(IO) {
     // config menu item
     SETUP.init(MENU_main);
     SETUP.add_item(BRUSH.MODE, 'brush scale on/off');
+    SETUP.add_item(BRUSH.OPACITY, 'brush default opacity');
     SETUP.add_item(GRID_MODE, 'grid on/off');
 
     // undo menu item
