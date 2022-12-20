@@ -172,6 +172,10 @@ let LineStroke = {
         return this['p' + point_idx];
     }
 
+    ,set_point : function(point_idx, point) {
+        this['p' + point_idx] = point;
+    }
+
     ,copy : function() {
         let stroke = LineStroke.new(this.p0.copy(), this.p1.copy(), this.color, this.width);
         stroke.commit_id = this.commit_id;

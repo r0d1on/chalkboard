@@ -98,7 +98,13 @@ let BRUSH = {
     ,get_color : function(alpha, color_id) {
         color_id = (color_id===undefined)?BRUSH.color_id:color_id;
         let color = BRUSH.COLORS[color_id][0];
-        color = (alpha===undefined)?color:(color.slice(0,-1) + alpha);
+
+        if (alpha===undefined) {
+            color = color.slice(0,-1) + ['5','A','F'][BRUSH.OPACITY.level];
+        } else {
+            color = color.slice(0,-1) + alpha;
+        }
+
         return color;
     }
 
@@ -179,6 +185,33 @@ let BRUSH = {
             BRUSH.MODE.click();
         }
     }
+
+    ,OPACITY : {
+        icons : {
+            0 : [null,[54,14],[47,6],[15,38],[23,45],[54,14],null,[19,49],[10,42],[7,53],[19,49],null,[47,6],[54,14],[23,45],null,[47,6],[15,38],[23,45],null,[19,49],[10,42],[7,53],[19,49],null,[15,46],[7,53],null,[18,41],[27,32],null,[21,43],[29,34]]
+            ,1 : [null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[19,40],[35,23],null,[21,43],[38,25]]
+            ,2 : [null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[18,40],[46,12],null,[21,42],[50,13]]
+        }
+        ,name : 'brush_opacity'
+
+        ,canvas : null
+
+        ,level : 0
+
+        ,click : function() {
+            BRUSH.OPACITY.level = (BRUSH.OPACITY.level+1)%3;
+            BRUSH.OPACITY.canvas.width = BRUSH.OPACITY.canvas.width+1-1;
+            let ctx = BRUSH.OPACITY.canvas.getContext('2d');
+            UI.draw_glyph(BRUSH.OPACITY.icons[BRUSH.OPACITY.level], ctx);
+            //BRUSH.update_size();
+        }
+
+        ,init : function(canvas) {
+            BRUSH.OPACITY.canvas = canvas;
+            BRUSH.OPACITY.click();
+        }
+    }
+
 };
 
 

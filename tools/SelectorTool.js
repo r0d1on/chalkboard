@@ -598,7 +598,7 @@ let SelectorTool = {
                 this.draw_selected();
                 this.mode = SelectorBase.MODES.SELECTED;
             }
-            return true;
+            return points.length > 0;
         }
         return false;
     }
@@ -739,17 +739,21 @@ let SelectorTool = {
                 if (stroke.is_hidden())
                     return;
 
-                stroke.gp.map((p)=>{
+                [0,1].map((point_idx)=>{
+                    let p = stroke.get_point(point_idx);
+                    let rnd = false;
                     if (Math.round(p.x)!=p.x) {
                         p.x = Math.round(p.x);
-                        rounded++;
+                        rnd = true;
                     }
                     if (Math.round(p.y)!=p.y) {
                         p.y = Math.round(p.y);
-                        rounded++;
+                        rnd = true;
                     }
+                    if (rnd)
+                        stroke.set_point(point_idx, p);
+                    rounded += rnd * 1;
                 });
-
             });
             UI.log(0, 'Rounded: ', rounded);
         }
