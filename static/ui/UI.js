@@ -173,6 +173,8 @@ let UI = {
             UI.log(2, 'ui.pointerdown', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
             if (e.pointerType=='pen') { // only process start events from pen here
                 let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
+                lp.pressure = e.pressure;
+
                 UI._last_point = lp;
                 if (UI.on_start(lp, e.button)) {
                     e.stopPropagation();
@@ -196,6 +198,7 @@ let UI = {
                 return false; // ignore touch events here (handled in touchmove())
 
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
+            lp.pressure = e.pressure;
 
             if ((UI._last_point!=null)&&((e.pointerType=='pen'))) {
                 let S = BRUSH.get_local_width();

@@ -4,13 +4,15 @@ import {_class, has} from '../base/objects.js';
 
 let Point = {
 
-    Point : function(x, y, d, p) {
+    Point : function(x, y, d, p, pressure) {
         this.x = x;
         this.y = y;
         if (d!==undefined)
             this.d = d;
         if (p!==undefined)
             this.p = p;
+        if (pressure!==undefined)
+            this.pressure = pressure;
     }
 
     ,dst2 : function(other) {
@@ -61,7 +63,7 @@ let Point = {
     }
 
     ,copy : function() {
-        return Point.new(this.x, this.y, this.d, this.p);
+        return Point.new(this.x, this.y, this.d, this.p, this.pressure);
     }
 
     ,to_json : function() {

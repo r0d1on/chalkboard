@@ -16,7 +16,15 @@ let BOARD = {
     ,add_line : function(lp0, lp1) {
         let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
 
-        let color = BRUSH.get_color();
+        let alpha = undefined;
+
+        if (lp1.pressure) {
+            alpha = Math.round(((lp1.pressure + 0.0) - 0.5)*10);
+            alpha = ((BRUSH.OPACITY.level+1)*5) + alpha;
+            alpha = (alpha).toString(16).toUpperCase();
+        }
+
+        let color = BRUSH.get_color(alpha);
         let width = BRUSH.get_local_width();
 
         let stroke = LineStroke.new(

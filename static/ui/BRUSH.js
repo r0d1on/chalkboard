@@ -100,6 +100,8 @@ let BRUSH = {
         let color = BRUSH.COLORS[color_id][0];
 
         if (alpha===undefined) {
+            // 0123456789ABCDEF
+            // -----+----+----+
             color = color.slice(0,-1) + ['5','A','F'][BRUSH.OPACITY.level];
         } else {
             color = color.slice(0,-1) + alpha;
