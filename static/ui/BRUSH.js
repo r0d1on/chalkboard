@@ -96,7 +96,7 @@ let BRUSH = {
     }
 
     ,get_color : function(alpha, color_id) {
-        color_id = (color_id===undefined)?BRUSH.color_id:color_id;
+        color_id = (color_id===undefined) ? BRUSH.color_id : color_id;
         let color = BRUSH.COLORS[color_id][0];
 
         if (alpha===undefined) {
@@ -211,6 +211,32 @@ let BRUSH = {
         ,init : function(canvas) {
             BRUSH.OPACITY.canvas = canvas;
             BRUSH.OPACITY.click();
+        }
+    }
+
+    ,PRESSURE : {
+        icons : {
+            1 : [null,[9,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[40,4],[40,44],[40,19],null,[40,44],[40,34],null,[49,5],[49,44],[49,20],null,[49,44],[49,34],null,[45,4],[45,44],[45,19],null,[45,44],[44,34],null,[50,51],[44,57],[39,51],[50,51],[39,51]]
+            ,2 : [null,[10,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[40,44],[40,4],null,[50,44],[50,5],null,[45,44],[45,4],null,[50,51],[45,57],[40,51],[50,51],[40,51],null,[45,44],[45,4],null,[50,5],[50,44],[50,5]]
+            ,3 : [null,[10,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[50,51],[45,57],[40,51],[50,51],[40,51],null,[41,4],[41,44],[41,19],null,[41,44],[41,34],null,[50,44],[50,5],null,[46,44],[46,4],null,[50,5],[50,44],[50,5],null,[46,4],[46,44],[46,20]]
+        }
+        ,name : 'brush_pressure'
+
+        ,canvas : null
+
+        ,mode : 1
+
+        ,click : function() {
+            BRUSH.PRESSURE.mode = (BRUSH.PRESSURE.mode+1)%3 + 1;
+            BRUSH.PRESSURE.canvas.width = BRUSH.PRESSURE.canvas.width+1-1;
+            let ctx = BRUSH.PRESSURE.canvas.getContext('2d');
+            UI.draw_glyph(BRUSH.PRESSURE.icons[BRUSH.PRESSURE.mode], ctx);
+            //BRUSH.update_size();
+        }
+
+        ,init : function(canvas) {
+            BRUSH.PRESSURE.canvas = canvas;
+            BRUSH.PRESSURE.click();
         }
     }
 
