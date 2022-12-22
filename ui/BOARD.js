@@ -17,15 +17,21 @@ let BOARD = {
         let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
 
         let alpha = undefined;
+        let width = BRUSH.get_local_width();
+        let pressure = lp1.pressure||lp0.pressure;
 
-        if (lp1.pressure) {
-            alpha = Math.round(((lp1.pressure + 0.0) - 0.5)*10);
-            alpha = ((BRUSH.OPACITY.level+1)*5) + alpha;
-            alpha = (alpha).toString(16).toUpperCase();
+        if (pressure) {
+            if (BRUSH.PRESSURE.mode&&1) {
+                alpha = Math.round(((pressure + 0.0) - 0.5) * 10);
+                alpha = ((BRUSH.OPACITY.level + 1) * 5) + alpha;
+                alpha = (alpha).toString(16).toUpperCase();
+            }
+            if (BRUSH.PRESSURE.mode&&2) {
+                width = Math.round(width*((pressure + 0.5))); // 0-0.2-1 :=>: 0.5-0.7-1.5
+            }
         }
 
         let color = BRUSH.get_color(alpha);
-        let width = BRUSH.get_local_width();
 
         let stroke = LineStroke.new(
             UI.local_to_global(lp0)
