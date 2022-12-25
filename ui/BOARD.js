@@ -21,12 +21,12 @@ let BOARD = {
         let pressure = lp1.pressure||lp0.pressure;
 
         if (pressure) {
-            if (BRUSH.PRESSURE.mode&&1) {
+            if (BRUSH.PRESSURE.mode && 1) {
                 alpha = Math.round(((pressure + 0.0) - 0.5) * 10);
                 alpha = ((BRUSH.OPACITY.level + 1) * 5) + alpha;
                 alpha = (alpha).toString(16).toUpperCase();
             }
-            if (BRUSH.PRESSURE.mode&&2) {
+            if (BRUSH.PRESSURE.mode && 2) {
                 width = Math.round(width*((pressure + 0.5))); // 0-0.2-1 :=>: 0.5-0.7-1.5
             }
         }
