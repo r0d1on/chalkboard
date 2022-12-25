@@ -321,6 +321,14 @@ let SAVE = {
             UI.redraw();
         }
 
+        if (msg.slides) {
+            SLIDER.slides = msg.slides;
+            if (SLIDER.slides.length>0) {
+                SLIDER.current_ix = 0;
+                SLIDER.update((UI.view_mode!='follow')&&(UI.view_mode!='lead'));
+            }
+        }
+
         if (UI.view_mode=='follow') {
             if ((msg['view_rect']!=undefined)&&(msg['view_rect']!=null))
                 SLIDER.move_to(msg['view_rect']);
