@@ -85,6 +85,7 @@ let TexterTool = {
         this.cursor = UI.local_to_global(Point.new(lp.x, lp.y));
         this.paragraph = UI.local_to_global(Point.new(lp.x, lp.y));
         this.draw_cursor(lp);
+        return true;
     }
 
     ,on_move : function(lp) {

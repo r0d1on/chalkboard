@@ -117,6 +117,7 @@ let DrawToolBase = {
         this.activated = true;
         this.start_point = lp;
         this.last_point = lp;
+        return true;
     }
 
     ,draw : function(){throw 'DrawToolBase.draw should be defined';}

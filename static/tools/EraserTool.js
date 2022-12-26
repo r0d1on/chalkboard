@@ -21,6 +21,7 @@ let EraserTool = {
     ,on_start : function(lp) {
         DrawToolBase.on_start.call(this, lp);
         BOARD.op_start();
+        return true;
     }
 
     ,draw : function(sp, lp, func) { // eslint-disable-line no-unused-vars

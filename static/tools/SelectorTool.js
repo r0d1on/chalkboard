@@ -607,6 +607,7 @@ let SelectorTool = {
         if (!this._try_select(lp)) {
             SelectorBase.on_start.call(this, lp);
         }
+        return true;
     }
 
 
