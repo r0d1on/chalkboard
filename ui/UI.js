@@ -139,6 +139,7 @@ let UI = {
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
             UI.log(2, 'ui.mousedown', e);
+
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_start(lp, e.button)) {
@@ -497,22 +498,25 @@ let UI = {
 
 
     ,on_start : function(lp, button) {
-        UI._event_handlers['on_start'].reduce((handled, handler)=>{
+        let handled = UI._event_handlers['on_start'].reduce((handled, handler)=>{
             return handled||handler(lp.copy(), button);
         }, false);
         UI._last_button = button;
+        return handled;
     }
 
     ,on_move : function(lp) {
-        UI._event_handlers['on_move'].reduce((handled, handler)=>{
+        let handled = UI._event_handlers['on_move'].reduce((handled, handler)=>{
             return handled||handler(lp.copy());
         }, false);
+        return handled;
     }
 
     ,on_stop : function(lp) {
-        UI._event_handlers['on_stop'].reduce((handled, handler)=>{
+        let handled = UI._event_handlers['on_stop'].reduce((handled, handler)=>{
             return handled||handler(lp.copy());
         }, false);
+        return handled;
     }
 
     ,_update_special : function() {
