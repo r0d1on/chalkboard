@@ -14,7 +14,7 @@ let IO = {
         ,'WheelEvent' : ['deltaY', 'deltaX']
         ,'KeyboardEvent' : ['key']
         ,'Event' : []
-        ,'PointerEvent' : []
+        ,'PointerEvent' : ['offsetX', 'offsetY', 'button', 'pressure', 'pointerType']
         ,'ClipboardEvent' : []
         ,'HashChangeEvent' : []
         ,'TouchEvent' : ['touches']
