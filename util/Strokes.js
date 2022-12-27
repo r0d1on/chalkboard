@@ -311,16 +311,28 @@ let ImageStroke = {
         if (this.is_hidden())
             return [];
 
-        let selected = (rect===undefined)||(this.touched_by(rect[0]))||this.touched_by(rect[1]);
+        let W = BRUSH.get_local_width();
+
+        // "all" selected
+        let selected = (rect===undefined);
+
+        // "point" picked
+        selected = selected || ((this.touched_by(rect[0])) && (rect[0].dst2(rect[1]) < W));
+
+        /*
+        selected = selected || (this.touched_by(rect[0]))||this.touched_by(rect[1]);
         selected = selected || (this.touched_by(Point.new(rect[0].x, rect[1].y)));
         selected = selected || (this.touched_by(Point.new(rect[1].x, rect[0].y)));
+        */
+
+        // within the selection rect
         selected = selected || (
             (rect[0].y <= this.p0.y)&&(this.p1.y <= rect[1].y)&&
             (rect[0].x <= this.p0.x)&&(this.p1.x <= rect[1].x)
         );
 
         if (selected) {
-            return [0,1].reduce((s, point_idx)=>{
+            return [0, 1].reduce((s, point_idx)=>{
                 //let p = this.get_point(point_idx);
                 s.push({
                     commit_id : this.commit_id
