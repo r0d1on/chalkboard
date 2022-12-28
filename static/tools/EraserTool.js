@@ -8,11 +8,14 @@ import {DrawToolBase} from './Base.js';
 
 import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
+import {BRUSH} from '../ui/BRUSH.js';
 
 let EraserTool = {
     super : DrawToolBase
 
     ,icon : [null,[35,10],[24,26],[39,36],[50,20],[35,10],null,[15,40],[21,31],[36,42],null,[44,21],[36,16],[30,25],[38,30],[44,21],null,[39,21],[35,25],null,[50,20],[35,10],[24,26],[39,36],[50,20],null,[42,27],[32,20],null,[41,18],[34,29],null,[45,20],[37,31],null,[38,15],[30,26],null,[15,40],[24,46],null,[36,42],[33,46],[24,46],null,[18,36],[33,46],null,[25,34],[19,43],null,[29,37],[24,45],null,[33,40],[29,46],null,[5,51],[22,51],null,[35,51],[54,51],null,[5,51],[16,51],null,[54,51],[41,51]]
+
+    ,original_width : null
 
     ,EraserTool : function() {
         DrawToolBase.__init__.call(this, 'eraser', false, ['Control', 'e']);
@@ -21,6 +24,8 @@ let EraserTool = {
     ,on_start : function(lp) {
         DrawToolBase.on_start.call(this, lp);
         BOARD.op_start();
+        this.original_width = BRUSH.get_local_width();
+        BRUSH.set_local_width(Math.min(Math.max(this.original_width * 4, 15), 25));
         return true;
     }
 
@@ -55,6 +60,8 @@ let EraserTool = {
 
         this.activated = false;
 
+        BRUSH.set_local_width(this.original_width);
+
         let erased = [];
 
         for(let commit_id in BOARD.strokes) {
@@ -79,6 +86,7 @@ let EraserTool = {
 
     ,cancel : function() {
         // TODO: rollback hidden strokes in opened and not committed transaction
+        BRUSH.set_local_width(this.original_width);
         DrawToolBase.cancel.call(this);
     }
 
