@@ -71,8 +71,10 @@ let BRUSH = {
     ,update_size : function (delta) {
         if (delta==undefined) delta = 0;
         BRUSH.size += delta;
-        if (BRUSH.size>40) BRUSH.size=5;
-        if (BRUSH.size<5)  BRUSH.size=40;
+        if (delta!=0) {
+            if (BRUSH.size>40) BRUSH.size=5;
+            if (BRUSH.size<5)  BRUSH.size=40;
+        }
 
         let wdiv = BRUSH.wdiv;
         let size = BRUSH.get_local_width();
@@ -89,6 +91,11 @@ let BRUSH = {
         //};
         if (delta!=0)
             UI.redraw();
+    }
+
+    ,set_local_width : function(size) {
+        BRUSH.size = BRUSH.MODE.scaled ? size / UI.viewpoint.scale : size;
+        BRUSH.update_size();
     }
 
     ,get_local_width : function() {
