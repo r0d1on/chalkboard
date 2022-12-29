@@ -283,6 +283,7 @@ let SAVE = {
     ,sync_message : function(msg) {
         let max_commit = '';
         let max_stroke_id = '';
+        let loaded = false;
 
         if ((msg.PERSISTENCE_VERSION===undefined)||(msg.PERSISTENCE_VERSION===null))
             msg.PERSISTENCE_VERSION = 2;
@@ -319,11 +320,13 @@ let SAVE = {
             BOARD.stroke_id = BOARD.id_next(max_stroke_id, 5);
 
             UI.redraw();
+
+            loaded = true;
         }
 
         if (msg.slides) {
             SLIDER.slides = msg.slides;
-            if (SLIDER.slides.length>0) {
+            if (SLIDER.slides.length > 0) {
                 SLIDER.current_ix = 0;
                 SLIDER.update((UI.view_mode!='follow')&&(UI.view_mode!='lead'));
             }
@@ -334,15 +337,17 @@ let SAVE = {
                 SLIDER.move_to(msg['view_rect']);
         }
 
+        return loaded;
     }
 
     ,_consume_message : function(str_json) {
         let message_in = JSON.parse(str_json);
         if ((message_in.resync)||(BOARD.locked)) {
             UI.log(0, 'will resync:', message_in);
+            return false;
         } else {
             SAVE.sent_version = message_in.received_version;
-            SAVE.sync_message(message_in);
+            return SAVE.sync_message(message_in);
         }
     }
 
@@ -480,17 +485,20 @@ let SAVE = {
 
         SAVE.is_syncing = true;
         UI.IO.request('/sync', message_out, (xhr)=>{
+            let loaded = false;
             if (xhr.status == 200) {
                 UI.log(0, 'backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
                 let ctx = SAVE.canvas_sync.getContext('2d');
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
 
-                SAVE._consume_message(xhr.responseText);
+                loaded = SAVE._consume_message(xhr.responseText);
             } else {
                 UI.log(0, 'backend unavailable: ', xhr);
             }
             SAVE.is_syncing = false;
+            if (!loaded)
+                SAVE.load();
         }, 2000);
 
     }
