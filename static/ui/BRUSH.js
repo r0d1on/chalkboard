@@ -62,7 +62,7 @@ let BRUSH = {
             BRUSH.select_color(color_id);
     }
 
-    ,on_color : function(e, id, long) { // eslint-disable-line no-unused-vars
+    ,on_color : function(e, id, long) {
         UI.log(1, 'brush.on_color :', id, long, e);
         const color_id = id.split('_')[1]*1;
         let button = (long) ? 2 : e.button; // long press selects alternative color (same as right mouse button click)

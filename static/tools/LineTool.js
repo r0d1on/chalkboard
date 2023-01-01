@@ -38,7 +38,7 @@ let LineTool = {
         let v = lp.sub(sp);
         let dx = Point.new(Math.abs(v.x), 0).angle(v);
         let dy = Point.new(0, Math.abs(v.y)).angle(v);
-        let t = 2 * BRUSH.size * UI.viewpoint.scale;
+        let t = 2 * BRUSH.get_local_width();
 
         let tip = [];
 

@@ -21,6 +21,7 @@ import {TexterTool} from './tools/TexterTool.js';
 import {LineTool} from './tools/LineTool.js';
 import {BoxTool} from './tools/BoxTool.js';
 import {CircleTool} from './tools/CircleTool.js';
+import {FillTool} from './tools/FillTool.js';
 
 // background tools
 import {PanZoomTool} from './tools/PanZoomTool.js';
@@ -99,6 +100,7 @@ function init(IO) {
     TOOLS.add_tool(LineTool.new(), true, '[l]ine, arrow');
     let selector = SelectorTool.new();
     TOOLS.add_tool(selector, true, '[s]elect - scale, rotate, copy, paste');
+    TOOLS.add_tool(FillTool.new(), true, '[f]ill');
     TOOLS.activate('pen', false, 0);
 
     // config menu item
