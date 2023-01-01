@@ -70,6 +70,7 @@ let Stroke = {
 
     ,selection : function() {return [];}
     ,touched_by : function(gp) {return false;} // eslint-disable-line no-unused-vars
+    ,intersection : function(p0, p1) {return null;} // eslint-disable-line no-unused-vars
 
     ,_register_json_class : function(type_code, klass) {
         Stroke.STROKE_TYPES[type_code] = klass;
@@ -167,6 +168,58 @@ let LineStroke = {
         let dst = gp.dst2seg(this.p0, this.p1);
         return (dst < ((BRUSH.size + this.width)/2.0));
     }
+
+    ,intersection : function(p0, p1, lw) {
+        // self
+        let p = UI.global_to_local(this.p0);
+        let r = UI.global_to_local(this.p1).sub(p);
+        let dt = (this.width * UI.viewpoint.scale) / p.dst(p.add(r));
+
+        // outer segment
+        let q = p0;
+        let s = p1.sub(q);
+        let du = (lw || 5) / p0.dst(p1);
+
+        let rs = r.prod(s);
+        let qp = q.sub(p);
+        let qpr = qp.prod(r);
+
+        let i = null;
+
+        if (rs==0) {
+            if (qpr==0) {
+                // collinear
+                let rr = r.prod(r);
+                if (rr==0) {
+                    // self (p) is a point
+                    if (p.dst2seg(p0, p1) < lw + this.width * UI.viewpoint.scale) {
+                        i = p.copy();
+                    } else {
+                        // debugger;
+                    }
+                } else {
+                    // If the interval between t0 and t1 intersects the interval [0, 1] then the line segments are collinear and overlapping;
+                    /*
+                    rr = r.mul(1 / rr);
+                    let t0 = qp.prod(rr);
+                    let t1 = t0 + s.prod(rr);
+                    */
+                    // debugger;
+                }
+            } else {
+                // parallel non intersecting
+            }
+        } else {
+            let t = qp.prod(s) / rs;
+            let u = qp.prod(r) / rs;
+            if ( ((0-dt<=t)&&(t<=1+dt)) && (((0-du<=u)&&(u<=1+du))) ) {
+                i = q.add(s.mul(u));
+            }
+        }
+
+        return i;
+    }
+
 
     ,get_point : function(point_idx) {
         return this['p' + point_idx];

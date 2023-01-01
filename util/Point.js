@@ -21,6 +21,10 @@ let Point = {
         return dx*dx + dy*dy;
     }
 
+    ,dst : function(other) {
+        return Math.sqrt(this.dst2(other));
+    }
+
     ,dst2seg2 : function(a, b) {
         const len2 = a.dst2(b);
         if (len2 == 0)
@@ -47,7 +51,15 @@ let Point = {
 
     ,sub : function(other, scale) {
         scale = (scale===undefined)?1:scale;
-        return Point.new(this.x - other.x*scale, this.y - other.y*scale);
+        return Point.new(this.x - other.x * scale, this.y - other.y * scale);
+    }
+
+    ,mul : function(scale) {
+        return Point.new(this.x * scale, this.y * scale);
+    }
+
+    ,prod : function(other) {
+        return this.x * other.y - this.y * other.x;
     }
 
     ,angle : function(other) {
