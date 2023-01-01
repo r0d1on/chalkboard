@@ -62,17 +62,17 @@ let LineTool = {
 
         figure = this._pre_render(figure);
 
-        let a0 = [figure[figure.length-2], figure[figure.length-1]];
-        let a1 = [figure[1], figure[0]];
+        //let a0 = [figure[figure.length-2], figure[figure.length-1]];
+        //let a1 = [figure[1], figure[0]];
 
         if (this.arrows > 0) {
-            let tip = this.arrow_tip(a0[0], a0[1]);
+            let tip = this.arrow_tip(sp, lp);
             tip = this._pre_render(tip, 0);
             this._render(tip, draw_line_fun, 0);
         }
 
         if (this.arrows > 1) {
-            let tip = this.arrow_tip(a1[0], a1[1]);
+            let tip = this.arrow_tip(lp, sp);
             tip = this._pre_render(tip, 0);
             this._render(tip, draw_line_fun, 0);
         }
