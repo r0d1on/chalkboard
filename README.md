@@ -14,11 +14,16 @@ Should work just fine in both desktop and mobile Chrome..
 * selecting, copypasting (works with system clipboard)
 * basic presenting: slides / viewpoint list handling and navigation
 * virtually infinite zoom
-* rudimentary online shared drawing sessions (refreshed with server polling, so not instant)
+* rudimentary online shared drawing sessions (refreshed with server polling, so not instant, available only with backend enabled)
+* supports stylus / pen input instruments (e.g. drawing tablets), translating pressure into opacity and pen width
+* working with rasterized images (pictures could be pasted from clipboard, or dragged onto the board)
 * named boards
 * read-only (write protected) boards
 * saving / loading board from / to browser local storage
-* downloading / uploading board from / to machine local storage
+* downloading / uploading board from / to machine local storage (json serialised)
+* downloading board as png
+* viewpoint lead / follow (tethering) mode for shared sessions
+* session record / play mode (with backend also supports record save and load operations)
 
 ### hosted on github pages:
 
