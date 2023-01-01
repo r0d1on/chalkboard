@@ -119,7 +119,7 @@ let IO = {
         this.ts = ts;
     }
 
-    ,start_recording : function() {
+    ,start_recording : function() { // CapsLock
         this.status = IO.STATUSES.RECORDING;
         this.ts = (+new Date());
         this.events_log = [];
@@ -127,20 +127,20 @@ let IO = {
         toast.set_bg_color('#F333');
     }
 
-    ,stop_recording : function() {
+    ,stop_recording : function() { // CapsLock
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3333');
     }
 
-    ,start_playing : function() {
+    ,start_playing : function() { // F9
         let toast = this.UI.toast('recorder', '▶', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3F33');
         this.status = IO.STATUSES.PLAYING;
         this.replay_events();
     }
 
-    ,stop_playing : function() {
+    ,stop_playing : function() { // F9
         clearTimeout(this.timer);
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
@@ -148,7 +148,7 @@ let IO = {
     }
 
 
-    ,load_recording : function() {
+    ,load_recording : function() { // F1
         let toast = this.UI.toast('recorder', '💾', -1, 1);
         toast.set_bg_color('#33F3');
         let message = {
@@ -166,7 +166,7 @@ let IO = {
         }, 1000);
     }
 
-    ,save_recording : function () {
+    ,save_recording : function () { // F2
         let toast = this.UI.toast('recorder', '💾', -1, 1);
         toast.set_bg_color('#33F3');
 

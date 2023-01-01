@@ -38,6 +38,7 @@ let BRUSH = {
     ,select_color : function(color_id) {
         BRUSH.color_id = color_id;
         BRUSH.div.style['background-color'] = BRUSH.get_color('E');
+        BRUSH.update_size();
     }
 
     ,attach_color : function(color_id, button) {
@@ -54,16 +55,17 @@ let BRUSH = {
                 ,false // do not reset
             );
             toast.set_bg_color(BRUSH.get_color('5', color_id));
+            BRUSH.update_size();
         }
 
         if (button==UI._last_button)
             BRUSH.select_color(color_id);
     }
 
-    ,oncolor : function(e, id, long) { // eslint-disable-line no-unused-vars
-        UI.log(1, 'brush.oncolor :', id, long, e);
+    ,on_color : function(e, id, long) { // eslint-disable-line no-unused-vars
+        UI.log(1, 'brush.on_color :', id, long, e);
         const color_id = id.split('_')[1]*1;
-        let button = (long)?1:e.button;
+        let button = (long) ? 2 : e.button; // long press selects alternative color (same as right mouse button click)
         BRUSH.attach_color(color_id, button);
         BRUSH.MENU_main.hide('colors');
     }
@@ -77,13 +79,16 @@ let BRUSH = {
         }
 
         let wdiv = BRUSH.wdiv;
-        let size = BRUSH.get_local_width();
-        wdiv.style['left']   = ((Menu.SIZE-size)>>1)+'px';
-        wdiv.style['top']    = ((Menu.SIZE-size)>>1)+'px';
+        let size = BRUSH.get_local_width()-3;
+        wdiv.style['left']   = ((Menu.SIZE-size)>>1)-2+'px';
+        wdiv.style['top']    = ((Menu.SIZE-size)>>1)-2+'px';
         wdiv.style['width']  = ((size)>>0)+'px';
         wdiv.style['height'] = ((size)>>0)+'px';
         wdiv.style['borderRadius'] = ((size)>>0)+'px';
-        wdiv.style['borderColor'] = 'red';
+        if (BRUSH.binding[2]!==undefined)
+            wdiv.style['borderColor'] = BRUSH.get_color('A', BRUSH.binding[2]);
+        else
+            wdiv.style['borderColor'] = BRUSH.get_color('A', (BRUSH.color_id + 1) % BRUSH.COLORS.length);
         //if (document.getElementById('palette').children[0].dataset['color']=='red') {
         //    wdiv.style.borderColor='black';
         //} else {
@@ -134,12 +139,12 @@ let BRUSH = {
         let wdiv = document.createElement('div');
         wdiv.id = div.id + '_s';
         wdiv.style['position'] = 'relative';
-        wdiv.style['border'] = '1px solid';
+        wdiv.style['border'] = '3px solid';
         div.appendChild(wdiv);
         BRUSH.wdiv = wdiv;
 
         BRUSH.COLORS.map((color, i)=>{
-            let [g,v] = this.MENU_main.add('colors', 'color_' + i, BRUSH.oncolor, 'div');
+            let [g,v] = this.MENU_main.add('colors', 'color_' + i, BRUSH.on_color, 'div');
             v.style['background-color'] = BRUSH.get_color('E', i);
             v.style['border-radius'] = '40px';
             v.style['width'] = '100%';
