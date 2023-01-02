@@ -1,6 +1,6 @@
 'use strict';
 
-import {_deploy_info} from './_deploy_info.js';
+import {deploy_info} from './deploy_info.js';
 
 import {UI} from '../ui/UI.js';
 
@@ -16,8 +16,8 @@ let ABOUT = {
         UI.draw_glyph(ABOUT.icon, ctx);
 
         let div = MENU_main.add('about_group', 'about_version', null, 'div', 'version', 140, 40)[0];
-        div.innerHTML = _deploy_info.version; // "0.0.12";
-        div.title = _deploy_info.time; //"20230102-2250";
+        div.innerHTML = deploy_info.version;
+        div.title = deploy_info.time;
         div.style['font-size'] = '32px';
         div.style['font-family'] = 'monospace';
 
