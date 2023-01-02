@@ -125,9 +125,6 @@ function init(IO) {
     // save menu item
     SAVE.init(MENU_main);
 
-    // separator
-    // MENU_main.add("root", null);
-
     // slides controls
     SLIDER.init(MENU_main);
 
