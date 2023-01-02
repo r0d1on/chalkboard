@@ -1,0 +1,8 @@
+'use strict';
+
+let _deploy_info = {
+     version : "0.2.VERSION"
+    ,time : "TIMESTAMP"
+};
+
+export {_deploy_info};
