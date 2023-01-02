@@ -22,9 +22,7 @@ let ABOUT = {
         div.style['font-family'] = 'monospace';
 
         div = MENU_main.add('about_group', 'about_git_link', ()=>{
-            alert('+');
-            let ancor = document.getElementById('a_git_link');
-            ancor.click();
+            document.getElementById('a_git_link').click();
         }, 'div', 'version', 140, 40)[0];
         div.innerHTML = '<a id=\'a_git_link\' target=\'blank\' href=\'https://github.com/r0d1on/chalkboard\'>GitHub</a>';
         div.style['font-size'] = '32px';
