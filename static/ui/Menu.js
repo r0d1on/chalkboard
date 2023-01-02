@@ -7,7 +7,8 @@ import {UI} from './UI.js';
 
 let Menu = {
 
-    SIZE : 60
+    SIZEX : 60
+    ,SIZEY : 60
     ,LONG_CLICK_DELAY : 1000
 
     ,Menu : function(root_name, root_div_id, top) {
@@ -28,15 +29,17 @@ let Menu = {
         this.items[root_name] = this._new_item(null, this.container, null, 0, 0);
     }
 
-    ,_new_item : function(dom, rdom, pid, top, left) {
+    ,_new_item : function(dom, dom_row, pid, top, left, dx, dy) {
         return {
             dom : dom // item dom node
-            ,rdom : rdom // item container dom node
+            ,dom_row : dom_row // item container dom node
             ,sub : [] // item's sub-items
             ,pid : pid // parent node id
             ,horizontal : (pid==null) || (!this.items[pid].horizontal)
             ,top : top // top index
             ,left : left // bottom index
+            ,dx : dx
+            ,dy : dy
         };
     }
 
@@ -45,7 +48,7 @@ let Menu = {
             return;
 
         if ((id != 'root')&&(x === undefined))
-            this.items[id].rdom.style['display'] = 'none';
+            this.items[id].dom_row.style['display'] = 'none';
 
         this.items[id].sub.map((sid)=>{
             if (sid != x) this.hide(sid);
@@ -56,7 +59,7 @@ let Menu = {
     }
 
     ,show : function(id) {
-        this.items[id].rdom.style['display'] = 'block';
+        this.items[id].dom_row.style['display'] = 'block';
     }
 
     ,onpush : function(id, touch) {
@@ -92,7 +95,7 @@ let Menu = {
 
             if (that.items[id].sub.length > 0) {
                 that.hide(that.items[id].pid, id);
-                if (that.items[id].rdom.style['display']=='none') {
+                if (that.items[id].dom_row.style['display']=='none') {
                     that.show(id);
                 } else {
                     that.hide(id);
@@ -108,23 +111,27 @@ let Menu = {
     ,get_menu_block : function(type, id) {
         let elem = document.createElement(type);
         elem.id = id;
-        elem.style['width'] = Menu.SIZE;
-        elem.style['height'] = Menu.SIZE;
+        elem.style['width'] = Menu.SIZEX;
+        elem.style['height'] = Menu.SIZEY;
         if (type=='canvas') {
-            elem.width = Menu.SIZE;
-            elem.height = Menu.SIZE;
+            elem.width = Menu.SIZEX;
+            elem.height = Menu.SIZEY;
         }
         return elem;
     }
 
-    ,add : function(pid, id, onclick, inner_type, title) {
+    ,add : function(pid, id, onclick, inner_type, title, dx, dy) {
         let parent = this.items[pid];
+
+        dx = (dx===undefined)?Menu.SIZEX:dx;
+        dy = (dy===undefined)?Menu.SIZEY:dy;
 
         // create dom node for the item
         let dom_elem = document.createElement('div');
         dom_elem.id = id;
-        dom_elem.style['width'] = Menu.SIZE + 'px';
-        dom_elem.style['height'] = Menu.SIZE + 'px';
+        dom_elem.style['width'] = dx + 'px';
+        dom_elem.style['height'] = dy + 'px';
+        dom_elem.style['position'] = 'fixed';
         add_class(dom_elem, 'menu_item');
 
         UI.IO.add_event(dom_elem, 'mousedown', this.onpush(id, false));
@@ -149,7 +156,7 @@ let Menu = {
         // create row dom node for the elements
         let dom_row = document.createElement('div');
         dom_row.id = id + '_row';
-        dom_row.style['position'] = 'absolute';
+        dom_row.style['position'] = 'fixed';
         dom_row.style['display'] = 'none';
 
         let top = parent.top;
@@ -158,36 +165,42 @@ let Menu = {
         let top_prop = (this.top)?'top':'bottom';
 
         if (parent.horizontal) {
-            left += parent.sub.length;
-            top += 1;
-            dom_elem.style[top_prop]  = '0px';
-            dom_elem.style['left'] = Menu.SIZE * parent.sub.length + 'px';
-            dom_row.style[top_prop]   = Menu.SIZE * top + 'px';
-            dom_row.style['left']  = Menu.SIZE * left + 'px';
+            // adding into a vertical stack of subitems
+            left = this.items[parent.sub.at(-1)];
+            left = left ? (left.left + left.dx) : (parent.left + parent.dx)||0;
+
+            dom_elem.style[top_prop] = parent.top + 'px';
+            dom_elem.style['left'] = left + 'px';
+
+            dom_row.style[top_prop] = parent.top + dy + 'px';
+            dom_row.style['left'] = left + 'px';
         } else {
-            left += 1;
-            top += parent.sub.length;
-            dom_elem.style[top_prop]  = Menu.SIZE * parent.sub.length + 'px';
-            dom_elem.style['left'] = '0px';
-            dom_row.style[top_prop]   = Menu.SIZE * top + 'px';
-            dom_row.style['left']  = Menu.SIZE * left + 'px';
+            // adding into a horisontal stack of subitems
+            top = this.items[parent.sub.at(-1)];
+            top = top ? (top.top + top.dy) : (parent.top + parent.dy)||0;
+
+            dom_elem.style[top_prop] = top + 'px';
+            dom_elem.style['left'] = parent.left + 'px';
+
+            dom_row.style[top_prop] = top + 'px';
+            dom_row.style['left'] = parent.left + dx + 'px';
         }
 
         // 1. inject item descriptor to the global menu items list
-        this.items[id] = this._new_item(dom_elem, dom_row, pid, top, left);
+        this.items[id] = this._new_item(dom_elem, dom_row, pid, top, left, dx, dy);
 
         // 2. inject item to parent sub-items list
         parent.sub.push(id);
 
         // 3. inject item's dom to parent row dom element
-        parent.rdom.appendChild(dom_elem);
+        parent.dom_row.appendChild(dom_elem);
         if (parent.dom != null) {
             add_class(parent.dom, 'menu_chldrn');
             add_class(parent.dom, 'menu_chldrn_'+(this.top?'t':'b')+'_'+(parent.horizontal?'h':'v'));
         }
 
         // 4. add item's container to menu container
-        this.items['root'].rdom.appendChild(dom_row);
+        this.items['root'].dom_row.appendChild(dom_row);
 
         return [dom_elem, sub_dom_elem];
     }
@@ -204,11 +217,11 @@ let Menu = {
         });
 
         // 4. remove from menu container
-        this.items['root'].rdom.removeChild(item.rdom);
+        this.items['root'].dom_row.removeChild(item.dom_row);
 
         let parent = this.items[item.pid];
         // 3. remove item from parent row
-        parent.rdom.removeChild(item.dom);
+        parent.dom_row.removeChild(item.dom);
 
         // 2. remove item from praent sub-list
         let index = parent.sub.indexOf(id);

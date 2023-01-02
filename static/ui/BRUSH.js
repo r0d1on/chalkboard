@@ -79,12 +79,12 @@ let BRUSH = {
         }
 
         let wdiv = BRUSH.wdiv;
-        let size = BRUSH.get_local_width()-3;
-        wdiv.style['left']   = ((Menu.SIZE-size)>>1)-2+'px';
-        wdiv.style['top']    = ((Menu.SIZE-size)>>1)-2+'px';
-        wdiv.style['width']  = ((size)>>0)+'px';
-        wdiv.style['height'] = ((size)>>0)+'px';
-        wdiv.style['borderRadius'] = ((size)>>0)+'px';
+        let size = BRUSH.get_local_width() - 3;
+        wdiv.style['left']   = ((Menu.SIZEY - size)>>1) - 2 + 'px';
+        wdiv.style['top']    = ((Menu.SIZEY - size)>>1) - 2 + 'px';
+        wdiv.style['width']  = ((size)>>0) + 'px';
+        wdiv.style['height'] = ((size)>>0) + 'px';
+        wdiv.style['borderRadius'] = ((size)>>0) + 'px';
         if (BRUSH.binding[2]!==undefined)
             wdiv.style['borderColor'] = BRUSH.get_color('A', BRUSH.binding[2]);
         else

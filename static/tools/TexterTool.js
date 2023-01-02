@@ -194,8 +194,8 @@ let TexterTool = {
 
         let inp = this.MENU_main.add('root', 'input', null, 'input')[1];
 
-        inp.style['width'] = (Menu.SIZE-9) + 'px';
-        inp.style['height'] = (Menu.SIZE-8) + 'px';
+        inp.style['width'] = (Menu.SIZEX - 9) + 'px';
+        inp.style['height'] = (Menu.SIZEY - 8) + 'px';
         inp.style['font-size'] = '40px';
         UI.IO.add_event(inp, 'keydown',(e)=>{
             if ((e.key in {'Enter':1, 'Backspace':1})) {
