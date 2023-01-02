@@ -48,7 +48,7 @@ let SLIDER = {
         let bx = 5+(20-5*label.length);
 
         for(let ci=0; ci<label.length; ci++)
-            bx += TexterTool.put_char(label[ci], bx, Menu.SIZE-15, 0.6, (p0, p1)=>{
+            bx += TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
                 UI.draw_line(p0, p1, 'green', 5, ctx);
             }) + 5;
 
@@ -188,6 +188,9 @@ let SLIDER = {
     }
 
     ,init : function(MENU_main) {
+        let div = MENU_main.add('root', 'slide_separator_0', null, 'div', '', 5)[0];
+        div.style['background-color'] = '#555';
+
         let ctx = MENU_main.add('root', 'slide_prev', SLIDER.slide_prev, 'canvas', '')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_prev, ctx);
 
@@ -196,6 +199,9 @@ let SLIDER = {
 
         ctx = MENU_main.add('root', 'slide_next', SLIDER.slide_next, 'canvas', '')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_next, ctx);
+
+        div = MENU_main.add('root', 'slide_separator_1', null, 'div', '', 5)[0];
+        div.style['background-color'] = '#555';
 
         ctx = MENU_main.add('slide_curr', 'slide_add', SLIDER.slide_add, 'canvas', 'new slide')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_add, ctx);

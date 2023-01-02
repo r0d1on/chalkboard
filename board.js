@@ -31,6 +31,7 @@ import {RedoTool} from './tools/RedoTool.js';
 // menu actions
 import {SAVE} from './actions/SAVE.js';
 import {SLIDER} from './actions/SLIDER.js';
+import {ABOUT} from './actions/ABOUT.js';
 
 const io_module = import('./ui/IO' + get_io_type() + '.js');
 
@@ -129,6 +130,9 @@ function init(IO) {
 
     // slides controls
     SLIDER.init(MENU_main);
+
+    // about menu
+    ABOUT.init(MENU_main);
 
     UI.redraw();
 
