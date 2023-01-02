@@ -2,7 +2,7 @@
 
 import {_deploy_info} from './_deploy_info.js';
 
-import {UI} from './UI.js';
+import {UI} from '../ui/UI.js';
 
 
 let ABOUT = {
