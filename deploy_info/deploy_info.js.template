@@ -1,7 +1,7 @@
 'use strict';
 
 let deploy_info = {
-     version : 'VERSION_MAJOR.VERSION_MINOR.VERSION_PATCH'
+    version : 'VERSION_MAJOR.VERSION_MINOR.VERSION_PATCH'
     ,time : 'TIMESTAMP'
 };
 
