@@ -1,6 +1,6 @@
 'use strict';
 
-import {UI} from './UI.js';
+import {UI} from '../ui/UI.js';
 
 
 let GRID_MODE = {
