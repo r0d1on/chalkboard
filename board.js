@@ -31,7 +31,7 @@ import {RedoTool} from './tools/RedoTool.js';
 // menu actions
 import {SAVE} from './actions/SAVE.js';
 import {SLIDER} from './actions/SLIDER.js';
-import {ABOUT} from './actions/ABOUT.js';
+import {ABOUT} from './about/ABOUT.js';
 
 const io_module = import('./ui/IO' + get_io_type() + '.js');
 
