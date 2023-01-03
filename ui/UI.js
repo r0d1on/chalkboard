@@ -6,7 +6,7 @@ import {ImageStroke} from '../util/Strokes.js';
 
 import {BOARD} from './BOARD.js';
 import {BRUSH} from './BRUSH.js';
-import {GRID_MODE} from './GRID_MODE.js';
+import {GRID_MODE} from '../actions/GRID_MODE.js';
 import {TOOLS} from './TOOLS.js';
 
 
