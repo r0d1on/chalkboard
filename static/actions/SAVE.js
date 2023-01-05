@@ -260,7 +260,8 @@ let SAVE = {
             ctx.fillRect(0, 0, overlay.width, overlay.height);
             UI.redraw(ctx);
             a.href = overlay.toDataURL();
-            UI.reset_layer('overlay');
+            let canvas = UI.reset_layer('overlay');
+            canvas.style['background-color']='';
         }
         a.click();
 
