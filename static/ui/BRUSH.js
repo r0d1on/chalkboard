@@ -3,6 +3,7 @@
 import {UI} from './UI.js';
 import {Menu} from './Menu.js';
 
+import {Settings} from '../actions/Settings.js';
 
 let BRUSH = {
     icon_size_inc :  [null,[41,20],[40,17],[42,15],[45,16],[44,19],[41,20],null,[40,24],[36,21],[35,17],[36,13],[40,11],[45,11],[48,13],[50,17],[49,20],[47,23],[40,24],null,[39,27],[36,26],[34,23],[32,20],[32,17],[32,14],[34,11],[36,9],[39,7],[42,7],[45,7],[48,9],[51,11],[52,14],[50,17],[52,20],[51,23],[48,26],[45,27],[42,28],[39,27],null,[12,50],[10,48],[12,45],[15,46],[15,49],[12,50],null,[32,35],[32,28],[25,28],null,[17,44],[32,28]]
@@ -99,12 +100,12 @@ let BRUSH = {
     }
 
     ,set_local_width : function(size) {
-        BRUSH.size = BRUSH.MODE.scaled ? size / UI.viewpoint.scale : size;
+        BRUSH.size = BRUSH.SCALED.value ? size / UI.viewpoint.scale : size;
         BRUSH.update_size();
     }
 
     ,get_local_width : function() {
-        return BRUSH.MODE.scaled ? BRUSH.size * UI.viewpoint.scale : BRUSH.size;
+        return BRUSH.SCALED.value ? BRUSH.size * UI.viewpoint.scale : BRUSH.size;
     }
 
     ,get_color : function(alpha, color_id) {
@@ -114,7 +115,7 @@ let BRUSH = {
         if (alpha===undefined) {
             // 0123456789ABCDEF
             // -----+----+----+
-            color = color.slice(0,-1) + ['5','A','F'][BRUSH.OPACITY.level];
+            color = color.slice(0,-1) + ['5','A','F'][BRUSH.OPACITY.value];
         } else {
             color = color.slice(0,-1) + alpha;
         }
@@ -175,82 +176,29 @@ let BRUSH = {
         UI.draw_glyph(BRUSH.icon_size_dec, ctx, undefined, undefined);
     }
 
-    ,MODE : {
-        icons : {
-            true : [null,[22,36],[27,31],[22,26],null,[11,26],[6,31],[11,36],null,[6,31],[27,31],null,[48,36],[53,31],[48,26],null,[37,26],[31,31],[36,36],null,[31,31],[53,31]]
-            ,false : [null,[28,37],[28,31],[28,25],null,[6,25],[6,31],[6,37],null,[6,31],[28,31],null,[53,37],[53,31],[53,25],null,[32,25],[32,31],[32,37],null,[32,31],[53,31]]
-        }
-        ,name : 'brush_mode'
+    ,SCALED : Settings.new('brush_scaled', 1
+        ,[[null,[28,37],[28,31],[28,25],null,[6,25],[6,31],[6,37],null,[6,31],[28,31],null,[53,37],[53,31],[53,25],null,[32,25],[32,31],[32,37],null,[32,31],[53,31]]
+            ,[null,[22,36],[27,31],[22,26],null,[11,26],[6,31],[11,36],null,[6,31],[27,31],null,[48,36],[53,31],[48,26],null,[37,26],[31,31],[36,36],null,[31,31],[53,31]]
+        ]
+        ,()=>{BRUSH.update_size();}
+    )
 
-        ,canvas : null
+    ,OPACITY : Settings.new('brush_opacity', 1
+        ,[[null,[54,14],[47,6],[15,38],[23,45],[54,14],null,[19,49],[10,42],[7,53],[19,49],null,[47,6],[54,14],[23,45],null,[47,6],[15,38],[23,45],null,[19,49],[10,42],[7,53],[19,49],null,[15,46],[7,53],null,[18,41],[27,32],null,[21,43],[29,34]]
+            ,[null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[19,40],[35,23],null,[21,43],[38,25]]
+            ,[null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[18,40],[46,12],null,[21,42],[50,13]]
+        ]
+        ,()=>{}
+    )
 
-        ,scaled : false
-
-        ,click : function() {
-            BRUSH.MODE.scaled = !BRUSH.MODE.scaled;
-            BRUSH.MODE.canvas.width = BRUSH.MODE.canvas.width+1-1;
-            let ctx = BRUSH.MODE.canvas.getContext('2d');
-            UI.draw_glyph(BRUSH.MODE.icons[BRUSH.MODE.scaled], ctx);
-            BRUSH.update_size();
-        }
-
-        ,init : function(canvas) {
-            BRUSH.MODE.canvas = canvas;
-            BRUSH.MODE.click();
-        }
-    }
-
-    ,OPACITY : {
-        icons : {
-            0 : [null,[54,14],[47,6],[15,38],[23,45],[54,14],null,[19,49],[10,42],[7,53],[19,49],null,[47,6],[54,14],[23,45],null,[47,6],[15,38],[23,45],null,[19,49],[10,42],[7,53],[19,49],null,[15,46],[7,53],null,[18,41],[27,32],null,[21,43],[29,34]]
-            ,1 : [null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[19,40],[35,23],null,[21,43],[38,25]]
-            ,2 : [null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[18,40],[46,12],null,[21,42],[50,13]]
-        }
-        ,name : 'brush_opacity'
-
-        ,canvas : null
-
-        ,level : 0
-
-        ,click : function() {
-            BRUSH.OPACITY.level = (BRUSH.OPACITY.level+1)%3;
-            BRUSH.OPACITY.canvas.width = BRUSH.OPACITY.canvas.width+1-1;
-            let ctx = BRUSH.OPACITY.canvas.getContext('2d');
-            UI.draw_glyph(BRUSH.OPACITY.icons[BRUSH.OPACITY.level], ctx);
-            //BRUSH.update_size();
-        }
-
-        ,init : function(canvas) {
-            BRUSH.OPACITY.canvas = canvas;
-            BRUSH.OPACITY.click();
-        }
-    }
-
-    ,PRESSURE : {
-        icons : {
-            1 : [null,[9,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[40,4],[40,44],[40,19],null,[40,44],[40,34],null,[49,5],[49,44],[49,20],null,[49,44],[49,34],null,[45,4],[45,44],[45,19],null,[45,44],[44,34],null,[50,51],[44,57],[39,51],[50,51],[39,51]]
-            ,2 : [null,[10,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[40,44],[40,4],null,[50,44],[50,5],null,[45,44],[45,4],null,[50,51],[45,57],[40,51],[50,51],[40,51],null,[45,44],[45,4],null,[50,5],[50,44],[50,5]]
-            ,3 : [null,[10,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[50,51],[45,57],[40,51],[50,51],[40,51],null,[41,4],[41,44],[41,19],null,[41,44],[41,34],null,[50,44],[50,5],null,[46,44],[46,4],null,[50,5],[50,44],[50,5],null,[46,4],[46,44],[46,20]]
-        }
-        ,name : 'brush_pressure'
-
-        ,canvas : null
-
-        ,mode : 1
-
-        ,click : function() {
-            BRUSH.PRESSURE.mode = (BRUSH.PRESSURE.mode+1)%3 + 1;
-            BRUSH.PRESSURE.canvas.width = BRUSH.PRESSURE.canvas.width+1-1;
-            let ctx = BRUSH.PRESSURE.canvas.getContext('2d');
-            UI.draw_glyph(BRUSH.PRESSURE.icons[BRUSH.PRESSURE.mode], ctx);
-            //BRUSH.update_size();
-        }
-
-        ,init : function(canvas) {
-            BRUSH.PRESSURE.canvas = canvas;
-            BRUSH.PRESSURE.click();
-        }
-    }
+    ,PRESSURE :  Settings.new('brush_pressure', 2
+        ,[
+            [null,[9,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[40,4],[40,44],[40,19],null,[40,44],[40,34],null,[49,5],[49,44],[49,20],null,[49,44],[49,34],null,[45,4],[45,44],[45,19],null,[45,44],[44,34],null,[50,51],[44,57],[39,51],[50,51],[39,51]]
+            ,[null,[10,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[40,44],[40,4],null,[50,44],[50,5],null,[45,44],[45,4],null,[50,51],[45,57],[40,51],[50,51],[40,51],null,[45,44],[45,4],null,[50,5],[50,44],[50,5]]
+            ,[null,[10,13],[15,17],[20,13],null,[15,4],[15,17],null,[19,25],[11,25],[4,22],null,[19,25],[26,22],null,[50,51],[45,57],[40,51],[50,51],[40,51],null,[41,4],[41,44],[41,19],null,[41,44],[41,34],null,[50,44],[50,5],null,[46,44],[46,4],null,[50,5],[50,44],[50,5],null,[46,4],[46,44],[46,20]]
+        ]
+        ,()=>{}
+    )
 
 };
 

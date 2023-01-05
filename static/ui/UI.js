@@ -4,9 +4,10 @@ import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
 import {ImageStroke} from '../util/Strokes.js';
 
+import {Settings} from '../actions/Settings.js';
+
 import {BOARD} from './BOARD.js';
 import {BRUSH} from './BRUSH.js';
-import {GRID_MODE} from '../actions/GRID_MODE.js';
 import {TOOLS} from './TOOLS.js';
 
 
@@ -41,6 +42,11 @@ let UI = {
     ,CANVAS_MARGIN : 20
     ,GRID : 30.0
     ,LAYERS : ['background', 'debug', 'board', 'buffer', 'overlay']
+
+    ,GRID_MODE : Settings.new('grid_mode',1
+        , [[],[null,[30,5],[30,55],[30,5],null,[55,30],[5,30],[55,30],null,[19,13],[40,13],null,[20,48],[41,48],null,[11,18],[12,44],null,[48,17],[48,42]]]
+        ,()=>{UI.redraw();}
+    )
 
     ,log_level : 0
 
@@ -872,7 +878,7 @@ let UI = {
             ctx_back = target_ctx;
         }
 
-        if (GRID_MODE.grid_active)
+        if (UI.GRID_MODE.value)
             UI.redraw_grid(ctx_back);
 
         UI.on_before_redraw();
