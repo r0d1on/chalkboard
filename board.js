@@ -28,8 +28,7 @@ import {UndoTool} from './tools/UndoTool.js';
 import {RedoTool} from './tools/RedoTool.js';
 
 // menu actions
-import {SETTINGS} from './actions/SETTINGS.js';
-import {GRID_MODE} from './actions/GRID_MODE.js';
+import {Settings} from './actions/Settings.js';
 import {SAVE} from './actions/SAVE.js';
 import {SLIDER} from './actions/SLIDER.js';
 
@@ -88,11 +87,11 @@ function init(IO) {
     TOOLS.activate('pen', false, 0);
 
     // config menu item
-    SETTINGS.init(MENU_main);
-    SETTINGS.add_item(BRUSH.MODE, 'brush scale on/off');
-    SETTINGS.add_item(BRUSH.OPACITY, 'brush default opacity');
-    SETTINGS.add_item(BRUSH.PRESSURE, 'pressure mode - opacity / width');
-    SETTINGS.add_item(GRID_MODE, 'grid on/off');
+    Settings.init(MENU_main);
+    Settings.add_item(BRUSH.SCALED, 'brush scale on/off');
+    Settings.add_item(BRUSH.OPACITY, 'brush default opacity');
+    Settings.add_item(BRUSH.PRESSURE, 'pressure mode - opacity / width');
+    Settings.add_item(UI.GRID_MODE, 'grid on/off');
 
     // undo menu item
     let ctx = MENU_main.add('root', 'undo', undo.on_activated, 'canvas', 'undo [backspace]')[1].getContext('2d');
