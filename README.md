@@ -24,6 +24,7 @@ Should work just fine in both desktop and mobile Chrome..
 * downloading board as png
 * viewpoint lead / follow (tethering) mode for shared sessions
 * session record / play mode (with backend also supports record save and load operations)
+* whiteboard (bright) / blackboard (dark) / greenboard themes
 
 ### hosted on github pages:
 
