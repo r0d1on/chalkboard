@@ -127,6 +127,7 @@ let UI = {
         canvas.style['margin'] = UI.CANVAS_MARGIN + 'px';
         canvas.width = UI.window_width - 2 * UI.CANVAS_MARGIN;
         canvas.height = UI.window_height - 2 * UI.CANVAS_MARGIN;
+        return canvas;
     }
 
     ,update_layers : function(for_redraw) {
