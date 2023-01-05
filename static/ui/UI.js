@@ -43,8 +43,16 @@ let UI = {
     ,GRID : 30.0
     ,LAYERS : ['background', 'debug', 'board', 'buffer', 'overlay']
 
-    ,GRID_MODE : Settings.new('grid_mode',1
+    ,GRID_MODE : Settings.new('grid_mode', 1
         , [[],[null,[30,5],[30,55],[30,5],null,[55,30],[5,30],[55,30],null,[19,13],[40,13],null,[20,48],[41,48],null,[11,18],[12,44],null,[48,17],[48,42]]]
+        ,()=>{UI.redraw();}
+    )
+
+    ,THEME : Settings.new('board_theme', 0
+        ,[[null,[8,11],[52,11],[52,50],[8,50],[8,11],[8,47],null,[8,50],[49,50],null,[52,47],[52,11],[52,47],null,[52,50],[8,50],null,[8,47],[8,11],null,[30,13],[30,48],null,[41,13],[41,48],null,[11,25],[49,25],null,[10,39],[49,39],null,[49,11],[11,11],[49,11],null,[19,13],[19,48]]
+            ,[null,[8,10],[52,10],[52,49],null,[8,49],[8,10],null,[30,12],[30,47],null,[41,12],[41,47],null,[11,24],[49,24],null,[10,38],[49,38],null,[8,49],[52,49],null,[19,12],[19,47],null,[11,21],[11,12],[11,21],null,[15,21],[15,12],[15,21],[15,12],null,[11,12],[11,21],null,[22,21],[22,12],[22,21],null,[26,21],[26,12],[26,21],[26,12],null,[22,12],[22,21],null,[34,21],[34,12],[34,21],null,[38,21],[38,12],[38,21],[38,12],null,[34,12],[34,21],null,[45,21],[45,12],[45,21],null,[49,21],[49,12],[49,21],[49,12],null,[45,12],[45,21],null,[12,35],[12,27],[12,35],null,[15,35],[15,27],[15,35],[15,27],null,[12,27],[12,35],null,[23,35],[23,27],[23,35],null,[26,35],[26,27],[26,35],[26,27],null,[23,27],[23,35],null,[34,35],[34,27],[34,35],null,[37,35],[37,27],[37,35],[37,27],null,[34,27],[34,35],null,[45,35],[45,27],[45,35],null,[48,35],[48,27],[48,35],[48,27],null,[45,27],[45,35],null,[12,48],[12,41],[12,48],null,[15,48],[15,41],[15,48],[15,41],null,[12,41],[12,48],null,[23,48],[23,41],[23,48],null,[26,48],[26,41],[26,48],[26,41],null,[23,41],[23,48],null,[34,48],[34,41],[34,48],null,[37,48],[37,41],[37,48],[37,41],null,[34,41],[34,48],null,[45,48],[45,41],[45,48],null,[48,48],[48,41],[48,48],[48,41],null,[45,41],[45,48]]
+            ,[null,[8,11],[52,11],[52,50],[8,50],[8,11],[8,47],null,[8,50],[49,50],null,[52,47],[52,11],[52,47],null,[52,50],[8,50],null,[8,47],[8,11],null,[49,11],[11,11],[49,11],null,[11,15],[49,15],[49,47],[11,47],[11,15],null,[15,18],[45,18],[45,43],[15,43],[15,18],null,[19,22],[41,22],[41,39],[19,39],[19,22],null,[22,26],[37,26],[37,35],[22,35],[22,26],null,[25,30],[34,30]]
+        ]
         ,()=>{UI.redraw();}
     )
 
@@ -878,8 +886,7 @@ let UI = {
             ctx_back = target_ctx;
         }
 
-        if (UI.GRID_MODE.value)
-            UI.redraw_grid(ctx_back);
+        UI.redraw_background(ctx_back, UI.GRID_MODE.value);
 
         UI.on_before_redraw();
 
@@ -898,14 +905,26 @@ let UI = {
         BRUSH.update_size();
     }
 
-    ,redraw_grid : function(ctx) {
+    ,redraw_background : function(ctx, grid) {
+        let background_colors = ['#FFF','#111','#030'];
+        let grid_colors = [
+            ['#333','#CCC']
+            ,['#CCC','#333']
+            ,['#CCC','#222']
+        ];
+
+        ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
+
+        if (!grid)
+            return;
+
         //h
         let y = - (UI.viewpoint.dy % UI.GRID) * UI.viewpoint.scale;
         while (y < UI.window_height) {
             UI.draw_line(
                 Point.new(0, y)
                 ,Point.new(UI.window_width, y)
-                ,(Math.abs(y / UI.viewpoint.scale + UI.viewpoint.dy)>0.1)?'#CCC':'#333'
+                ,grid_colors[UI.THEME.value][(Math.abs(y / UI.viewpoint.scale + UI.viewpoint.dy)>0.1)*1]
                 ,1
                 ,ctx
             );
@@ -918,7 +937,7 @@ let UI = {
             UI.draw_line(
                 Point.new(x, 0)
                 ,Point.new(x, UI.window_height)
-                ,(Math.abs(x / UI.viewpoint.scale + UI.viewpoint.dx)>0.1)?'#CCC':'#333'
+                ,grid_colors[UI.THEME.value][(Math.abs(x / UI.viewpoint.scale + UI.viewpoint.dx)>0.1)*1]
                 ,1
                 ,ctx
             );
