@@ -92,6 +92,7 @@ function init(IO) {
     Settings.add_item(BRUSH.OPACITY, 'brush default opacity');
     Settings.add_item(BRUSH.PRESSURE, 'pressure mode - opacity / width');
     Settings.add_item(UI.GRID_MODE, 'grid on/off');
+    Settings.add_item(UI.THEME, 'board theme: whiteboard / blackboard / greenboard');
 
     // undo menu item
     let ctx = MENU_main.add('root', 'undo', undo.on_activated, 'canvas', 'undo [backspace]')[1].getContext('2d');
