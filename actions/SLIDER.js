@@ -187,6 +187,53 @@ let SLIDER = {
         }
     }
 
+    ,on_persist : function(json, is_sync) {
+        json.modules['slider'] = {
+            slides : SLIDER.slides
+            ,view_rect : SLIDER.get_current_frame()
+        };
+        if (is_sync) {
+            if (UI.view_mode=='follow') {
+                json.modules['slider'].slides = null;
+                json.modules['slider'].view_rect = null;
+            }
+            //json.modules['slider'].lead = (UI.view_mode == 'lead')*1;
+        }
+    }
+
+    ,on_unpersist : function(json, is_sync) {
+        function convert_point(p) {
+            if ('X' in p)
+                return Point.new(p.X, p.Y);
+            else
+                return Point.new(p.x, p.y);
+        }
+
+        let msg = json.modules['slider'];
+        if (msg===undefined)
+            return;
+
+        if (msg.slides) {
+            msg.slides = msg.slides.map((slide)=>{
+                return [slide[0], slide[1].map(convert_point)];
+            });
+
+            SLIDER.slides = msg.slides;
+            if (SLIDER.slides.length > 0) {
+                if ((!is_sync)||(SLIDER.current_ix==null))
+                    SLIDER.current_ix = 0;
+            } else {
+                SLIDER.current_ix = null;
+            }
+            SLIDER.update(!is_sync); // refocus
+        }
+
+        if (((UI.view_mode=='follow')||(!is_sync))&&(msg.view_rect)) {
+            msg.view_rect = msg.view_rect.map(convert_point);
+            SLIDER.move_to(msg.view_rect);
+        }
+    }
+
     ,init : function(MENU_main) {
         let div = MENU_main.add('root', 'slide_separator_0', null, 'div', '', 5)[0];
         div.style['background-color'] = '#555';
@@ -216,6 +263,9 @@ let SLIDER = {
         UI.draw_glyph(SLIDER.icon_home, ctx);
 
         UI.addEventListener('on_key_down', SLIDER.on_key_down);
+
+        UI.addEventListener('on_persist', SLIDER.on_persist);
+        UI.addEventListener('on_unpersist', SLIDER.on_unpersist);
     }
 
 };

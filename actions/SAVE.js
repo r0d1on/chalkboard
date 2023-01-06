@@ -2,17 +2,15 @@
 
 import {deepcopy, sizeof, has, is_instance_of} from '../base/objects.js';
 
-import {Point} from '../util/Point.js';
 import {Stroke, ErasureStroke} from '../util/Strokes.js';
 
 import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
-import {SLIDER} from './SLIDER.js';
 
 
 // SAVE ITEMS
 let SAVE = {
-    PERSISTENCE_VERSION : 3
+    PERSISTENCE_VERSION : 4
 
     ,icon : [null,[8,7],[8,11],[8,13],[7,17],[8,19],[7,23],[8,25],[7,28],[8,30],[7,34],[8,36],[7,40],[8,42],[7,45],[8,47],[7,51],[8,53],[10,54],[14,53],[16,54],[19,53],[21,54],[25,53],[27,54],[31,53],[33,54],[36,53],[38,54],[42,53],[44,54],[48,53],[50,54],[53,53],[53,51],[53,48],[53,45],[54,42],[53,39],[53,36],[53,34],[53,30],[53,26],[53,22],[53,18],null,[44,8],[40,8],[36,7],[33,8],[30,8],[27,8],[25,8],[22,8],[19,7],[16,8],[13,8],[10,8],[8,7],null,[53,18],[44,8],[53,18],null,[15,10],[15,21],[37,21],[37,9],[37,21],[15,21],[15,10],null,[14,51],[14,31],[14,51],null,[14,31],[42,30],[42,51],[42,30],[14,31],null,[20,36],[35,36],null,[21,45],[35,45],null,[19,12],[33,12],null,[17,17],[33,16]]
     ,icon_save : [null,[16,12],[16,15],[16,19],[16,24],null,[16,34],[16,36],[16,41],[16,45],[18,47],[20,46],[25,46],[29,46],[33,47],[37,47],[41,47],[46,47],[49,46],[49,43],[50,40],[50,38],[49,36],[49,32],[49,29],[49,26],[49,23],[49,20],null,[43,13],[40,13],[37,12],[35,12],[31,13],[27,13],[24,12],[22,12],[16,12],null,[49,20],[43,13],[49,20],null,[22,12],[21,20],[37,20],[37,12],[37,20],[21,20],[22,12],null,[35,15],[24,15],[35,15],null,[25,35],[30,30],[25,25],null,[4,30],[30,30],[25,35],null,[25,25],[30,30],[4,30]]
@@ -64,14 +62,14 @@ let SAVE = {
     ,_persist : function() {
         let out_strokes = SAVE._strokes_to_save();
 
-        let json = JSON.stringify({
+        let json = {
             strokes : out_strokes
-            ,slides : SLIDER.slides
-            ,view_rect : SLIDER.get_current_frame()
+            ,modules : {}
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
-        });
+        };
+        UI.on_persist(json);
 
-        return [json, sizeof(out_strokes)];
+        return [JSON.stringify(json), sizeof(out_strokes)];
     }
 
     ,save : function() {
@@ -98,12 +96,6 @@ let SAVE = {
     }
 
     ,_unpersist_message : function(msg) {
-        function convert_point(p) {
-            if ('X' in p)
-                return Point.new(p.X, p.Y);
-            else
-                return Point.new(p.x, p.y);
-        }
 
         if (msg.PERSISTENCE_VERSION===undefined) {
             let commit_id = BOARD.id_next('0');
@@ -122,7 +114,7 @@ let SAVE = {
             msg = tmp_msg;
             msg.PERSISTENCE_VERSION = 2;
 
-        } else if (msg.PERSISTENCE_VERSION===1) {
+        } else if (msg.PERSISTENCE_VERSION === 1) {
             let commit_id = BOARD.id_next('0');
             let id = BOARD.id_next('0', 5);
             let tmp_msg = deepcopy(msg);
@@ -145,7 +137,7 @@ let SAVE = {
             msg.PERSISTENCE_VERSION = 2;
         }
 
-        if (msg.PERSISTENCE_VERSION===2) {
+        if (msg.PERSISTENCE_VERSION === 2) {
             for(let commit in msg.strokes) {
                 for(let i in msg.strokes[commit]) {
                     let stroke = msg.strokes[commit][i];
@@ -172,7 +164,24 @@ let SAVE = {
             msg.PERSISTENCE_VERSION = 3;
         }
 
-        if (msg.PERSISTENCE_VERSION===3) {
+
+        if (msg.PERSISTENCE_VERSION === 3) {
+            msg.modules = {'slider' : {}};
+
+            if (msg.slides) {
+                msg.modules['slider'].slides = msg.slides;
+                delete msg.slides;
+            }
+
+            if (msg.view_rect) {
+                msg.modules['slider'].view_rect = msg.view_rect;
+                delete msg.view_rect;
+            }
+
+            msg.PERSISTENCE_VERSION = 4;
+        }
+
+        if (msg.PERSISTENCE_VERSION === 4) {
             for(let commit in msg.strokes) {
                 for(let i in msg.strokes[commit]) {
                     msg.strokes[commit][i] = Stroke.from_json(msg.strokes[commit][i]);
@@ -180,16 +189,15 @@ let SAVE = {
             }
         }
 
-        msg.slides = (msg.slides)&&(msg.slides.map((slide)=>{
-            return [slide[0], slide[1].map(convert_point)];
-        }));
-        msg.view_rect = (msg.view_rect)&&(msg.view_rect.map(convert_point));
+        if (msg.modules===undefined)
+            msg.modules = {};
 
         return msg;
     }
 
     ,_unpersist_board : function(json) {
         let msg = SAVE._unpersist_message(JSON.parse(json));
+        UI.on_unpersist(msg);
 
         BOARD.strokes = msg.strokes;
 
@@ -204,16 +212,6 @@ let SAVE = {
             }
         }
         BOARD.max_commit_id = BOARD.commit_id;
-
-        SLIDER.slides = msg.slides;
-        if (msg.slides.length==0) {
-            SLIDER.current_ix = null;
-        } else {
-            SLIDER.current_ix = 0;
-        }
-
-        SLIDER.update();
-        SLIDER.move_to(msg.view_rect);
     }
 
     ,load : function() {
@@ -281,7 +279,7 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
     }
 
-    ,sync_message : function(msg) {
+    ,sync_message : function(msg, is_sync) {
         let max_commit = '';
         let max_stroke_id = '';
         let loaded = false;
@@ -290,6 +288,7 @@ let SAVE = {
             msg.PERSISTENCE_VERSION = 2;
 
         msg = SAVE._unpersist_message(msg);
+        UI.on_unpersist(msg, is_sync);
 
         for(let in_commit in msg.strokes) {
             let in_strokes = msg.strokes[in_commit];
@@ -325,30 +324,17 @@ let SAVE = {
             loaded = true;
         }
 
-        if (msg.slides) {
-            SLIDER.slides = msg.slides;
-            if (SLIDER.slides.length > 0) {
-                SLIDER.current_ix = 0;
-                SLIDER.update((UI.view_mode!='follow')&&(UI.view_mode!='lead'));
-            }
-        }
-
-        if (UI.view_mode=='follow') {
-            if ((msg['view_rect']!=undefined)&&(msg['view_rect']!=null))
-                SLIDER.move_to(msg['view_rect']);
-        }
-
         return loaded;
     }
 
-    ,_consume_message : function(str_json) {
+    ,_consume_message : function(str_json, is_sync) {
         let message_in = JSON.parse(str_json);
         if ((message_in.resync)||(BOARD.locked)) {
             UI.log(0, 'will resync:', message_in);
             return false;
         } else {
             SAVE.sent_version = message_in.received_version;
-            return SAVE.sync_message(message_in);
+            return SAVE.sync_message(message_in, is_sync);
         }
     }
 
@@ -367,27 +353,26 @@ let SAVE = {
 
         let out_strokes = SAVE._strokes_to_save(from_version);
 
-        let message_out = deepcopy({
+        let json = {
             name : BOARD.board_name
 
             ,version : BOARD.version
             ,strokes : out_strokes
+            ,modules : {}
 
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
-
-            ,view_rect : (UI.view_mode=='follow') ? null : SLIDER.get_current_frame()
-            ,slides : (UI.view_mode=='follow') ? null : SLIDER.slides
-            ,lead : (UI.view_mode == 'lead')? 1 : 0
-
             ,refresh : (SAVE.sent_version == null) ? 1 : 0
-        });
+        };
+        UI.on_persist(json, true);
+
+        let message_out = deepcopy(json);
 
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
 
         SAVE.is_syncing = true;
         UI.IO.request('/sync', message_out, (xhr, message)=>{
             if (xhr.status == 200) {
-                SAVE._consume_message(xhr.responseText);
+                SAVE._consume_message(xhr.responseText, true);
             } else {
                 UI.log(0, 'could not send the data:', xhr);
                 UI.log(1, 'message:', message);
@@ -493,7 +478,7 @@ let SAVE = {
                 let ctx = SAVE.canvas_sync.getContext('2d');
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
 
-                loaded = SAVE._consume_message(xhr.responseText);
+                loaded = SAVE._consume_message(xhr.responseText, false);
             } else {
                 UI.log(0, 'backend unavailable: ', xhr);
             }
