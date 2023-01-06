@@ -450,13 +450,16 @@ let UI = {
 
         ,'on_after_redraw' : []
         ,'on_before_redraw' : []
+
+        ,'on_persist' : []
+        ,'on_unpersist' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
         if (event_type in UI._event_handlers) {
             UI._event_handlers[event_type].push(event_handler);
         } else {
-            throw ('Unknown event type: '+event_type);
+            throw ('Unknown event type: ' + event_type);
         }
     }
 
@@ -737,6 +740,21 @@ let UI = {
         UI._event_handlers['on_after_redraw'].reduce((handled, handler)=>{
             return handled||handler();
         }, false);
+    }
+
+
+    ,on_persist : function(json, partial) {
+        let handled = UI._event_handlers['on_persist'].reduce((handled, handler)=>{
+            return handled||handler(json, partial);
+        }, false);
+        return handled;
+    }
+
+    ,on_unpersist : function(json, partial) {
+        let handled = UI._event_handlers['on_unpersist'].reduce((handled, handler)=>{
+            return handled||handler(json, partial);
+        }, false);
+        return handled;
     }
 
 
