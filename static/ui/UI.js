@@ -891,8 +891,7 @@ let UI = {
         return rect;
     }
 
-
-    ,redraw : function(target_ctx) {
+    ,_redraw : function(target_ctx) {
         let ctx = null;
         let ctx_back = null;
 
@@ -922,6 +921,22 @@ let UI = {
         UI.on_after_redraw();
 
         BRUSH.update_size();
+    }
+
+    ,redraw : function(target_ctx) {
+        window.requestAnimationFrame(()=>{
+            UI._redraw(target_ctx);
+        });
+        if (UI.view_mode=='debug') {
+            let now = (new Date()).valueOf();
+            UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
+            UI.__tl.push(now - UI.__ts);
+            let fps = 1000 * UI.__tl.length / (UI.__tl.reduce((a,v)=>{return a + (v||1);}, 0));
+            UI.toast('fps', 'FPS: ' + Math.ceil(fps*10)/10, -1, 1);
+            UI.__ts = now;
+            if (UI.__tl.length > 20)
+                UI.__tl = UI.__tl.slice(1);
+        }
     }
 
     ,redraw_background : function(ctx, grid) {
