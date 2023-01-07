@@ -28,6 +28,64 @@ def sync_message(loc, msg):
 
     return
 
+def update_modules(loc, msg):
+    def upd(t, s):
+        c = False
+        
+        if s is None:
+            return False
+        
+        if (t is None)or(type(t)!=type(s)):
+            return True
+        
+        if (type(s)==dict):
+            for k in s:
+                if s[k] is None:
+                    pass
+                elif (t.get(k, None) is None)or(type(t[k])!=type(s[k])):
+                    t[k] = s[k]
+                    c = True
+                else:
+                    if (isinstance(s[k], (list, dict))):
+                        c = c or upd(t[k], s[k])
+                    elif t[k] != s[k]:
+                        t[k] = s[k]
+                        c = True
+        elif (type(s)==list):
+            for i in range(len(s)):
+                if (i>=len(t)) or (t[i] is None)or(type(t[i])!=type(s[i])):
+                    if i>=len(t):
+                        t.append(s[i])
+                    else:
+                        t[i] = s[i]
+                    c = True
+                else:
+                    if (isinstance(s[i], (list, dict))):
+                        c = c or upd(t[i], s[i])
+                    elif t[i] != s[i]:
+                        t[i] = s[i]
+                        c = True
+        elif type(s)==None:
+            c = False
+        else:
+            c = t!=s
+        return c
+        
+    loc["modules"] = loc.get("modules", {})
+    if (len(loc["modules"])==0):
+        print(' - empty local modules')
+
+    print()
+    print('received modules:', msg.get("modules",{}))
+    
+    changed = upd(loc["modules"], msg.get("modules",{}))
+    
+    print()
+    print('updated modules:', changed, msg.get("modules",{}))
+    
+    return changed
+
+
 @app.route("/record.load", methods=['POST'])
 def http_record_load():
     msg = flask.request.get_json(force=True)
@@ -65,6 +123,8 @@ def http_record_save():
 def http_sync():
     msg = flask.request.get_json(force=True)
 
+    print()
+    print('=='*30)
     print("<= brd=", msg['name'], ' ver=', msg['version'], ' |msg|=', len(msg['strokes']))
 
     if (msg["version"] < 0) and (CONFIG['dry']):
@@ -97,26 +157,32 @@ def http_sync():
             ,"strokes" : {}
             ,"view_rect" : None
             ,"slides" : []
-
             ,"p" : bpass
         }
         changed = True
         
-    if loc.get("PERSISTENCE_VERSION",None) is None:
+    if loc.get("PERSISTENCE_VERSION", None) is None:
         loc["PERSISTENCE_VERSION"] = 2
+
+    if loc["PERSISTENCE_VERSION"] < 4:
+        print('persistence update')
+        loc["modules"] = {
+            "slider" : {
+                 "view_rect" : loc["view_rect"] 
+                ,"slides" : loc["slides"]
+            }
+        }
+        del loc["view_rect"]
+        del loc["slides"]
 
     auth = ((bpass=="") or (loc['p']==bpass))
 
     # process the request (ingest remote updates)
     
-    if (msg.get("lead", 0)) and (auth): # someone's leading - update the view
-        loc["view_rect"] = msg["view_rect"]
-        changed = True
+    changed = (auth and update_modules(loc, msg)) or changed;
 
     if (loc["version"] < msg["version"]) and (auth): # new version incoming
         loc["version"] = msg["version"]
-        loc["view_rect"] = msg["view_rect"]
-        loc["slides"] = msg["slides"]
         loc["p"] = bpass
         changed = True
 
@@ -143,9 +209,9 @@ def http_sync():
     for loc_commit, loc_strokes in loc['strokes'].items():
         for loc_idx, loc_stroke in loc_strokes.items():
             if (loc_stroke.get('version', None) is None):
-                print('loc: ',loc_stroke)
+                print('loc: ', loc_stroke)
             if (msg.get('version', None) is None):
-                print('msg: ',msg)
+                print('msg: ', msg)
                 
             if (loc_stroke['version'] > msg['version']):
                 upd[loc_commit] = upd.get(loc_commit, {})
@@ -157,8 +223,7 @@ def http_sync():
     return json.dumps({
           "strokes" : upd
          ,"received_version" : msg["version"]
-         ,"view_rect" : loc.get("view_rect", None)
-         ,"slides" : loc.get("slides", [])
+         ,"modules" : loc.get("modules", {})
          ,"PERSISTENCE_VERSION" : loc["PERSISTENCE_VERSION"]
     })
 
