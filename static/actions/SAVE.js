@@ -216,8 +216,10 @@ let SAVE = {
 
     ,load : function() {
         let board_data = localStorage.getItem('local_board_' + BOARD.board_name);
-        if (board_data==null)
+        if (board_data==null) {
+            UI.toast('local.loading', 'board is not in local storage', 2000);
             return;
+        }
 
         SAVE._unpersist_board(board_data);
 
@@ -225,6 +227,7 @@ let SAVE = {
 
         SAVE.MENU_main.hide('save_group');
         UI.redraw();
+        UI.toast('local.loading', 'loaded from local storage', 2000);
     }
 
     ,download : function() {
@@ -479,9 +482,10 @@ let SAVE = {
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
 
                 loaded = SAVE._consume_message(xhr.responseText, false);
+                UI.toast('backend.loading', 'loaded from backend', 2000);
             } else {
                 UI.log(0, 'backend unavailable: ', xhr);
-                UI.toast("backend.loading","backend is not available",2000);
+                UI.toast('backend.loading', 'backend is not available', 2000);
             }
             SAVE.is_syncing = false;
             if (!loaded)
