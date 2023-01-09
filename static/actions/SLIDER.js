@@ -45,12 +45,16 @@ let SLIDER = {
         let ctx = SLIDER.canvas_current.getContext('2d');
 
         let label = current_slide[0];
-        let bx = 5+(20-5*label.length);
 
-        for(let ci=0; ci<label.length; ci++)
+        let bx = 5+(20-5*label.length);
+        for(let ci=0; ci<label.length; ci++) {
+            TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
+                UI.draw_line(p0, p1, 'black', 7, ctx);
+            });
             bx += TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
                 UI.draw_line(p0, p1, 'green', 5, ctx);
             }) + 5;
+        }
 
         if (refocus)
             SLIDER.move_to(SLIDER.slides[SLIDER.current_ix][1]);
