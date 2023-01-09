@@ -238,13 +238,13 @@ let SLIDER = {
         let div = MENU_main.add('root', 'slide_separator_0', null, 'div', '', 5)[0];
         div.style['background-color'] = '#555';
 
-        let ctx = MENU_main.add('root', 'slide_prev', SLIDER.slide_prev, 'canvas', '')[1].getContext('2d');
+        let ctx = MENU_main.add('root', 'slide_prev', SLIDER.slide_prev, 'canvas', 'previous slide')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_prev, ctx);
 
-        SLIDER.canvas_current = MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', '')[1];
+        SLIDER.canvas_current = MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', 'current slide / slide operations')[1];
         //UI.draw_glyph(SLIDER.icon_next, ctx);
 
-        ctx = MENU_main.add('root', 'slide_next', SLIDER.slide_next, 'canvas', '')[1].getContext('2d');
+        ctx = MENU_main.add('root', 'slide_next', SLIDER.slide_next, 'canvas', 'next slide')[1].getContext('2d');
         UI.draw_glyph(SLIDER.icon_next, ctx);
 
         div = MENU_main.add('root', 'slide_separator_1', null, 'div', '', 5)[0];
