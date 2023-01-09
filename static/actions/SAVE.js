@@ -481,11 +481,12 @@ let SAVE = {
                 loaded = SAVE._consume_message(xhr.responseText, false);
             } else {
                 UI.log(0, 'backend unavailable: ', xhr);
+                UI.toast("backend.loading","backend is not available",2000);
             }
             SAVE.is_syncing = false;
             if (!loaded)
                 SAVE.load();
-        }, 2000);
+        }, 8000);
 
     }
 
