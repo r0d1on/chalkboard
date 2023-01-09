@@ -923,10 +923,14 @@ let UI = {
         BRUSH.update_size();
     }
 
-    ,redraw : function(target_ctx) {
-        window.requestAnimationFrame(()=>{
+    ,redraw : function(target_ctx, immediate) {
+        if (immediate) {
             UI._redraw(target_ctx);
-        });
+        } else {
+            window.requestAnimationFrame(()=>{
+                UI._redraw(target_ctx);
+            });
+        }
         if (UI.view_mode=='debug') {
             let now = (new Date()).valueOf();
             UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
