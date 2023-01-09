@@ -259,10 +259,10 @@ let SAVE = {
             let ctx = overlay.getContext('2d');
             ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
             ctx.fillRect(0, 0, overlay.width, overlay.height);
-            UI.redraw(ctx);
+            UI.redraw(ctx, true);
             a.href = overlay.toDataURL();
             let canvas = UI.reset_layer('overlay');
-            canvas.style['background-color']='';
+            canvas.style['background-color'] = '';
         }
         a.click();
 
