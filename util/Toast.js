@@ -5,6 +5,7 @@ import {_class} from '../base/objects.js';
 import {add_class} from './html.js';
 
 import {UI} from '../ui/UI.js';
+import {Menu} from '../ui/Menu.js';
 
 
 let Toast = {
@@ -12,11 +13,12 @@ let Toast = {
         CENTER : 0
         ,TOP_RIGHT : 1
         ,BOTTOM_RIGHT : 2
+        ,BOTTOM_LEFT : 3
     }
     ,DY : (3*10 + 20)
 
     ,TOASTS : {}
-    ,TOPICS : [[], [], []]
+    ,TOPICS : [[], [], [], []]
 
     ,Toast : function(topic, text, lifespan, align, reset) {
         align = (align===undefined)?Toast.ALIGN.CENTER:align;
@@ -42,7 +44,10 @@ let Toast = {
         document.body.appendChild(this.div);
 
         this.ix = 0;
-        while((this.ix < Toast.TOPICS[this.align].length) && (Toast.TOPICS[this.align][this.ix]!==undefined)) this.ix++;
+        while(
+            (this.ix < Toast.TOPICS[this.align].length) &&
+            (Toast.TOPICS[this.align][this.ix]!==undefined)
+        ) this.ix++;
 
         Toast.TOPICS[this.align][this.ix] = topic;
         Toast.TOASTS[topic] = this;
@@ -74,6 +79,10 @@ let Toast = {
         } else if (this.align==Toast.ALIGN.TOP_RIGHT) {
             top_origin = UI.CANVAS_MARGIN;
             dir = +1;
+        } else if (this.align==Toast.ALIGN.BOTTOM_LEFT) {
+            top_origin = top_origin - UI.CANVAS_MARGIN - Menu.SIZEY;
+            left = UI.CANVAS_MARGIN;
+            dir = -1;
         }
 
         let top = top_origin + dir * this.ix * Toast.DY;

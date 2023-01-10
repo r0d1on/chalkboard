@@ -78,6 +78,12 @@ let UI = {
     }
 
 
+    ,special_keys : {
+        'Control' : 'ctrlKey'
+        , 'Shift' : 'shiftKey'
+        , 'Alt' : 'altKey'
+        , 'Meta' : 'metaKey'
+    }
     ,keys : {
         'Control' : false
         , 'Shift' : false
@@ -85,7 +91,7 @@ let UI = {
         , 'Meta' : false
         , null : true
     }
-    ,keys_special : 0
+    ,special_active : 0
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
@@ -142,6 +148,18 @@ let UI = {
         });
     }
 
+    ,_check_specials : function(e) {
+        for(let key in UI.special_keys) {
+            let key_field = UI.special_keys[key];
+            if ((key_field in e)&&(e[key_field]!=UI.keys[key])) {
+                if (e[key_field])
+                    UI.on_key_down({'key':key});
+                else
+                    UI.on_key_up({'key':key});
+            }
+        }
+    }
+
     ,_setup_event_listeners : function() {
         // window size change listener
         UI.IO.add_event(window, 'resize', ()=>{
@@ -153,8 +171,8 @@ let UI = {
         let buffer_canvas = UI.layers[UI.LAYERS.indexOf('buffer')];
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
+            UI._check_specials(e);
             UI.log(2, 'ui.mousedown', e);
-
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
             if (UI.on_start(lp, e.button)) {
@@ -163,6 +181,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchstart', e => {
+            UI._check_specials(e);
             UI.log(2, 'ui.touchstart', e);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
@@ -186,6 +205,7 @@ let UI = {
             e.preventDefault();
         });
         UI.IO.add_event(buffer_canvas, 'pointerdown', e => {
+            UI._check_specials(e);
             UI.log(2, 'ui.pointerdown', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
             if (e.pointerType=='pen') { // only process start events from pen here
                 let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
@@ -207,6 +227,7 @@ let UI = {
 
         // tool move events
         UI.IO.add_event(buffer_canvas, 'pointermove', e => { // mousemove
+            UI._check_specials(e);
             //UI.log(3, 'ui.mousemove', e);
             UI.log(3, 'ui.pointermove', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
 
@@ -226,6 +247,7 @@ let UI = {
             UI._last_point = lp;
         });
         UI.IO.add_event(buffer_canvas, 'touchmove', e => {
+            UI._check_specials(e);
             UI.log(3, 'ui.touchmove', e, e.pointerId, '=>', e.pointerType,' | ',e.bubbles,' | ',e.cancelable);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
@@ -245,6 +267,7 @@ let UI = {
 
         // tool usage stop events
         UI.IO.add_event(buffer_canvas, 'mouseup', e => {
+            UI._check_specials(e);
             UI.log(2, 'ui.mouseup', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
@@ -254,6 +277,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchend', e => {
+            UI._check_specials(e);
             UI.log(2, 'ui.touchend', e);
             UI.is_mobile = true;
             let lp = UI._last_point;
@@ -275,6 +299,7 @@ let UI = {
             e.preventDefault();
         });
         UI.IO.add_event(buffer_canvas, 'pointerup', e => {
+            UI._check_specials(e);
             UI.log(2, 'ui.pointerup', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
             if (e.pointerType=='pen') {
                 let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
@@ -290,17 +315,22 @@ let UI = {
 
         // mouse wheel listener
         UI.IO.add_event(buffer_canvas, 'wheel', e => {
+            UI._check_specials(e);
             UI.on_wheel(e.deltaY, e.deltaX);
             e.preventDefault();
         });
 
         // keyboard listener
         UI.IO.add_event(document, 'keydown', e => {
+            if (!(e.key in UI.special_keys))
+                UI._check_specials(e);
             const handled = UI.on_key_down(e.key);
             if ((handled)||(((e.key=='+')||(e.key=='-'))&&(UI.keys['Control'])))
                 e.preventDefault();
         });
         UI.IO.add_event(document, 'keyup', e => {
+            if (!(e.key in UI.special_keys))
+                UI._check_specials(e);
             UI.on_key_up(e.key);
             if (((e.key=='+')||(e.key=='-'))&&(UI.keys['Control']))
                 e.preventDefault();
@@ -391,6 +421,14 @@ let UI = {
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
 
+    ,_is_mobile_browser : function() {
+        try {
+            return navigator.userAgentData.mobile;
+        } catch(e) {
+            return /ip(hone|ad|od)|android/i.test((navigator.userAgent+'').toLowerCase());
+        }
+    }
+
     ,init : function(IO) {
         UI.IO = IO;
 
@@ -403,12 +441,7 @@ let UI = {
         // generate view id
         UI.view_id = Number(Math.ceil(Math.random()*1000)).toString(36);
 
-        try {
-            UI.is_mobile = navigator.userAgentData.mobile;
-        } catch(e) {
-            UI.is_mobile = true;
-        }
-
+        UI.is_mobile = UI._is_mobile_browser();
 
         UI.layers = (UI.LAYERS).map((id)=>{
             return document.getElementById('canvas_' + id);
@@ -538,10 +571,10 @@ let UI = {
     }
 
     ,_update_special : function() {
-        UI.keys_special = 0;
+        UI.special_active = 0;
         for (const key in UI.keys)
-            UI.keys_special += (key!=null)?UI.keys[key]*1:0;
-        UI.keys[null] = UI.keys_special==0;
+            UI.special_active += (key!=null)?UI.keys[key]*1:0;
+        UI.keys[null] = UI.special_active==0;
     }
 
     ,on_key_down : function(key) {
