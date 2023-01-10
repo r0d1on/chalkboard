@@ -391,6 +391,14 @@ let UI = {
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
 
+    ,_is_mobile_browser : function() {
+        try {
+            return navigator.userAgentData.mobile;
+        } catch(e) {
+            return /ip(hone|ad|od)|android/i.test((navigator.userAgent+'').toLowerCase());
+        }
+    }
+
     ,init : function(IO) {
         UI.IO = IO;
 
@@ -403,12 +411,7 @@ let UI = {
         // generate view id
         UI.view_id = Number(Math.ceil(Math.random()*1000)).toString(36);
 
-        try {
-            UI.is_mobile = navigator.userAgentData.mobile;
-        } catch(e) {
-            UI.is_mobile = true;
-        }
-
+        UI.is_mobile = UI._is_mobile_browser();
 
         UI.layers = (UI.LAYERS).map((id)=>{
             return document.getElementById('canvas_' + id);
