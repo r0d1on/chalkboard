@@ -35,10 +35,11 @@ let TexterTool = {
     }
 
     ,put_char : function(key, bx, by, scale, draw_line_fun) {
-        scale = (scale===undefined)?(BRUSH.get_local_width()/10) : scale;
-        draw_line_fun = (draw_line_fun===undefined)?BOARD.add_line:draw_line_fun;
+        scale = (scale===undefined) ? (BRUSH.get_local_width()/10) : scale;
+        draw_line_fun = (draw_line_fun===undefined) ? BOARD.add_line : draw_line_fun;
 
-        let A = ALPHABET[key].A;
+        let char = ALPHABET[key] || {A: [], dx: ALPHABET['X'].dx};
+        let A = char.A;
         let a,b,p = null;
 
         for(let i=0; i<A.length; i++) {
@@ -57,7 +58,7 @@ let TexterTool = {
 
             p = A[i];
         }
-        return ALPHABET[key].dx * scale;
+        return char.dx * scale;
     }
 
     ,draw_cursor : function(lp, params) {

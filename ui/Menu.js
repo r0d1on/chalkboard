@@ -123,8 +123,8 @@ let Menu = {
     ,add : function(pid, id, onclick, inner_type, title, dx, dy) {
         let parent = this.items[pid];
 
-        dx = (dx===undefined)?Menu.SIZEX:dx;
-        dy = (dy===undefined)?Menu.SIZEY:dy;
+        dx = (dx===undefined) ? Menu.SIZEX : dx;
+        dy = (dy===undefined) ? Menu.SIZEY : dy;
 
         // create dom node for the item
         let dom_elem = document.createElement('div');
