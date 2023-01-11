@@ -46,14 +46,16 @@ let SLIDER = {
 
         let label = current_slide[0];
 
-        let bx = 5+(20-5*label.length);
-        for(let ci=0; ci<label.length; ci++) {
-            TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
-                UI.draw_line(p0, p1, 'black', 7, ctx);
-            });
-            bx += TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
-                UI.draw_line(p0, p1, 'green', 5, ctx);
-            }) + 5;
+        if (label) {
+            let bx = 5+(20-5*label.length);
+            for(let ci=0; ci<label.length; ci++) {
+                TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
+                    UI.draw_line(p0, p1, 'black', 7, ctx);
+                });
+                bx += TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
+                    UI.draw_line(p0, p1, 'green', 5, ctx);
+                }) + 5;
+            }
         }
 
         if (refocus)
@@ -133,7 +135,7 @@ let SLIDER = {
         let frame_rect = SLIDER.get_current_frame();
 
         let code = prompt('New slide code');
-        if (code!='') {
+        if ((code!='')&&(code!=null)) {
             if (SLIDER.current_ix==null) {
                 SLIDER.slides.push([code, frame_rect]);
                 SLIDER.current_ix = 0;
@@ -149,6 +151,10 @@ let SLIDER = {
     }
 
     ,slide_del : function() {
+        if (SLIDER.slides.length==0) {
+            UI.toast('slider','no slides to delete', 2000);
+            return;
+        }
         SLIDER.slides.splice(SLIDER.current_ix,1);
         SLIDER.current_ix = Math.min(SLIDER.current_ix, SLIDER.slides.length-1);
         if (SLIDER.slides.length==0)
