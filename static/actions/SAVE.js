@@ -341,7 +341,7 @@ let SAVE = {
         }
     }
 
-    ,sync : function() {
+    ,sync : function(full) {
         if (SAVE.is_syncing) {
             UI.log(0, 'skipping sync() - already syncing');
             return;
@@ -351,6 +351,9 @@ let SAVE = {
             UI.log(0, 'skipping sync() - board is locked');
             return;
         }
+
+        if (full)
+            SAVE.sent_version = null;
 
         let from_version = (SAVE.sent_version == null)? 0 : SAVE.sent_version + 1;
 
@@ -376,9 +379,12 @@ let SAVE = {
         UI.IO.request('/sync', message_out, (xhr, message)=>{
             if (xhr.status == 200) {
                 SAVE._consume_message(xhr.responseText, true);
+                if (full)
+                    UI.toast('backend.saving', 'board saved on the backend', 2000);
             } else {
                 UI.log(0, 'could not send the data:', xhr);
                 UI.log(1, 'message:', message);
+                UI.toast('backend.saving', 'connection to backend is broken, could not sync the board', 2000);
                 if (SAVE.autosync) {
                     SAVE.sync_switch();
                 }
@@ -389,7 +395,7 @@ let SAVE = {
         //console.log("=> |msg|:", sizeof(message_out.strokes), " ver:", message_out.version);
     }
 
-    ,sync_switch : function() {
+    ,sync_switch : function(e, id, long) {
         function _sync() {
             if (SAVE.is_syncing) {
                 UI.log(0, 'skipping sync: already syncing');
@@ -399,6 +405,11 @@ let SAVE = {
             if (SAVE.autosync) {
                 setTimeout(_sync, 1000);
             }
+        }
+
+        if (long) {
+            SAVE.sync(true);
+            return;
         }
 
         if (SAVE.autosync) {
