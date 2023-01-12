@@ -153,9 +153,9 @@ let UI = {
             let key_field = UI.special_keys[key];
             if ((key_field in e)&&(e[key_field]!=UI.keys[key])) {
                 if (e[key_field])
-                    UI.on_key_down({'key':key});
+                    UI.on_key_down(key);
                 else
-                    UI.on_key_up({'key':key});
+                    UI.on_key_up(key);
             }
         }
     }
