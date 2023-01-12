@@ -574,6 +574,7 @@ let SelectorTool = {
             let W = SelectorBase.WIDTH;
             let S = BRUSH.get_local_width();
 
+            // points nearby
             let points = BOARD.get_points(
                 UI.get_rect([
                     Point.new(lp.x-W-S, lp.y-W-S)
@@ -581,6 +582,20 @@ let SelectorTool = {
                 ]).map((p)=>{
                     return UI.local_to_global(p);
                 }));
+
+            // points from touched strokes
+            BOARD.get_points(
+                UI.get_rect([
+                    Point.new(0, 0)
+                    ,Point.new(UI.window_width, UI.window_width)
+                ]).map((p)=>{
+                    return UI.local_to_global(p);
+                })
+            ).map((pnt)=>{
+                if (BOARD.strokes[pnt.commit_id][pnt.stroke_idx].touched_by(UI.local_to_global(lp))) {
+                    points.push(pnt);
+                }
+            });
 
             if (UI.keys['Alt']) {
                 (

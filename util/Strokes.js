@@ -166,7 +166,10 @@ let LineStroke = {
 
     ,touched_by : function(gp) {
         let dst = gp.dst2seg(this.p0, this.p1);
-        return (dst < ((BRUSH.size + this.width)/2.0));
+        let radius = BRUSH.size;
+        if (!BRUSH.SCALED.value)
+            radius /= UI.viewpoint.scale;
+        return dst < (this.width + radius) / 2.0;
     }
 
     ,intersection : function(p0, p1, lw) {
