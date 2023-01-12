@@ -572,9 +572,22 @@ let UI = {
 
     ,_update_special : function() {
         UI.special_active = 0;
-        for (const key in UI.keys)
-            UI.special_active += (key!=null)?UI.keys[key]*1:0;
+        let text = '';
+        for (const key in UI.keys) if ( ((key + '')!='null') && (UI.keys[key]) ) {
+            text += ' ' + key;
+            UI.special_active += 1;
+        }
         UI.keys[null] = UI.special_active==0;
+
+        text = text.trim();
+
+        if (UI.special_active == 0) {
+            let toast = UI.toast('special.keys', undefined, -1, 3, false);
+            toast.lifespan = 500;
+            toast._blur()();
+        } else {
+            UI.toast('special.keys', text, -1, 3);
+        }
     }
 
     ,on_key_down : function(key) {
