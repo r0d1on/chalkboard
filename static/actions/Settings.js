@@ -69,6 +69,7 @@ let Settings = {
         if (saved_value!==undefined) {
             item.value = saved_value;
             item.redraw_icon();
+            item.on_change(saved_value);
         } else {
             Settings.VALUES[item.name] = item.value;
             Settings.save_values();

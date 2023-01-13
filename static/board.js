@@ -118,7 +118,7 @@ function init(IO) {
     UI.redraw();
 
     if (BOARD.board_name=='') {
-        window.location.hash = 'board-'+UI.view_id;
+        window.location.hash = 'board-' + UI.view_id;
     } else {
         document.title = BOARD.board_name;
     }
