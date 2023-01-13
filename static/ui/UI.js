@@ -525,7 +525,7 @@ let UI = {
         } else if (key == '-') {
             BRUSH.update_size(-5);
         } else if (key == 'Tab') {
-            BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS.length, UI._last_button);
+            BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS[BRUSH.current_palette].length, UI._last_button);
             return true;
         }
     }

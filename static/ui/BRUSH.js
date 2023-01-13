@@ -9,15 +9,63 @@ let BRUSH = {
     icon_size_inc :  [null,[41,20],[40,17],[42,15],[45,16],[44,19],[41,20],null,[40,24],[36,21],[35,17],[36,13],[40,11],[45,11],[48,13],[50,17],[49,20],[47,23],[40,24],null,[39,27],[36,26],[34,23],[32,20],[32,17],[32,14],[34,11],[36,9],[39,7],[42,7],[45,7],[48,9],[51,11],[52,14],[50,17],[52,20],[51,23],[48,26],[45,27],[42,28],[39,27],null,[12,50],[10,48],[12,45],[15,46],[15,49],[12,50],null,[32,35],[32,28],[25,28],null,[17,44],[32,28]]
     ,icon_size_dec : [null,[19,40],[20,41],[20,43],[19,45],[17,45],[16,44],[15,43],[16,41],[17,40],[19,40],null,[20,36],[22,37],[24,40],[25,41],[25,44],[25,46],[23,48],[21,48],[19,49],[17,50],[14,49],[12,48],[11,47],[11,45],[10,43],[11,40],[12,39],[13,37],[15,36],[18,36],[20,36],null,[21,33],[24,35],[26,38],[28,41],[28,44],[28,47],[25,50],[23,52],[20,53],[17,53],[14,53],[11,51],[8,49],[8,46],[8,43],[8,40],[9,37],[12,34],[15,33],[18,32],[21,33],null,[49,11],[50,12],[51,13],[50,14],[49,15],[48,16],[46,16],[45,15],[45,13],[46,12],[47,11],[48,10],[49,11],null,[43,25],[43,18],[35,18],null,[27,34],[43,18]]
 
+    ,current_palette : 0
     ,COLORS : [
-        ['#000A', 'black'],
-        ['#FFFA', 'white'],
-        ['#F00A', 'red'],
-        ['#FD0A', 'gold'],
-        ['#080A', 'green'],
-        ['#93EA', 'blueviolet'],
-        ['#00FA', 'blue'],
-        ['#469A', '#469'] // pale blue
+        [
+            ['#000A', 'black'],
+            ['#FFFA', 'white'],
+            ['#F00A', 'red'],
+            ['#FD0A', 'gold'],
+            ['#080A', 'green'],
+            ['#93EA', 'blueviolet'],
+            ['#00FA', 'blue'],
+            ['#469A', 'pale blue']
+        ],
+
+        [ // graffiti 1
+            ['#000A', 'black'],
+            ['#FFFA', 'white'],
+            ['#d71201AA', 'red'],
+            ['#fec449AA', 'gold'],
+            ['#3cab06AA', 'green'],
+            ['#dc4e7eAA', 'blueviolet'],
+            ['#1356ebAA', 'blue'],
+            ['#23a0a4AA', 'pale blue']
+        ],
+
+        [ // graffiti 2
+            ['#000A', 'black'],
+            ['#FFFA', 'white'],
+            ['#b92e34AA', 'red'],
+            ['#f6f16bAA', 'gold'],
+            ['#39ff14AA', 'green'],
+            ['#fb7cf5AA', 'blueviolet'],
+            ['#99f0f2AA', 'blue'],
+            ['#81a9ffAA', 'pale blue']
+        ],
+
+
+        [ // graffiti 3
+            ['#000A', 'black'],
+            ['#FFFA', 'white'],
+            ['#dd855cAA', 'red'],
+            ['#f1e8caAA', 'gold'],
+            ['#9ebd9eAA', 'green'],
+            ['#bbcbdbAA', 'blue'],
+            ['#745151AA', 'brown'],
+            ['#469A', 'pale blue']
+        ],
+
+        [ // greenish 1
+            ['#000A', 'black'],
+            ['#FFFA', 'white'],
+            ['#4f151cAA', 'red'],
+            ['#e9e0aaAA', 'gold'],
+            ['#009f62AA', 'green'],
+            ['#fb7cf5AA', 'blueviolet'],
+            ['#a0d173AA', 'light green'],
+            ['#63635cAA', 'pale brown']
+        ]
     ]
 
     ,color_id : 0
@@ -89,7 +137,7 @@ let BRUSH = {
         if (BRUSH.binding[2]!==undefined)
             wdiv.style['borderColor'] = BRUSH.get_color('A', BRUSH.binding[2]);
         else
-            wdiv.style['borderColor'] = BRUSH.get_color('A', (BRUSH.color_id + 1) % BRUSH.COLORS.length);
+            wdiv.style['borderColor'] = BRUSH.get_color('A', (BRUSH.color_id + 1) % BRUSH.COLORS[BRUSH.current_palette].length);
         //if (document.getElementById('palette').children[0].dataset['color']=='red') {
         //    wdiv.style.borderColor='black';
         //} else {
@@ -110,17 +158,33 @@ let BRUSH = {
 
     ,get_color : function(alpha, color_id) {
         color_id = (color_id===undefined) ? BRUSH.color_id : color_id;
-        let color = BRUSH.COLORS[color_id][0];
+        let color = BRUSH.COLORS[BRUSH.current_palette][color_id][0];
+        let ctype = color.length / 4; // 1 for short 2 for long
 
         if (alpha===undefined) {
             // 0123456789ABCDEF
             // -----+----+----+
-            color = color.slice(0,-1) + ['5','A','F'][BRUSH.OPACITY.value];
+            color = color.slice(0, -ctype) + ['55', 'AA', 'FF'][BRUSH.OPACITY.value].slice(0, ctype);
         } else {
-            color = color.slice(0,-1) + alpha;
+            color = color.slice(0, -ctype) + (alpha + alpha).slice(0, ctype);
         }
 
         return color;
+    }
+
+    ,_update_palette : function() {
+        BRUSH.MENU_main.items['colors'].sub.slice().map((color_id)=>{
+            BRUSH.MENU_main.drop(color_id);
+        });
+
+        BRUSH.COLORS[BRUSH.current_palette].map((color, i)=>{
+            let [g,v] = this.MENU_main.add('colors', 'color_' + i, BRUSH.on_color, 'div');
+            v.style['background-color'] = BRUSH.get_color('E', i);
+            v.style['border-radius'] = '40px';
+            v.style['width'] = '100%';
+            v.style['height'] = '100%';
+            g.style['background-color'] = '#666D';
+        });
     }
 
     ,init : function(MENU_main, MENU_options) {
@@ -144,14 +208,7 @@ let BRUSH = {
         div.appendChild(wdiv);
         BRUSH.wdiv = wdiv;
 
-        BRUSH.COLORS.map((color, i)=>{
-            let [g,v] = this.MENU_main.add('colors', 'color_' + i, BRUSH.on_color, 'div');
-            v.style['background-color'] = BRUSH.get_color('E', i);
-            v.style['border-radius'] = '40px';
-            v.style['width'] = '100%';
-            v.style['height'] = '100%';
-            g.style['background-color'] = '#666D';
-        });
+        BRUSH._update_palette();
 
         BRUSH.attach_color(0 ,0);
         BRUSH.update_size();
@@ -200,6 +257,22 @@ let BRUSH = {
         ,()=>{}
     )
 
+    ,PALETTE : Settings.new('brush_palette', 0
+        ,[
+            [null,[24,52],[17,49],[12,44],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[52,23],null,[31,53],[24,52],null,[52,23],[50,31],null,[32,42],[34,35],[50,31],null,[32,42],[37,46],null,[31,53],[36,51],[37,46],null,[44,22],[44,22],null,[34,17],[34,17],null,[25,17],[25,17],null,[19,22],[19,22],null,[18,32],[18,32],null,[22,42],[22,42],null,[24,52],[17,49],[12,44],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[52,23],null,[31,53],[24,52],null,[52,23],[50,31],null,[32,42],[34,35],[50,31],null,[32,42],[37,46],null,[31,53],[36,51],[37,46]]
+            ,[null,[24,52],[17,49],[12,43],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[52,23],null,[31,53],[24,52],null,[52,23],[50,30],null,[32,41],[34,34],[50,30],null,[32,41],[37,46],null,[31,53],[36,51],[37,46],null,[44,21],[44,21],null,[34,17],[34,17],null,[25,17],[25,17],null,[19,22],[19,22],null,[18,32],[18,32],null,[22,42],[22,42],null,[24,52],[17,49],[12,43],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[52,23],null,[31,53],[24,52],null,[52,23],[50,30],null,[32,41],[34,34],[50,30],null,[32,41],[37,46],null,[31,53],[36,51],[37,46],null,[44,24],[41,23],[44,21],[44,24]]
+            ,[null,[24,52],[17,49],[12,44],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[53,23],null,[31,53],[24,52],null,[53,23],[50,31],null,[32,42],[34,35],[50,31],null,[32,42],[37,46],null,[31,53],[36,51],[37,46],null,[44,21],[44,21],null,[34,17],[34,17],null,[25,17],[25,17],null,[19,22],[19,22],null,[18,32],[18,32],null,[22,42],[22,42],null,[24,52],[17,49],[12,44],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[53,23],null,[31,53],[24,52],null,[53,23],[50,31],null,[32,42],[34,35],[50,31],null,[32,42],[37,46],null,[31,53],[36,51],[37,46],null,[34,17],[34,17],[37,17],null,[34,17],[35,20],[37,17]]
+            ,[null,[23,52],[17,49],[12,44],[9,37],[7,30],[9,23],[12,17],[17,11],[23,8],[30,7],[37,8],[44,11],[49,17],[52,23],null,[30,53],[23,52],null,[52,23],[50,31],null,[32,42],[34,35],[50,31],null,[32,42],[36,46],null,[30,53],[36,52],[36,46],null,[43,22],[43,22],null,[34,17],[34,17],null,[24,17],[24,17],null,[19,22],[19,22],null,[17,32],[17,32],null,[22,42],[22,42],null,[23,52],[17,49],[12,44],[9,37],[7,30],[9,23],[12,17],[17,11],[23,8],[30,7],[37,8],[44,11],[49,17],[52,23],null,[30,53],[23,52],null,[52,23],[50,31],null,[32,42],[34,35],[50,31],null,[32,42],[36,46],null,[30,53],[36,52],[36,46],null,[27,16],[24,17],[27,16],[27,19],[24,17]]
+            ,[null,[24,52],[17,49],[12,44],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[53,23],null,[31,53],[24,52],null,[53,23],[51,31],null,[32,41],[34,34],[51,31],null,[32,41],[37,46],null,[31,53],[36,51],[37,46],null,[44,21],[44,21],null,[34,17],[34,17],null,[25,17],[25,17],null,[19,22],[19,22],null,[18,32],[18,32],null,[22,42],[22,42],null,[24,52],[17,49],[12,44],[9,37],[8,30],[9,23],[12,16],[17,11],[24,8],[31,7],[38,8],[44,11],[49,16],[53,23],null,[31,53],[24,52],null,[53,23],[51,31],null,[32,41],[34,34],[51,31],null,[32,41],[37,46],null,[31,53],[36,51],[37,46],null,[19,22],[19,22],null,[22,23],[19,25],[19,22],[22,23]]
+        ]
+        ,(new_value)=>{
+            BRUSH.current_palette = new_value;
+            BRUSH._update_palette();
+            BRUSH.attach_color(BRUSH.color_id, 0);
+            BRUSH.update_size();
+            console.log('palette:', new_value);
+        }
+    )
 };
 
 
