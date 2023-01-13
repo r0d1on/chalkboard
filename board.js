@@ -91,6 +91,7 @@ function init(IO) {
     Settings.add_item(BRUSH.SCALED, 'brush scale on/off');
     Settings.add_item(BRUSH.OPACITY, 'brush default opacity');
     Settings.add_item(BRUSH.PRESSURE, 'pressure mode - opacity / width');
+    Settings.add_item(BRUSH.PALETTE, 'brush palette preset');
     Settings.add_item(UI.GRID_MODE, 'grid on/off');
     Settings.add_item(UI.THEME, 'board theme: whiteboard / blackboard / greenboard');
 

@@ -45,7 +45,7 @@ let Settings = {
                     Settings.VALUES[key] = values[key];
                     if (key in Settings.ITEMS) {
                         Settings.ITEMS[key].value = values[key];
-                        Settings.ITEMS[key].on_change();
+                        Settings.ITEMS[key].on_change(values[key]);
                         Settings.ITEMS[key].redraw_icon();
                     }
                 }
@@ -102,12 +102,12 @@ let Settings = {
     ,on_item_click : function() {
         this.value = (this.value + 1) % this.icons.length;
         this.redraw_icon();
-        this.on_change();
+        this.on_change(this.value);
         Settings.VALUES[this.name] = this.value;
         Settings.save_values();
     }
 
-    ,on_change : function() {}
+    ,on_change : function(new_value) {new_value;}
 };
 
 Settings = _class('Settings', Settings);

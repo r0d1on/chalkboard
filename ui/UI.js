@@ -149,6 +149,8 @@ let UI = {
     }
 
     ,_check_specials : function(e) {
+        if (UI.is_mobile)
+            return;
         for(let key in UI.special_keys) {
             let key_field = UI.special_keys[key];
             if ((key_field in e)&&(e[key_field]!=UI.keys[key])) {
@@ -523,7 +525,7 @@ let UI = {
         } else if (key == '-') {
             BRUSH.update_size(-5);
         } else if (key == 'Tab') {
-            BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS.length, UI._last_button);
+            BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS[BRUSH.current_palette].length, UI._last_button);
             return true;
         }
     }
