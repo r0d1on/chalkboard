@@ -149,6 +149,8 @@ let UI = {
     }
 
     ,_check_specials : function(e) {
+        if (UI.is_mobile)
+            return;
         for(let key in UI.special_keys) {
             let key_field = UI.special_keys[key];
             if ((key_field in e)&&(e[key_field]!=UI.keys[key])) {
