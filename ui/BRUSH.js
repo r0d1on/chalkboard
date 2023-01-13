@@ -270,7 +270,6 @@ let BRUSH = {
             BRUSH._update_palette();
             BRUSH.attach_color(BRUSH.color_id, 0);
             BRUSH.update_size();
-            console.log('palette:', new_value);
         }
     )
 };
