@@ -63,6 +63,7 @@ let UI = {
     ,_last_button : 0
 
     ,is_mobile : false
+    ,is_dirty : false
     ,view_id : 'xx'
     ,view_mode : undefined
 
@@ -383,6 +384,14 @@ let UI = {
             UI._on_focus_change(true);
         });
 
+        // window unload handler
+        UI.IO.add_event(window, 'beforeunload', e => {
+            if (!UI.is_dirty)
+                return undefined;
+            let message = 'Board was changed, these will be lost if you navigate away';
+            e.returnValue = message;
+            return message;
+        });
     }
 
     ,_sel_loglevel : function(level) {
@@ -804,7 +813,6 @@ let UI = {
         }, false);
         return handled;
     }
-
 
     // Stroke handling
     ,global_to_local : function(point, viewpoint) {

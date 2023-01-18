@@ -145,6 +145,7 @@ let BOARD = {
         for (let i in BOARD.strokes[commit_id])
             undone.push(BOARD.strokes[commit_id][i]);
 
+        UI.is_dirty = true;
         return undone;
     }
 
@@ -189,6 +190,7 @@ let BOARD = {
         if (!BOARD.locked)
             throw 'board is not locked';
         BOARD.locked = false;
+        UI.is_dirty = true;
     }
 
 
