@@ -93,6 +93,7 @@ let SAVE = {
         SAVE.sent_version = null; // reset remote watermark to update the whole board
 
         SAVE.MENU_main.hide('save_group');
+        UI.is_dirty = false;
     }
 
     ,_unpersist_message : function(msg) {
@@ -228,6 +229,7 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
         UI.redraw();
         UI.toast('local.loading', 'loaded from local storage', 2000);
+        UI.is_dirty = false;
     }
 
     ,download : function() {
