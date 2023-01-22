@@ -923,9 +923,9 @@ let UI = {
     ,draw_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
         const ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
         const {
-            color:color = BRUSH.get_color()
-            ,width:width = BRUSH.get_local_width()
-        } = params||{};
+            color : color = BRUSH.get_color()
+            ,width : width = BRUSH.get_local_width()
+        } = params || {};
         UI.draw_line(lp0, lp1, color, width, ctx);
     }
 
@@ -947,9 +947,11 @@ let UI = {
         return rect;
     }
 
-    ,_redraw : function(target_ctx) {
+    ,_redraw : function(target_ctx, extra_strokes) {
         let ctx = null;
         let ctx_back = null;
+
+        extra_strokes = (extra_strokes===undefined)?[]:extra_strokes;
 
         if (target_ctx === undefined) {
             UI.update_layers(true);
@@ -974,17 +976,21 @@ let UI = {
             }
         }
 
+        extra_strokes.map((stroke)=>{
+            stroke.draw(ctx);
+        });
+
         UI.on_after_redraw();
 
         BRUSH.update_size();
     }
 
-    ,redraw : function(target_ctx, immediate) {
+    ,redraw : function(target_ctx, immediate, extra_strokes) {
         if (immediate) {
-            UI._redraw(target_ctx);
+            UI._redraw(target_ctx, extra_strokes);
         } else {
             window.requestAnimationFrame(()=>{
-                UI._redraw(target_ctx);
+                UI._redraw(target_ctx, extra_strokes);
             });
         }
         if (UI.view_mode=='debug') {

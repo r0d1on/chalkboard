@@ -36,8 +36,11 @@ let Stroke = {
         if (this.erased!=undefined) {
             if (this.erased[0]=='-') {
                 this.erased = this.erased.substr(1);
-                if ((eraser_id!==undefined)&&(this.erased!=eraser_id))
-                    throw 'stroke ' + this + ' flipped from '+this.erased+' by '+eraser_id;
+                if ((eraser_id!==undefined)&&(this.erased!=eraser_id)) {
+                    //throw 'stroke ' + this.stroke_id + ' flipped from '+this.erased+' by '+eraser_id;
+                    console.error('stroke ' + this.stroke_id + ' flipped from ' + this.erased + ' by ' + eraser_id);
+                    this.erased = eraser_id;
+                }
             } else {
                 this.erased = '-' + this.erased;
             }
@@ -164,12 +167,43 @@ let LineStroke = {
         }, []);
     }
 
-    ,touched_by : function(gp) {
+    ,touched_by : function(gp, diameter) {
+        diameter = (diameter===undefined) ? 0 : diameter;
         let dst = gp.dst2seg(this.p0, this.p1);
-        let radius = BRUSH.size;
-        if (!BRUSH.SCALED.value)
-            radius /= UI.viewpoint.scale;
-        return dst < (this.width + radius) / 2.0;
+        return dst < (this.width + diameter) / 2.0;
+    }
+
+    ,split_by : function(gp, trim) {
+        trim = (trim===undefined) ? 0 : trim;
+
+        let [, t] = gp.prj2seg(this.p0, this.p1);
+
+        const d = this.p1.sub(this.p0);
+
+        let t_trim = 0;
+
+        if (t===undefined) { // if this is a point (zero length segment)
+            t = 0.5;
+            t_trim = 1;
+        } else {
+            t_trim = trim / this.p0.dst(this.p1);
+        }
+
+        let splitted = [];
+
+        if (t - t_trim > 0) {
+            let pd = this.p0.add(d.mul(t - t_trim));
+            if (this.p0.dst(pd) > trim / 10)
+                splitted.push(LineStroke.new(this.p0, pd, this.color, this.width));
+        }
+
+        if (t + t_trim < 1) {
+            let pd = this.p0.add(d.mul(t + t_trim));
+            if (this.p1.dst(pd) > trim / 10)
+                splitted.push(LineStroke.new(pd, this.p1, this.color, this.width));
+        }
+
+        return splitted;
     }
 
     ,intersection : function(p0, p1, lw) {

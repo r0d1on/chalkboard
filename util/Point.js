@@ -25,19 +25,24 @@ let Point = {
         return Math.sqrt(this.dst2(other));
     }
 
-    ,dst2seg2 : function(a, b) {
+    ,prj2seg : function(a, b) { // projection point to segment
         const len2 = a.dst2(b);
         if (len2 == 0)
-            return this.dst2(a);
+            return [a, undefined];
 
         let t = ((this.x - a.x) * (b.x - a.x) + (this.y - a.y) * (b.y - a.y));
         t = t / len2;
         t = Math.max(0, Math.min(1, t));
 
-        return this.dst2(Point.new(
+        return [Point.new(
             a.x + t * (b.x - a.x),
             a.y + t * (b.y - a.y)
-        ));
+        ), t];
+    }
+
+    ,dst2seg2 : function(a, b) {
+        const [p, ] = this.prj2seg(a, b);
+        return this.dst2(p);
     }
 
     ,dst2seg : function(a, b) {

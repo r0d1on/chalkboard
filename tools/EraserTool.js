@@ -1,8 +1,8 @@
 'use strict';
 
-import {_class} from '../base/objects.js';
+import {_class, extend, is_instance_of} from '../base/objects.js';
 
-import {ErasureStroke} from '../util/Strokes.js';
+import {LineStroke, ErasureStroke} from '../util/Strokes.js';
 
 import {DrawToolBase} from './Base.js';
 
@@ -19,6 +19,23 @@ let EraserTool = {
 
     ,EraserTool : function() {
         DrawToolBase.__init__.call(this, 'eraser', false, ['Control', 'e']);
+
+        this.mode = 0;
+        this.options = extend(this.options, {
+            'mode' : {
+                'icon' : [
+                    [null,[14,10],[14,24],null,[14,37],[14,51],null,[21,10],[21,24],null,[21,37],[21,51],null,[29,10],[29,24],null,[29,37],[29,51],null,[48,10],[48,51],null,[39,10],[39,51],null,[28,29],[32,29],[32,32],[28,32],[28,29],[28,29],[32,29],[32,32],[28,29]] // splitting
+                    ,[null,[48,10],[48,51],null,[39,10],[39,51],null,[28,28],[32,28],[32,32],[28,32],[28,28],[28,28],[32,28],[32,32],[28,28]] // erasing
+                ]
+                ,'on_click' : ()=>{
+                    UI.log(1, 'mode');
+                }
+                ,'type' : 'count'
+                ,'tooltip' : 'eraser mode'
+            }
+        });
+
+        this._buffer_strokes = []; // created strokes (splits)
     }
 
     ,on_start : function(lp) {
@@ -26,29 +43,58 @@ let EraserTool = {
         BOARD.op_start();
         this.original_width = BRUSH.get_local_width();
         BRUSH.set_local_width(Math.min(Math.max(this.original_width * 4, 15), 25));
+        this._buffer_strokes = [];
         return true;
     }
 
     ,draw : function(sp, lp, func) { // eslint-disable-line no-unused-vars
-        let erased = false;
+        let erased = [];
         let gp = UI.local_to_global(lp);
+        let diameter = BRUSH.size;
+        if (!BRUSH.SCALED.value)
+            diameter /= UI.viewpoint.scale;
 
+        // collect touched committed strokes on the board
         for(let commit_id in BOARD.strokes) {
+            if (commit_id > BOARD.commit_id)
+                continue;
             let strokes_group = BOARD.strokes[commit_id];
             for(let i in strokes_group) {
                 let stroke = strokes_group[i];
                 if (stroke.is_hidden())
                     continue;
-                if (stroke.touched_by(gp)) {
+                if (stroke.touched_by(gp, diameter)) {
+                    let clean_stroke = stroke.copy();
+                    clean_stroke.erased=undefined;
+                    erased.push(clean_stroke);
                     stroke.flip_by(BOARD.stroke_id);
-                    erased = true;
                 }
             }
         }
 
-        if (erased) {
-            UI.redraw();
+        // check touched buffered strokes
+        this._buffer_strokes = this._buffer_strokes.reduce((buf, stroke)=>{
+            if (stroke.touched_by(gp, diameter))
+                erased.push(stroke);
+            else
+                buf.push(stroke);
+            return buf;
+        }, []);
+
+        // if "normal" erasing mode - split and trim touched strokes
+        if (this.mode==0) {
+            erased.map((stroke)=>{
+                if (is_instance_of(stroke, LineStroke)) {
+                    let trim = Math.max(0, ( diameter - gp.dst2seg( stroke.p0, stroke.p1 ) ) ) / 2;
+                    stroke.split_by(gp, trim).map((s)=>{
+                        this._buffer_strokes.push(s);
+                    });
+                }
+            });
         }
+
+        // redraw the board + draw newly created strokes (splits) if we have any
+        UI.redraw(undefined, true, this._buffer_strokes);
 
         UI.draw_overlay_stroke(lp, lp, {color : '#9335'});
     }
@@ -64,6 +110,7 @@ let EraserTool = {
 
         let erased = [];
 
+        // "unerase" directly erased strokes
         for(let commit_id in BOARD.strokes) {
             let strokes_group = BOARD.strokes[commit_id];
             for(let i in strokes_group) {
@@ -74,11 +121,26 @@ let EraserTool = {
             }
         }
 
-        if (erased.length>0) {
+        // properly "erase" them
+        if (erased.length > 0) {
             ErasureStroke.flip_strokes(erased, undefined, true);
         }
 
-        BOARD.op_commit();
+        // add new strokes created
+        this._buffer_strokes.map((stroke)=>{
+            BOARD.add_line(
+                UI.global_to_local(stroke.p0)
+                , UI.global_to_local(stroke.p1)
+                , {
+                    width : stroke.width * UI.viewpoint.scale
+                    ,color : stroke.color
+                    ,pressure : null
+                }
+            );
+        });
+        BOARD.flush(BOARD.buffer);
+
+        BOARD.op_commit(); // finish board transaction opened in on_start()
         UI.redraw();
 
         DrawToolBase.on_move.call(this, lp);
