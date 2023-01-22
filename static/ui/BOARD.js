@@ -13,12 +13,17 @@ let BOARD = {
     board_name : null
 
     ,buffer : [] // globally positioned strokes in buffer layer
-    ,add_line : function(lp0, lp1) {
+    ,add_line : function(lp0, lp1, params) {
         let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
 
+        params = params || {};
+
         let alpha = undefined;
-        let width = BRUSH.get_local_width();
-        let pressure = lp1.pressure||lp0.pressure;
+        let width = params.width||BRUSH.get_local_width();
+        let color = params.color;
+        let pressure = params.pressure;
+        if (pressure===undefined)
+            pressure = lp1.pressure||lp0.pressure;
 
         if (pressure) {
             if ((BRUSH.PRESSURE.value + 1) & 1) {
@@ -31,7 +36,7 @@ let BOARD = {
             }
         }
 
-        let color = BRUSH.get_color(alpha);
+        color = color || BRUSH.get_color(alpha);
 
         let stroke = LineStroke.new(
             UI.local_to_global(lp0)
@@ -199,7 +204,7 @@ let BOARD = {
 
         for(let commit_id in BOARD.strokes) {
             if (commit_id > BOARD.commit_id)
-                break;
+                continue;
 
             let strokes_group = BOARD.strokes[commit_id];
 
