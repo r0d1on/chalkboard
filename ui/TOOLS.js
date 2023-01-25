@@ -258,6 +258,7 @@ let TOOLS = {
                 return true;
 
             } else if (TOOLS._key_match(key, tool.shortcut)) {
+                TOOLS.binding[0] = tool_name; // same as selecting the tool from the menu
                 TOOLS.activate(tool_name, false, 0, key); // activate as a foreground
                 return true;
             }
