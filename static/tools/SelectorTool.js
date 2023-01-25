@@ -127,7 +127,7 @@ let SelectorBase = {
         }
 
         let W = SelectorBase.WIDTH;
-        let S = BRUSH.get_local_width();
+        let S = W; //BRUSH.get_local_width();
         let lp;
 
         let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
@@ -440,7 +440,7 @@ let SelectorBase = {
 
         if (this.mode==SelectorBase.MODES.SELECTED) {
             let W = SelectorBase.WIDTH;
-            let S = BRUSH.get_local_width();
+            let S = W; //BRUSH.get_local_width();
 
             let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
             let key_points = [
