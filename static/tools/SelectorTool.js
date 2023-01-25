@@ -803,10 +803,12 @@ let SelectorTool = {
 
             }  else if (key in keymap) {
                 let dxdy = keymap[key];
-                let scale = (UI.keys['Control'])?1:5;
-                scale = (UI.keys['Shift'])?30:scale;
+                let scale = (UI.keys['Control']||UI.keys['Meta']||UI.keys['Alt']) ? 1 : 5;
+                scale = (UI.keys['Shift']) ? 30 : scale;
                 scale = scale / UI.viewpoint.scale;
+                this.on_key_point_start(SelectorBase.MODES.MOVING);
                 this._move_selection( dxdy[0] * scale, dxdy[1] * scale );
+                this.on_key_point_stop(SelectorBase.MODES.MOVING);
                 handled = true;
 
             }
