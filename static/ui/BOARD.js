@@ -180,8 +180,13 @@ let BOARD = {
     ,commit_stroke : function(stroke) {
         stroke.version = BOARD.version;
 
+        let id_next = BOARD.id_next(BOARD.stroke_id, 5)
+
+        if (BOARD.stroke_id == '0')
+            BOARD.id_prev(id_next, 5)
+
         stroke.stroke_id = BOARD.stroke_id;
-        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
+        BOARD.stroke_id = id_next;
 
         let idx = sizeof(BOARD.strokes[BOARD.commit_id]);
         stroke.stroke_idx = idx;
