@@ -108,14 +108,14 @@ let Menu = {
     }
 
 
-    ,get_menu_block : function(type, id) {
+    ,get_menu_block : function(type, id, dx, dy) {
         let elem = document.createElement(type);
         elem.id = id;
-        elem.style['width'] = Menu.SIZEX;
-        elem.style['height'] = Menu.SIZEY;
+        elem.style['width'] = dx;
+        elem.style['height'] = dy;
         if (type=='canvas') {
-            elem.width = Menu.SIZEX;
-            elem.height = Menu.SIZEY;
+            elem.width = dx;
+            elem.height = dy;
         }
         return elem;
     }
@@ -149,7 +149,7 @@ let Menu = {
         // create inner element if requested
         let sub_dom_elem = null;
         if (inner_type != undefined) {
-            sub_dom_elem = this.get_menu_block(inner_type, id + '_g');
+            sub_dom_elem = this.get_menu_block(inner_type, id + '_g', dx, dy);
             dom_elem.appendChild(sub_dom_elem);
         }
 
