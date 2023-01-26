@@ -78,7 +78,7 @@ let SAVE = {
         let [board_data, new_size] = SAVE._persist();
 
         if (old!=null) {
-            if (prompt('overwrite ' + sizeof(old.strokes) + ' with ' + new_size + ' ?', 'no')!='yes')
+            if (!confirm('overwrite board old board [' + sizeof(old.strokes) + '] with [' + new_size + '] ?'))
                 return;
         }
 
