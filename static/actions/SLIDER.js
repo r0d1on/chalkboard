@@ -134,7 +134,7 @@ let SLIDER = {
     ,slide_add : function() {
         let frame_rect = SLIDER.get_current_frame();
 
-        let code = prompt('New slide code');
+        let code = prompt('Slide name:');
         if ((code!='')&&(code!=null)) {
             if (SLIDER.current_ix==null) {
                 SLIDER.slides.push([code, frame_rect]);
@@ -155,6 +155,10 @@ let SLIDER = {
             UI.toast('slider','no slides to delete', 2000);
             return;
         }
+
+        if (!confirm('Delete slide: ' + SLIDER.slides[SLIDER.current_ix][0]) + "?")
+            return;
+
         SLIDER.slides.splice(SLIDER.current_ix,1);
         SLIDER.current_ix = Math.min(SLIDER.current_ix, SLIDER.slides.length-1);
         if (SLIDER.slides.length==0)
