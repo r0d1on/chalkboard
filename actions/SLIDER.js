@@ -39,7 +39,7 @@ let SLIDER = {
     ,update : function(refocus) {
         refocus = (refocus===undefined)?true:refocus;
 
-        SLIDER.canvas_current.width = SLIDER.canvas_current.width+1-1;
+        SLIDER.canvas_current.width = SLIDER.canvas_current.width + 1 - 1;
         if (SLIDER.current_ix==null)
             return;
 
@@ -161,12 +161,12 @@ let SLIDER = {
         if (!confirm('Delete slide: ' + SLIDER.slides[SLIDER.current_ix][0] + '?'))
             return;
 
-        SLIDER.slides.splice(SLIDER.current_ix,1);
-        SLIDER.current_ix = Math.min(SLIDER.current_ix, SLIDER.slides.length-1);
+        SLIDER.slides.splice(SLIDER.current_ix, 1);
+        SLIDER.current_ix = Math.max(SLIDER.current_ix - 1, 0);
         if (SLIDER.slides.length==0)
             SLIDER.current_ix = null;
 
-        SLIDER.update();
+        SLIDER.update(false);
         return true;
     }
 
