@@ -121,10 +121,14 @@ let BRUSH = {
 
     ,update_size : function (delta) {
         if (delta==undefined) delta = 0;
+
+        if (((BRUSH.size + delta <= 5)||(BRUSH.size < 5)) && (delta!=0))
+            delta = Math.sign(delta);
+
         BRUSH.size += delta;
         if (delta!=0) {
             if (BRUSH.size>40) BRUSH.size=5;
-            if (BRUSH.size<5)  BRUSH.size=40;
+            if (BRUSH.size<=0)  BRUSH.size=40;
         }
 
         let wdiv = BRUSH.wdiv;
@@ -210,7 +214,7 @@ let BRUSH = {
 
         BRUSH._update_palette();
 
-        BRUSH.attach_color(0 ,0);
+        BRUSH.attach_color(0, 0);
         BRUSH.update_size();
 
         // brush size changer options menu items
