@@ -319,6 +319,8 @@ let UI = {
         // mouse wheel listener
         UI.IO.add_event(buffer_canvas, 'wheel', e => {
             UI._check_specials(e);
+            if ((Math.abs(e.deltaY) > 1000) || (Math.abs(e.deltaX) > 1000))
+                return;
             UI.on_wheel(e.deltaY, e.deltaX);
             e.preventDefault();
         });
