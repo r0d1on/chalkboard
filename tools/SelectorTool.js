@@ -272,6 +272,17 @@ let SelectorBase = {
     }
 
 
+    ,_repaint_selection : function(color) {
+        console.log(color);
+        this.selection.map((sel)=>{
+            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
+            if (is_instance_of(stroke, LineStroke)) {
+                stroke.color = color;
+            }
+        });
+    }
+
+
     ,_move_selection : function(dx, dy) {
         this.selection.map((sel)=>{
             let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
@@ -527,13 +538,23 @@ let SelectorTool = {
         // default strokes paste override
         UI.on_paste_strokes_default = (strokes)=>{
             UI.log(1, 'selector:on_paste_strokes_default');
-
             TOOLS.activate(SelectorTool.NAME, false, 0);
-
             this.last_point = UI._last_point;
-
             this.paste(strokes);
         };
+
+        // on change color - repaint selected strokes
+        UI.addEventListener('on_color', (color)=>{
+
+            if (this.mode==SelectorBase.MODES.SELECTED) {
+                this.on_key_point_start(SelectorBase.MODES.MOVING);
+                this._repaint_selection(color);
+                this.on_key_point_stop(SelectorBase.MODES.MOVING);
+                return true;
+            }
+
+        });
+
     }
 
 

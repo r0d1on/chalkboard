@@ -319,6 +319,8 @@ let UI = {
         // mouse wheel listener
         UI.IO.add_event(buffer_canvas, 'wheel', e => {
             UI._check_specials(e);
+            if ((Math.abs(e.deltaY) > 1000) || (Math.abs(e.deltaX) > 1000))
+                return;
             UI.on_wheel(e.deltaY, e.deltaX);
             e.preventDefault();
         });
@@ -497,6 +499,8 @@ let UI = {
 
         ,'on_persist' : []
         ,'on_unpersist' : []
+
+        ,'on_color' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -810,6 +814,13 @@ let UI = {
     ,on_unpersist : function(json, partial) {
         let handled = UI._event_handlers['on_unpersist'].reduce((handled, handler)=>{
             return handled||handler(json, partial);
+        }, false);
+        return handled;
+    }
+
+    ,on_color : function(color) {
+        let handled = UI._event_handlers['on_color'].reduce((handled, handler)=>{
+            return handled||handler(color);
         }, false);
         return handled;
     }

@@ -86,8 +86,9 @@ let BRUSH = {
 
     ,select_color : function(color_id) {
         BRUSH.color_id = color_id;
-        BRUSH.div.style['background-color'] = BRUSH.get_color('E');
+        BRUSH.div.style['background-color'] = BRUSH.get_color();
         BRUSH.update_size();
+        UI.on_color(BRUSH.get_color());
     }
 
     ,attach_color : function(color_id, button) {
@@ -121,10 +122,14 @@ let BRUSH = {
 
     ,update_size : function (delta) {
         if (delta==undefined) delta = 0;
+
+        if (((BRUSH.size + delta <= 5)||(BRUSH.size < 5)) && (delta!=0))
+            delta = Math.sign(delta);
+
         BRUSH.size += delta;
         if (delta!=0) {
             if (BRUSH.size>40) BRUSH.size=5;
-            if (BRUSH.size<5)  BRUSH.size=40;
+            if (BRUSH.size<=0)  BRUSH.size=40;
         }
 
         let wdiv = BRUSH.wdiv;
@@ -210,7 +215,7 @@ let BRUSH = {
 
         BRUSH._update_palette();
 
-        BRUSH.attach_color(0 ,0);
+        BRUSH.attach_color(0, 0);
         BRUSH.update_size();
 
         // brush size changer options menu items
@@ -245,7 +250,10 @@ let BRUSH = {
             ,[null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[19,40],[35,23],null,[21,43],[38,25]]
             ,[null,[54,15],[47,7],[15,39],[23,46],[54,15],null,[19,50],[10,43],[7,54],[19,50],null,[47,7],[54,15],[23,46],null,[47,7],[15,39],[23,46],null,[19,50],[10,43],[7,54],[19,50],null,[15,47],[7,54],null,[18,40],[46,12],null,[21,42],[50,13]]
         ]
-        ,()=>{}
+        ,()=>{
+            BRUSH.attach_color(BRUSH.color_id, 0);
+            BRUSH.update_size();
+        }
     )
 
     ,PRESSURE :  Settings.new('brush_pressure', 2
