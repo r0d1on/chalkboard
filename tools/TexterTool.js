@@ -234,15 +234,21 @@ let TexterTool = {
     }
 
     ,on_paste_text : function(text) {
-        let ctrl_status = UI.keys['Control'];
-        UI.keys['Control'] = false;
+        const specials = {'Control':null, 'Meta':null};
+
+        for(const special_key in specials) {
+            specials[special_key] = UI.keys[special_key];
+            UI.keys[special_key] = false;
+        }
 
         for(let i=0; i<text.length; i++)
             this.on_key_down(text[i], false);
 
-        UI.keys['Control'] = ctrl_status;
+        for(const special_key in specials)
+            UI.keys[special_key] = specials[special_key];
 
         BOARD.flush_commit();
+        return true;
     }
 
 };
