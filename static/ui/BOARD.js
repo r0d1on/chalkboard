@@ -121,7 +121,6 @@ let BOARD = {
     }
 
     ,flush_commit : function() {
-
         if (BOARD.buffer.length==0)
             return false;
 

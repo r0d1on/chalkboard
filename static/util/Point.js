@@ -79,6 +79,13 @@ let Point = {
         );
     }
 
+    ,within : function(rect) {
+        return (
+            (rect[0].x <= this.x) && (this.x <= rect[1].x) &&
+            (rect[0].y <= this.y) && (this.y <= rect[1].y)
+        );
+    }
+
     ,copy : function() {
         return Point.new(this.x, this.y, this.d, this.p, this.pressure);
     }
