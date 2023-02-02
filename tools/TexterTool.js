@@ -109,10 +109,7 @@ let TexterTool = {
         if (key==' ') {
             lcursor.x += 3.0 * BRUSH.get_local_width();
 
-        } else if (key=='Control') {
-            return false;
-
-        } else if (key=='Shift') {
+        } else if (key in ['Control', 'Shift', 'Meta']) {
             return false;
 
         } else if ((key=='+')&&(UI.keys['Control'])) {
@@ -122,6 +119,9 @@ let TexterTool = {
             return false;
 
         } else if (UI.keys['Control']) {
+            return false;
+
+        } else if (UI.keys['Meta']) {
             return false;
 
         } else if (key=='Tab') {

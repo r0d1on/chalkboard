@@ -1,6 +1,6 @@
 'use strict';
 
-import {_class, is_instance_of} from '../base/objects.js';
+import {_class, is_instance_of, extend} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
 import {Stroke, LineStroke, ErasureStroke} from '../util/Strokes.js';
@@ -27,6 +27,7 @@ let SelectorBase = {
         ,ROTATING : 4
         ,OPTIMIZE : 5
         ,COPY : 6
+        ,CUTTING : 7
     }
 
 
@@ -34,6 +35,8 @@ let SelectorBase = {
         this.allowed_modes = new Set(allowed_modes);
         this._selection_reset();
         this.is_capturing = true;
+        this.original_strokes = {};
+        this.extra_strokes = [];
     }
 
 
@@ -69,13 +72,16 @@ let SelectorBase = {
 
     }
 
-    ,_selected_strokes : function() {
+    ,_selected_strokes : function(types) {
         let was = new Set();
         let selected_strokes = [];
         this.selection.map((sel)=>{
             if (!was.has(sel.stroke_id)) {
-                selected_strokes.push(BOARD.strokes[sel.commit_id][sel.stroke_idx]);
-                was.add(sel.stroke_id);
+                let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
+                if ( (types===undefined) || (is_instance_of(stroke, types)) ) {
+                    selected_strokes.push(stroke);
+                    was.add(sel.stroke_id);
+                }
             }
         });
         return selected_strokes;
@@ -218,6 +224,18 @@ let SelectorBase = {
                     ,SelectorBase.COLOR_COPYPASTE, W, ctx);
             }
         }
+
+        // draw over selected points
+        this._selected_strokes().map((s)=>{
+            if (is_instance_of(s, LineStroke))
+                UI.draw_line(
+                    UI.global_to_local(s.p0)
+                    ,UI.global_to_local(s.p1)
+                    ,'#F335'
+                    ,s.width * UI.viewpoint.scale * 1.3
+                    ,ctx
+                );
+        });
 
         return ctx;
     }
@@ -368,32 +386,110 @@ let SelectorBase = {
     ,stop_selecting : function(lp) {
         UI.reset_layer('overlay');
         let sp = this.start_point;
+        let cutted = false;
 
-        let grect = UI.get_rect([sp, lp]).map((p)=>{
+        let lrect = UI.get_rect([sp, lp]);
+        let lbox = [
+            [Point.new(lrect[0].x, lrect[0].y), Point.new(lrect[1].x, lrect[0].y)]
+            ,[Point.new(lrect[1].x, lrect[0].y), Point.new(lrect[1].x, lrect[1].y)]
+            ,[Point.new(lrect[1].x, lrect[1].y), Point.new(lrect[0].x, lrect[1].y)]
+            ,[Point.new(lrect[0].x, lrect[1].y), Point.new(lrect[0].x, lrect[0].y)]
+        ];
+        let grect = lrect.map((p)=>{
             return UI.local_to_global(p);
         });
 
+        // select strokes having points inside selection rect
         let points = this._get_selection_points(grect);
 
         points.map((pnt)=>{
             this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
         });
 
+
+        if (this.cutter == 1) { // cutter mode - add intersected strokes
+            // collect touched committed strokes on the board
+            for(let commit_id in BOARD.strokes) {
+                if (commit_id > BOARD.commit_id)
+                    continue;
+                let strokes_group = BOARD.strokes[commit_id];
+                for(let i in strokes_group) {
+                    let stroke = strokes_group[i];
+                    if (stroke.is_hidden()||(!is_instance_of(stroke, LineStroke)))
+                        continue;
+                    lbox.map((seg)=>{
+                        let itu = stroke.intersection(seg[0], seg[1], 1 / UI.viewpoint.scale);
+                        if (itu[0]!=null) {
+                            this._add_selected_point(stroke.commit_id, stroke.stroke_idx, 0);
+                            cutted = true;
+                        }
+                    });
+                }
+            }
+        }
+
         if (this.selection.length > 0) {
+            if ((this.cutter==1)&&(cutted)) { // cutter mode
+                this.on_key_point_start(SelectorBase.MODES.CUTTING);
+
+                let new_selection = [];
+
+                this._selected_strokes(LineStroke).map((stroke)=>{
+
+                    let stroke_splits = lbox.reduce((a, seg)=>{
+                        return a.reduce((b, split)=>{
+                            let itu = split.intersection(seg[0], seg[1], 1 / UI.viewpoint.scale);
+                            if (itu[0]!=null) {
+                                split.split_by(UI.local_to_global(itu[0]), 0).map((s)=>{
+                                    b.push(s);
+                                });
+                            } else {
+                                b.push(split);
+                            }
+                            return b;
+                        }, []);
+                    }, [stroke]);
+
+                    if ((stroke_splits.length==1)&&(stroke_splits[0]==stroke)) {
+                        // stroke went through cutting intact (fully inside the selection rect)
+                        stroke_splits=[stroke.copy()];
+                    }
+
+                    // hide original stroke
+                    stroke.erased = '+';
+                    // append splits
+                    stroke_splits.map((split)=>{
+                        this.extra_strokes.push(split);
+                        if (split.center().within(grect))
+                            new_selection.push(split);
+                    });
+
+                });
+
+                this.on_key_point_stop(SelectorBase.MODES.CUTTING);
+
+                this._selection_reset();
+                new_selection.map((stroke)=>{
+                    this._add_selected_point(stroke.commit_id, stroke.stroke_idx, 0);
+                    this._add_selected_point(stroke.commit_id, stroke.stroke_idx, 1);
+                });
+
+            }
+
             this.draw_selected();
             this.mode = SelectorBase.MODES.SELECTED;
         }
     }
 
     ,_replace_changed : function() {
-        let new_strokes = [];
+        let changed_strokes = [];
         let old_strokes = [];
         for(let id in this.original_strokes) {
             let old_stroke = this.original_strokes[id];
             let new_stroke = BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx];
             // capture changed strokes
             if (!new_stroke.is_hidden())
-                new_strokes.push(new_stroke.copy());
+                changed_strokes.push(new_stroke.copy());
             // return original strokes back
             BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx] = old_stroke;
             old_strokes.push(old_stroke);
@@ -402,8 +498,11 @@ let SelectorBase = {
         // delete original strokes
         ErasureStroke.flip_strokes(old_strokes, BOARD.stroke_id, true);
 
+        // add changed strokes
+        BOARD.flush(changed_strokes, false);
+
         // add new strokes
-        BOARD.flush(new_strokes, false);
+        BOARD.flush(this.extra_strokes, false);
     }
 
     ,on_key_point_stop : function(mode) { // eslint-disable-line no-unused-vars
@@ -429,6 +528,7 @@ let SelectorBase = {
 
     ,_save_selected : function() {
         this.original_strokes = {};
+        this.extra_strokes = [];
 
         this.selection.map((sel)=>{
             let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
@@ -524,8 +624,23 @@ let SelectorTool = {
             ,SelectorBase.MODES.COPY
         ]);
 
-        this.original_strokes = {};
         this.clipboard = [];
+
+        let that = this;
+        this.cutter = 0;
+        this.options = extend(this.options, {
+            'cutter' : {
+                'icon' : [
+                    [null,[11,12],[11,23],[11,12],null,[11,38],[11,49],[11,38],null,[11,49],[22,49],[11,49],null,[39,49],[49,49],[39,49],null,[49,24],[49,12],[49,24],null,[49,49],[49,39],[49,49],null,[49,12],[39,12],[49,12],null,[23,12],[11,12],[23,12]] // selecting only
+                    ,[null,[41,7],[31,39],[33,44],[32,49],[29,53],[25,54],[21,51],[20,47],[23,42],[27,39],null,[41,7],[25,23],[27,39],null,[21,31],[16,29],[10,30],[6,32],[6,36],[8,41],[13,41],[19,39],[21,35],null,[38,36],[54,21],null,[21,31],[21,31],null,[54,21],[38,26],null,[21,35],[21,35],null,[35,36],[38,36],null,[29,31],[29,31],[29,31],null,[27,39],[25,23],[41,7],[31,39],null,[38,26],[54,21],[38,36],[35,36],null,[21,31],[16,29],[10,30],[6,32],[6,36],[8,41],[13,41],[19,39],[21,35],null,[27,39],[23,42],[20,47],[21,51],[25,54],[29,53],[32,49],[33,44],[31,39]] // cutter
+                ]
+                ,'on_click' : ()=>{
+                    UI.log(1, 'mode:', that.mode);
+                }
+                ,'type' : 'count'
+                ,'tooltip' : 'selector mode: cutter / selctor'
+            }
+        });
     }
 
 
@@ -644,22 +759,6 @@ let SelectorTool = {
             SelectorBase.on_start.call(this, lp);
         }
         return true;
-    }
-
-
-    ,draw_selected : function() {
-        let ctx = SelectorBase.draw_selected.call(this);
-        // draw over selected points
-        this._selected_strokes().map((s)=>{
-            if (is_instance_of(s, LineStroke))
-                UI.draw_line(
-                    UI.global_to_local(s.p0)
-                    ,UI.global_to_local(s.p1)
-                    ,'#F335'
-                    ,s.width * UI.viewpoint.scale * 1.3
-                    ,ctx
-                );
-        });
     }
 
     ,clipboard : []
@@ -801,10 +900,10 @@ let SelectorTool = {
         let handled = false;
 
         let keymap = {
-            'ArrowUp'    : [0,-1],
-            'ArrowDown'  : [0,+1],
-            'ArrowLeft'  : [-1,0],
-            'ArrowRight' : [+1,0]
+            'ArrowUp'    : [0, -1],
+            'ArrowDown'  : [0, +1],
+            'ArrowLeft'  : [-1, 0],
+            'ArrowRight' : [+1, 0]
         };
 
         if (key=='Escape') {

@@ -33,7 +33,7 @@ let FillTool = {
 
         for(let commit_id in strokes)
             for(let stroke_idx in strokes[commit_id])
-                p1 = BOARD.strokes[commit_id][stroke_idx].intersection(p0, p1, lw) || p1;
+                p1 = BOARD.strokes[commit_id][stroke_idx].intersection(p0, p1, lw)[0] || p1;
 
         return p1;
     }
@@ -81,7 +81,7 @@ let FillTool = {
             );
 
             func(p1, p2);
-            s+=1;
+            s += 1;
         }
 
     }

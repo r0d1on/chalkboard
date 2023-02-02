@@ -146,11 +146,15 @@ let LineStroke = {
         return UI.get_rect([this.p0, this.p1]);
     }
 
+    ,center : function() {
+        return this.p0.add(this.p1).mul(0.5);
+    }
+
     ,selection : function(rect) {
         if (this.is_hidden())
             return [];
 
-        return [0,1].reduce((s, point_idx)=>{
+        return [0, 1].reduce((s, point_idx)=>{
             let p = this.get_point(point_idx);
             let take = (rect===undefined)||(
                 (rect[0].y<=p.y)&&(p.y<=rect[1].y)&&
@@ -221,16 +225,20 @@ let LineStroke = {
         let qp = q.sub(p);
         let qpr = qp.prod(r);
 
-        let i = null;
+        let ip = null; // local intersection point
+        let t = null;  // t (0..1) param for self
+        let u = null;  // u (0..1) param for [p0, p1]
 
         if (rs==0) {
             if (qpr==0) {
                 // collinear
                 let rr = r.prod(r);
                 if (rr==0) {
-                    // self (p) is a point
+                    // self is a point
                     if (p.dst2seg(p0, p1) < lw + this.width * UI.viewpoint.scale) {
-                        i = p.copy();
+                        ip = p.copy();
+                        t = 0;
+                        u = p.prj2seg(p0, p1)[1];
                     } else {
                         // debugger;
                     }
@@ -247,14 +255,14 @@ let LineStroke = {
                 // parallel non intersecting
             }
         } else {
-            let t = qp.prod(s) / rs;
-            let u = qp.prod(r) / rs;
-            if ( ((0-dt<=t)&&(t<=1+dt)) && (((0-du<=u)&&(u<=1+du))) ) {
-                i = q.add(s.mul(u));
+            t = qp.prod(s) / rs;
+            u = qp.prod(r) / rs;
+            if ( (( 0 - dt <= t )&&( t <= 1 + dt )) && (( 0 - du <= u )&&( u <= 1 + du )) ) {
+                ip = q.add(s.mul(u));
             }
         }
 
-        return i;
+        return [ip, t, u];
     }
 
 
