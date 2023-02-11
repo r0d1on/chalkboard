@@ -109,7 +109,7 @@ let TexterTool = {
         if (key==' ') {
             lcursor.x += 3.0 * BRUSH.get_local_width();
 
-        } else if (key in ['Control', 'Shift', 'Meta']) {
+        } else if ((key in UI.special_keys)||(key == 'CapsLock')) {
             return false;
 
         } else if ((key=='+')&&(UI.keys['Control'])) {
