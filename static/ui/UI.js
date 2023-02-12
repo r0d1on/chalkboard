@@ -473,6 +473,8 @@ let UI = {
         UI.addEventListener('on_file', UI._on_file);
 
         UI._last_point = Point.new(UI.window_width/2, UI.window_height/2);
+
+        Toast.init();
     }
 
 
@@ -501,6 +503,7 @@ let UI = {
         ,'on_unpersist' : []
 
         ,'on_color' : []
+        ,'on_setting_changed' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -821,6 +824,13 @@ let UI = {
     ,on_color : function(color) {
         let handled = UI._event_handlers['on_color'].reduce((handled, handler)=>{
             return handled||handler(color);
+        }, false);
+        return handled;
+    }
+
+    ,on_setting_changed : function(name, value) {
+        let handled = UI._event_handlers['on_setting_changed'].reduce((handled, handler)=>{
+            return handled||handler(name, value);
         }, false);
         return handled;
     }

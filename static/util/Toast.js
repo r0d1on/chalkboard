@@ -2,7 +2,7 @@
 
 import {_class} from '../base/objects.js';
 
-import {add_class} from './html.js';
+import {add_class, remove_class} from './html.js';
 
 import {UI} from '../ui/UI.js';
 import {Menu} from '../ui/Menu.js';
@@ -16,9 +16,39 @@ let Toast = {
         ,BOTTOM_LEFT : 3
     }
     ,DY : (3*10 + 20)
+    ,DEFAULT_CLASSES : ['toast', 'toast_dark']
 
     ,TOASTS : {}
     ,TOPICS : [[], [], [], []]
+
+    /* Class methods */
+
+    ,init : function() {
+        UI.addEventListener('on_setting_changed', Toast.on_setting_changed);
+    }
+
+    ,on_setting_changed : function(name, value) {
+        if (name=='board_theme') {
+            let old_class = 'toast_bright';
+            let new_class = 'toast_dark';
+            if (value > 0) { // switched to  dark themes
+                old_class = 'toast_dark';
+                new_class = 'toast_bright';
+            }
+
+            for (const topic in Toast.TOASTS) {
+                remove_class(Toast.TOASTS[topic].div, old_class);
+                add_class(Toast.TOASTS[topic].div, new_class);
+            }
+
+            Toast.DEFAULT_CLASSES[1] = new_class;
+        }
+
+
+
+    }
+
+    /* Instance methods */
 
     ,Toast : function(topic, text, lifespan, align, reset) {
         align = (align===undefined)?Toast.ALIGN.CENTER:align;
@@ -38,7 +68,7 @@ let Toast = {
         this.text = text;
 
         this.div = document.createElement('div');
-        add_class(this.div, 'toast');
+        add_class(this.div, Toast.DEFAULT_CLASSES);
         this.div.id = topic;
         this.div.innerHTML = this.text;
         document.body.appendChild(this.div);
