@@ -57,12 +57,8 @@ canvas.layer {
 }
 
 
-
-
 .toast {
     position: absolute;
-    border-top: 1px solid black;
-    background-color: #3333;
     padding: 10px;
     border-radius: 15px;
     font-size: 20px;
@@ -70,6 +66,16 @@ canvas.layer {
     pointer-events: none;
 }
 
+.toast_dark {
+    border-top: 1px solid black;
+    background-color: #3333;
+}
+
+.toast_bright {
+    border-top: 1px solid white;
+    background-color: #5553;
+    color: white;
+}
 
 
 
