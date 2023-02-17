@@ -19,6 +19,9 @@ let Settings = {
             Settings.VALUES = {};
         else
             Settings.VALUES = JSON.parse(values);
+
+        for(const key in Settings.VALUES)
+            UI.on_setting_changed(key, Settings.VALUES[key]);
     }
 
     ,save_values : function() {
@@ -47,6 +50,7 @@ let Settings = {
                         Settings.ITEMS[key].value = values[key];
                         Settings.ITEMS[key].on_change(values[key]);
                         Settings.ITEMS[key].redraw_icon();
+                        UI.on_setting_changed(key, values[key]);
                     }
                 }
             }
