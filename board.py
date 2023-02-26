@@ -168,12 +168,14 @@ def http_sync():
         print('persistence update')
         loc["modules"] = {
             "slider" : {
-                 "view_rect" : loc["view_rect"] 
-                ,"slides" : loc["slides"]
+                 "view_rect" : loc.get("view_rect", None)
+                ,"slides" : loc.get("slides", None)
             }
         }
-        del loc["view_rect"]
-        del loc["slides"]
+        if "view_rect" in loc:
+            del loc["view_rect"]
+        if "slides" in loc:
+            del loc["slides"]
 
     auth = ((bpass=="") or (loc['p']==bpass))
 
