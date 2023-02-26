@@ -7,8 +7,6 @@ import {UI} from './ui/UI.js';
 import {BOARD} from './ui/BOARD.js';
 import {BRUSH} from './ui/BRUSH.js';
 
-
-
 // drawing tools handler: menu, events
 import {TOOLS} from './ui/TOOLS.js';
 
@@ -42,7 +40,7 @@ let MENU_options = null;
 
 function get_io_type() {
     let [board_name, view_mode] = UI._hash_board_mode(); // eslint-disable-line no-unused-vars
-    if (view_mode=='recorder') {
+    if ((view_mode=='record')||(view_mode=='play')) {
         return '.recorder';
     } else {
         return '';
@@ -140,6 +138,16 @@ document.addEventListener('DOMContentLoaded', function(){
             let IO = module.IO.new();
             console.log('IO type: ', IO.type);
             init(IO);
+
+            if (UI.view_mode=='play') {
+                UI.addEventListener('on_stale', ()=>{
+                    //alert('playing back');
+                    IO.load_recording().then(()=>{
+                        IO.start_playing();
+                    });
+                });
+            }
+
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
         });

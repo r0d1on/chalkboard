@@ -149,40 +149,43 @@ let IO = {
 
 
     ,load_recording : function() { // F1
-        let toast = this.UI.toast('recorder', '💾', -1, 1);
-        toast.set_bg_color('#33F3');
+        this.UI.toast('recorder', '💾', -1, 1).set_bg_color('#33F3');
+
         let message = {
             'name' : this.UI._hash_board_mode()[0]
         };
 
-        this.request('/record.load', JSON.stringify(message), (xhr)=>{
-            if (xhr.status == 200) {
-                this.events_log = JSON.parse(xhr.responseText);
-                this.stop_playing();
-            } else {
-                let toast = this.UI.toast('recorder', '💾', -1, 1);
-                toast.set_bg_color('#F333');
-            }
-        }, 1000);
+        const that = this;
+
+        return this.request('/record.load', JSON.stringify(message))
+            .then(({xhr})=>{
+                that.events_log = JSON.parse(xhr.responseText);
+                that.stop_playing();
+            })
+            .catch(({xhr, error})=>{
+                that.UI.log(0, 'could not load recording:', error, xhr);
+                that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
+            });
     }
 
     ,save_recording : function () { // F2
-        let toast = this.UI.toast('recorder', '💾', -1, 1);
-        toast.set_bg_color('#33F3');
+        this.UI.toast('recorder', '💾', -1, 1).set_bg_color('#33F3');
 
         let message = {
             'name' : this.UI._hash_board_mode()[0]
             ,'log' : this.events_log
         };
 
-        this.request('/record.save', JSON.stringify(message), (xhr)=>{
-            if (xhr.status == 200) {
-                this.stop_playing();
-            } else {
-                let toast = this.UI.toast('recorder', '💾', -1, 1);
-                toast.set_bg_color('#F333');
-            }
-        }, 1000);
+        const that = this;
+
+        return this.request('/record.save', JSON.stringify(message))
+            .then(()=>{
+                that.stop_playing();
+            })
+            .catch(({error, xhr})=>{
+                that.UI.log(0, 'could not save recording:', error, xhr);
+                that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
+            });
     }
 
 
