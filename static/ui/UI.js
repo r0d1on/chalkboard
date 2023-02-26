@@ -568,27 +568,29 @@ let UI = {
         }
     }
 
+    ,_handle_event : function(event, data) {
+        UI.__handling_event = event;
+        let handled = UI._event_handlers[event].reduce((handled, handler)=>{
+            UI.__handling_handler = handler;
+            return handled||handler.apply(null, data);
+        }, false);
+        UI.__handling_event = null;
+        UI.__handling_handler = null;
+        return handled;
+    }
 
     ,on_start : function(lp, button) {
-        let handled = UI._event_handlers['on_start'].reduce((handled, handler)=>{
-            return handled||handler(lp.copy(), button);
-        }, false);
+        let handled = UI._handle_event('on_start', [lp.copy(), button]);
         UI._last_button = button;
         return handled;
     }
 
     ,on_move : function(lp) {
-        let handled = UI._event_handlers['on_move'].reduce((handled, handler)=>{
-            return handled||handler(lp.copy());
-        }, false);
-        return handled;
+        return UI._handle_event('on_move', [lp.copy()]);
     }
 
     ,on_stop : function(lp) {
-        let handled = UI._event_handlers['on_stop'].reduce((handled, handler)=>{
-            return handled||handler(lp.copy());
-        }, false);
-        return handled;
+        return UI._handle_event('on_stop', [lp.copy()]);
     }
 
     ,_update_special : function() {
@@ -619,10 +621,7 @@ let UI = {
             UI._update_special();
         }
 
-        let handled = UI._event_handlers['on_key_down'].reduce((handled, handler)=>{
-            return handled||handler(key);
-        }, false);
-
+        let handled = UI._handle_event('on_key_down', [key]);
         if (!handled)
             handled = UI.on_key_down_default(key);
 
@@ -632,10 +631,7 @@ let UI = {
     ,on_key_up : function(key) {
         UI.log(1, 'ui.key_up:', key);
 
-        let handled = UI._event_handlers['on_key_up'].reduce((handled, handler)=>{
-            return handled||handler(key);
-        }, false);
-
+        let handled = UI._handle_event('on_key_up', [key]);
         if (!handled)
             UI.on_key_up_default(key);
 
@@ -648,10 +644,7 @@ let UI = {
     ,on_wheel : function(delta, deltaX) {
         UI.log(1, 'ui.on_wheel:', delta, deltaX);
 
-        let handled = UI._event_handlers['on_wheel'].reduce((handled, handler)=>{
-            return handled||handler(delta, deltaX);
-        }, false);
-
+        let handled = UI._handle_event('on_wheel', [delta, deltaX]);
         if (!handled)
             UI.on_wheel_default(delta, deltaX);
     }
@@ -710,19 +703,13 @@ let UI = {
     }
 
     ,on_paste_text : function(text) {
-        let handled = UI._event_handlers['on_paste_text'].reduce((handled, handler)=>{
-            return handled||handler(text);
-        }, false);
-
+        let handled = UI._handle_event('on_paste_text', [text]);
         if (!handled)
             UI.on_paste_text_default(text);
     }
 
     ,on_paste_strokes : function(strokes) {
-        let handled = UI._event_handlers['on_paste_strokes'].reduce((handled, handler)=>{
-            return handled||handler(strokes);
-        }, false);
-
+        let handled = UI._handle_event('on_paste_strokes', [strokes]);
         if (!handled)
             UI.on_paste_strokes_default(strokes);
     }
@@ -754,10 +741,7 @@ let UI = {
     }
 
     ,on_file : function(file) {
-        let handled = UI._event_handlers['on_file'].reduce((handled, handler)=>{
-            return handled||handler(file);
-        }, false);
-
+        let handled = UI._handle_event('on_file', [file]);
         if (!handled)
             UI.log(0, 'unhandled file transfer:', file);
     }
@@ -777,16 +761,12 @@ let UI = {
 
     ,on_focus : function() {
         UI._on_focus_change(true);
-        UI._event_handlers['on_focus'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_focus', []);
     }
 
     ,on_blur : function() {
         UI._on_focus_change(false);
-        UI._event_handlers['on_blur'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_blur', []);
     }
 
     ,on_hash_change : function() {
@@ -798,53 +778,34 @@ let UI = {
 
 
     ,on_before_redraw : function() {
-        UI._event_handlers['on_before_redraw'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_before_redraw', []);
     }
 
     ,on_after_redraw : function() {
-        UI._event_handlers['on_after_redraw'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_after_redraw', []);
     }
 
 
     ,on_persist : function(json, partial) {
-        let handled = UI._event_handlers['on_persist'].reduce((handled, handler)=>{
-            return handled||handler(json, partial);
-        }, false);
-        return handled;
+        return UI._handle_event('on_persist', [json, partial]);
     }
 
     ,on_unpersist : function(json, partial) {
-        let handled = UI._event_handlers['on_unpersist'].reduce((handled, handler)=>{
-            return handled||handler(json, partial);
-        }, false);
+        let handled = UI._handle_event('on_unpersist', [json, partial]);
         return handled;
     }
 
     ,on_color : function(color) {
-        let handled = UI._event_handlers['on_color'].reduce((handled, handler)=>{
-            return handled||handler(color);
-        }, false);
-        return handled;
+        return UI._handle_event('on_color', [color]);
     }
 
     ,on_setting_changed : function(name, value) {
-        let handled = UI._event_handlers['on_setting_changed'].reduce((handled, handler)=>{
-            return handled||handler(name, value);
-        }, false);
-        return handled;
+        return UI._handle_event('on_setting_changed', [name, value]);
     }
 
     ,on_stale : function() {
         UI.log(1, 'ui.on_stale');
-
-        let handled = UI._event_handlers['on_stale'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
-        return handled;
+        return UI._handle_event('on_stale', []);
     }
 
 
@@ -1052,9 +1013,9 @@ let UI = {
     ,redraw_background : function(ctx, grid) {
         let background_colors = ['#FFF','#111','#030'];
         let grid_colors = [
-            ['#333','#CCC']
-            ,['#CCC','#333']
-            ,['#CCC','#222']
+            ['#333', '#CCC']
+            ,['#CCC', '#333']
+            ,['#CCC', '#222']
         ];
 
         ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
