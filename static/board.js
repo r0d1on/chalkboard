@@ -141,10 +141,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
             if (UI.view_mode=='play') {
                 UI.addEventListener('on_stale', ()=>{
-                    //alert('playing back');
                     IO.load_recording().then(()=>{
                         IO.start_playing();
                     });
+                    UI.dropEventListener(); // ensure it's called only once
                 });
             }
 

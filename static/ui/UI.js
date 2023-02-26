@@ -517,6 +517,24 @@ let UI = {
         }
     }
 
+    ,dropEventListener : function(event_type, event_handler) {
+        if ((event_type === undefined)||(event_handler === undefined)) {
+            if ( (UI.__handling_event === undefined) || (UI.__handling_handler === undefined) ) {
+                throw 'dropEventListener() called outside event handler';
+            }
+            UI.dropEventListener(UI.__handling_event, UI.__handling_handler);
+        } else {
+            if (event_type in UI._event_handlers) {
+                let index = UI._event_handlers[event_type].indexOf(event_handler);
+                if (index < 0)
+                    throw ('Trying to drop unexistent handler');
+                UI._event_handlers[event_type].splice(index, 1);
+            } else {
+                throw ('Unknown event type: ' + event_type);
+            }
+        }
+    }
+
     ,get_touch : function(canvasDom, e) {
         const rect = canvasDom.getBoundingClientRect();
         let client_origin = Point.new(rect.left, rect.top);
