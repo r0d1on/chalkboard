@@ -17,30 +17,46 @@ let IO = {
         console.log(...args);
     }
 
-    ,request : function(api_endpoint, message, cb, timeout) {
+    ,request : function(api_endpoint, message, callback, timeout) {
         timeout = (timeout===undefined) ? 10*1000 : timeout;
+        return new Promise((resolve, reject) => {
+            let xhr = new XMLHttpRequest();
 
-        let xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = ((xhr, message)=>{
-            return ()=>{
-                if (xhr.readyState == 4) {
-                    cb(xhr, message);
-                } else {
-                    //console.log("xhr:", xhr, "rs:", xhr.readyState);
-                }
-            };
-        })(xhr, message);
+            xhr.onreadystatechange = ((xhr, message)=>{
+                return ()=>{
+                    if (xhr.readyState == 4) {
+                        callback && callback(xhr, message);
+                        if (xhr.status == 200) {
+                            resolve({'xhr': xhr, 'message': message});
+                        } else {
+                            IO.log(0, 'rejected', xhr);
+                            reject({'xhr': xhr, 'error': 'rejected', 'message': message});
+                        }
+                    } else {
+                        //console.log("xhr:", xhr, "rs:", xhr.readyState);
+                    }
+                };
+            })(xhr, message);
 
-        xhr.timeout = timeout;
-        xhr.ontimeout = ((xhr)=>{
-            return ()=>{
-                IO.log(0, 'timeout',xhr);
-            };
-        })(xhr);
-        xhr.open('POST', api_endpoint, true);
-        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+            xhr.timeout = timeout;
+            xhr.ontimeout = ((xhr, message)=>{
+                return ()=>{
+                    IO.log(0, 'timeout', xhr);
+                    reject({'xhr': xhr, 'error': 'timeout', 'message': message});
+                };
+            })(xhr, message);
 
-        xhr.send(JSON.stringify((message)));
+            xhr.onerror = ((xhr, message)=>{
+                return ()=>{
+                    IO.log(0, 'error', xhr);
+                    reject({'xhr': xhr, 'error': 'error', 'message': message});
+                };
+            })(xhr, message);
+
+            xhr.open('POST', api_endpoint, true);
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+            xhr.send(JSON.stringify((message)));
+        });
     }
 
     ,handler_proxy : function(target, event_type, event_handler) {

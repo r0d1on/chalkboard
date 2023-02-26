@@ -388,21 +388,24 @@ let SAVE = {
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
 
         SAVE.sync_begin();
-        UI.IO.request('/sync', message_out, (xhr, message)=>{
-            if (xhr.status == 200) {
+
+        UI.IO.request('/sync', message_out)
+            .then(({xhr})=>{
                 SAVE._consume_message(xhr.responseText, true);
                 if (full)
                     UI.toast('backend.saving', 'board saved on the backend', 2000);
-            } else {
-                UI.log(0, 'could not send the data:', xhr);
+            })
+            .catch(({xhr, error, message})=>{
+                UI.log(0, 'could not send the data:', error, xhr);
                 UI.log(1, 'message:', message);
                 UI.toast('backend.saving', 'connection to backend is broken, could not sync the board', 2000);
                 if (SAVE.autosync) {
                     SAVE.sync_switch();
                 }
-            }
-            SAVE.sync_end();
-        });
+            })
+            .finally(()=>{
+                SAVE.sync_end();
+            });
 
         //console.log("=> |msg|:", sizeof(message_out.strokes), " ver:", message_out.version);
     }
@@ -495,10 +498,11 @@ let SAVE = {
         };
 
 
+        let loaded = false;
         SAVE.sync_begin();
-        UI.IO.request('/sync', message_out, (xhr)=>{
-            let loaded = false;
-            if (xhr.status == 200) {
+
+        UI.IO.request('/sync', message_out)
+            .then(({xhr})=>{
                 UI.log(0, 'backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
                 let ctx = SAVE.canvas_sync.getContext('2d');
@@ -506,14 +510,16 @@ let SAVE = {
 
                 loaded = SAVE._consume_message(xhr.responseText, false);
                 UI.toast('backend.loading', 'loaded from backend', 2000);
-            } else {
-                UI.log(0, 'backend unavailable: ', xhr);
-                UI.toast('backend.loading', 'backend is not available', 2000);
-            }
-            SAVE.sync_end();
-            if (!loaded)
-                SAVE.load();
-        }, 8000);
+            })
+            .catch(({xhr, error})=>{
+                UI.log(0, 'backend unavailable: ', error, xhr);
+                UI.toast('backend.loading', 'backend is not available : ' + error, 2000);
+            })
+            .finally(()=>{
+                SAVE.sync_end();
+                if (!loaded)
+                    SAVE.load();
+            });
 
     }
 
