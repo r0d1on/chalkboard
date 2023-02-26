@@ -343,6 +343,16 @@ let SAVE = {
         }
     }
 
+    ,sync_begin : function() {
+        SAVE.is_syncing = true;
+        UI.set_busy('SAVER', true);
+    }
+
+    ,sync_end : function() {
+        SAVE.is_syncing = false;
+        UI.set_busy('SAVER', false);
+    }
+
     ,sync : function(full) {
         if (SAVE.is_syncing) {
             UI.log(0, 'skipping sync() - already syncing');
@@ -377,7 +387,7 @@ let SAVE = {
 
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
 
-        SAVE.is_syncing = true;
+        SAVE.sync_begin();
         UI.IO.request('/sync', message_out, (xhr, message)=>{
             if (xhr.status == 200) {
                 SAVE._consume_message(xhr.responseText, true);
@@ -391,7 +401,7 @@ let SAVE = {
                     SAVE.sync_switch();
                 }
             }
-            SAVE.is_syncing = false;
+            SAVE.sync_end();
         });
 
         //console.log("=> |msg|:", sizeof(message_out.strokes), " ver:", message_out.version);
@@ -485,7 +495,7 @@ let SAVE = {
         };
 
 
-        SAVE.is_syncing = true;
+        SAVE.sync_begin();
         UI.IO.request('/sync', message_out, (xhr)=>{
             let loaded = false;
             if (xhr.status == 200) {
@@ -500,7 +510,7 @@ let SAVE = {
                 UI.log(0, 'backend unavailable: ', xhr);
                 UI.toast('backend.loading', 'backend is not available', 2000);
             }
-            SAVE.is_syncing = false;
+            SAVE.sync_end();
             if (!loaded)
                 SAVE.load();
         }, 8000);

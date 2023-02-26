@@ -94,6 +94,8 @@ let UI = {
     }
     ,special_active : 0
 
+    ,busy_modules : {}
+
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
         UI.viewpoint.dx = dx;
@@ -504,6 +506,7 @@ let UI = {
 
         ,'on_color' : []
         ,'on_setting_changed' : []
+        ,'on_stale' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -835,7 +838,27 @@ let UI = {
         return handled;
     }
 
-    // Stroke handling
+    ,on_stale : function() {
+        UI.log(1, 'ui.on_stale');
+
+        let handled = UI._event_handlers['on_stale'].reduce((handled, handler)=>{
+            return handled||handler();
+        }, false);
+        return handled;
+    }
+
+
+    // state tracking
+    ,set_busy : function(owner, flag) {
+        UI.busy_modules[owner] = flag;
+        let total_busy = 0;
+        for (const key in UI.busy_modules)
+            total_busy += (UI.busy_modules[key])*1;
+        if (total_busy==0)
+            UI.on_stale();
+    }
+
+    // stroke handling
     ,global_to_local : function(point, viewpoint) {
         if (point==null) return null;
         let vp = (viewpoint===undefined)?UI.viewpoint:viewpoint;
@@ -1067,6 +1090,8 @@ let UI = {
 
     }
 
+
+    // logging , alerting
     ,toast : function(topic, text, lifespan, align, reset) {
         return Toast.new(topic, text, lifespan, align, reset);
     }

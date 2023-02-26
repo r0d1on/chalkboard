@@ -162,9 +162,22 @@ let BOARD = {
     }
 
 
-    ,op_start : function() {
+    ,lock : function() {
         if (BOARD.locked)
             throw 'board is locked';
+        BOARD.locked = true;
+        UI.set_busy('BOARD', true);
+    }
+
+    ,unlock : function() {
+        if (!BOARD.locked)
+            throw 'board is not locked';
+        BOARD.locked = false;
+        UI.set_busy('BOARD', false);
+    }
+
+    ,op_start : function() {
+        BOARD.lock();
 
         BOARD.drop_redo();
 
@@ -172,8 +185,6 @@ let BOARD = {
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
         BOARD.strokes[BOARD.commit_id] = {};
         BOARD.max_commit_id = BOARD.commit_id;
-
-        BOARD.locked = true;
     }
 
     ,commit_stroke : function(stroke) {
@@ -196,9 +207,7 @@ let BOARD = {
     }
 
     ,op_commit : function() {
-        if (!BOARD.locked)
-            throw 'board is not locked';
-        BOARD.locked = false;
+        BOARD.unlock();
         UI.is_dirty = true;
     }
 
