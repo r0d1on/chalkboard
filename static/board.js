@@ -7,6 +7,8 @@ import {UI} from './ui/UI.js';
 import {BOARD} from './ui/BOARD.js';
 import {BRUSH} from './ui/BRUSH.js';
 
+import {Toast} from './util/Toast.js';
+
 // drawing tools handler: menu, events
 import {TOOLS} from './ui/TOOLS.js';
 
@@ -140,12 +142,17 @@ document.addEventListener('DOMContentLoaded', function(){
             init(IO);
 
             if (UI.view_mode=='play') {
+
+                if (BOARD.board_name.startsWith('test'))
+                    Toast.ignore_topic('recorder');
+
                 UI.addEventListener('on_stale', ()=>{
                     IO.load_recording().then(()=>{
                         IO.start_playing();
                     });
                     UI.dropEventListener(); // ensure it's called only once
                 });
+
             }
 
         }).catch((error)=>{

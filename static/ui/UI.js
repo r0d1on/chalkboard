@@ -3,37 +3,13 @@
 import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
 import {ImageStroke} from '../util/Strokes.js';
+import {Logger} from '../util/Logger.js';
 
 import {Settings} from '../actions/Settings.js';
 
 import {BOARD} from './BOARD.js';
 import {BRUSH} from './BRUSH.js';
 import {TOOLS} from './TOOLS.js';
-
-
-let LOG=[];
-function log(level, ...args) {
-    if (level > UI.log_level)
-        return;
-    console.log(...args);
-    if (BOARD.board_name=='debug') {
-        LOG.splice(0, 0, args.join(' '));
-        LOG.slice(0, 40);
-
-        UI.reset_layer('debug');
-
-        let ctx = UI.contexts[UI.LAYERS.indexOf('debug')];
-
-        for(let i=0; i < LOG.length; i++) {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(10, (i+2)*25, 20*LOG[i].length, 20);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'black';
-            ctx.font='20px courier';
-            ctx.strokeText(''+(i)+'::'+LOG[i], 10, 20+(i+2)*25);
-        }
-    }
-}
 
 
 let UI = {
@@ -56,7 +32,7 @@ let UI = {
         ,()=>{UI.redraw();}
     )
 
-    ,log_level : 0
+    ,logger : Logger.new(null, 0)
 
     ,_last_point : null
     ,_under_focus : false
@@ -400,22 +376,25 @@ let UI = {
 
     ,_sel_loglevel : function(level) {
         if (level!==undefined) {
-            UI.log_level = level;
+            UI.logger.log_level = level;
             return;
         }
 
-        UI.log_level = 0;
+        UI.logger.log_level = 0;
+        UI.logger.ctx = null;
 
         if (BOARD.board_name.startsWith('test'))
-            UI.log_level = 1;
+            UI.logger.log_level = 1;
 
-        if (BOARD.board_name=='debug')
-            UI.log_level = 2;
+        if (BOARD.board_name=='debug') {
+            UI.logger.log_level = 2;
+            UI.logger.ctx = UI.contexts[UI.LAYERS.indexOf('debug')];
+        }
 
         if (UI.view_mode=='debug')
-            UI.log_level += 2;
+            UI.logger.log_level += 2;
 
-        UI.log(1, 'log_level:', UI.log_level);
+        UI.log(1, 'log_level:', UI.logger.log_level);
     }
 
     ,_hash_board_mode : function() {
@@ -1076,7 +1055,7 @@ let UI = {
     }
 
     ,log : function(...args) {
-        log(...args);
+        UI.logger.log(...args);
     }
 
 };
