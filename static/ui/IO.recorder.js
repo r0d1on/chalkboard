@@ -71,6 +71,7 @@ let IO = {
                 that.position = 0;
                 that.stop_playing();
                 that.status = IO.STATUSES.PLAYED;
+                that.UI._canvas_changed(-1);
             }
         }
         replay(this.position||0);

@@ -920,6 +920,7 @@ let UI = {
         ctx.lineTo(lp1.x, lp1.y);
         ctx.stroke();
         ctx.closePath();
+        UI._canvas_changed();
     }
 
     ,draw_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
@@ -947,6 +948,13 @@ let UI = {
             }
         });
         return rect;
+    }
+
+    ,_canvas_changed : function(stamp) {
+        if (UI._redraw_hook) {
+            UI._redraw_hook((stamp||1)*((new Date()).valueOf()));
+            UI._redraw_hook = undefined;
+        }
     }
 
     ,_redraw : function(target_ctx, extra_strokes) {
@@ -985,6 +993,8 @@ let UI = {
         UI.on_after_redraw();
 
         BRUSH.update_size();
+
+        UI._canvas_changed();
     }
 
     ,redraw : function(target_ctx, immediate, extra_strokes) {
