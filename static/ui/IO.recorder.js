@@ -134,11 +134,11 @@ let IO = {
         toast.set_bg_color('#3333');
     }
 
-    ,start_playing : function() { // F9
+    ,start_playing : function(speedup) { // F9
         let toast = this.UI.toast('recorder', '▶', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3F33');
         this.status = IO.STATUSES.PLAYING;
-        this.replay_events();
+        this.replay_events(speedup);
     }
 
     ,stop_playing : function() { // F9

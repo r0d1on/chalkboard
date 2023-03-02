@@ -42,6 +42,7 @@ let UI = {
     ,is_dirty : false
     ,view_id : 'xx'
     ,view_mode : undefined
+    ,view_params : undefined
 
     ,window_width : null
     ,window_height : null
@@ -399,10 +400,30 @@ let UI = {
 
     ,_hash_board_mode : function() {
         let hash = window.location.hash.slice(1,);
-        // index.html#tablename$viewmode
+        let tokens = hash.split('$');
+        if (tokens.length > 1) {
+            tokens[1].split('?').map((v, i)=>{
+                tokens[1 + i] = v;
+            });
+        } else {
+            tokens[1] = '';
+        }
+
+        if (tokens.length > 2) {
+            tokens[2] = tokens[2].split('&').reduce((d, p)=>{
+                p = p.split('=');
+                d[p[0]] = p[1];
+                return d;
+            }, {});
+        } else {
+            tokens[2] = {};
+        }
+
+        // index.html#tablename$viewmode$param1=value1&param2=value2
         return [
-            hash.split('$')[0] // table name
-            ,hash.split('$')[1] // view mode
+            tokens[0] // table name
+            ,tokens[1] // view mode
+            ,tokens[2] // extraparameters
         ];
     }
 
@@ -410,7 +431,7 @@ let UI = {
         let old_name = BOARD.board_name;
         let old_view_mode = UI.view_mode;
 
-        [BOARD.board_name, UI.view_mode] = UI._hash_board_mode();
+        [BOARD.board_name, UI.view_mode, UI.view_params] = UI._hash_board_mode();
 
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }

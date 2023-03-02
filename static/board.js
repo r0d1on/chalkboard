@@ -41,7 +41,7 @@ let MENU_main = null;
 let MENU_options = null;
 
 function get_io_type() {
-    let [board_name, view_mode] = UI._hash_board_mode(); // eslint-disable-line no-unused-vars
+    let [board_name, view_mode, params] = UI._hash_board_mode(); // eslint-disable-line no-unused-vars
     if ((view_mode=='record')||(view_mode=='play')) {
         return '.recorder';
     } else {
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 UI.addEventListener('on_stale', ()=>{
                     IO.load_recording().then(()=>{
-                        IO.start_playing();
+                        IO.start_playing(UI.view_params['speedup']*1);
                     });
                     UI.dropEventListener(); // ensure it's called only once
                 });
