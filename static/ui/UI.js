@@ -971,10 +971,29 @@ let UI = {
         return rect;
     }
 
-    ,_canvas_changed : function(stamp) {
+
+    ,_set_redraw_hook : function(callback) {
+        UI._redraw_hook = callback;
+    }
+
+    ,_canvas_changed : function(stamp, retry) {
+        retry = (retry===undefined)? 3 : retry;
         if (UI._redraw_hook) {
             UI._redraw_hook((stamp||1)*((new Date()).valueOf()));
             UI._redraw_hook = undefined;
+        } else {
+            if (stamp!==undefined) {
+                if (retry) {
+                    UI.log(0, 'retrying canvas change ' + stamp);
+                    setTimeout(((stamp, retry)=>{
+                        return ()=>{
+                            UI._canvas_changed(stamp, retry-1);
+                        };
+                    })(stamp, retry), 50);
+                } else {
+                    UI.log(0, 'missed canvas change ' + stamp);
+                }
+            }
         }
     }
 
