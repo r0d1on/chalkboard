@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
                 UI.addEventListener('on_stale', ()=>{
                     IO.load_recording().then(()=>{
-                        IO.start_playing(UI.view_params['speedup']*1);
+                        IO.start_playing((UI.view_params['speedup']||1.0)*1);
                     });
                     UI.dropEventListener(); // ensure it's called only once
                 });
