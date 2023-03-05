@@ -68,6 +68,7 @@ let IO = {
                     replay(index + 1);
                 }, event['-'] / speedup);
             } else {
+                that.UI.log(0, 'recording ended');
                 that.position = 0;
                 that.stop_playing();
                 that.status = IO.STATUSES.PLAYED;
@@ -126,17 +127,20 @@ let IO = {
         this.events_log = [];
         let toast = this.UI.toast('recorder', '◉', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#F333');
+        this.UI.log(0, 'recording started');
     }
 
     ,stop_recording : function() { // CapsLock
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3333');
+        this.UI.log(0, 'recording stopped');
     }
 
     ,start_playing : function(speedup) { // F9
         let toast = this.UI.toast('recorder', '▶', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3F33');
+        this.UI.log(0, 'playing record, speedup: ' + speedup);
         this.status = IO.STATUSES.PLAYING;
         this.replay_events(speedup);
     }
@@ -146,6 +150,7 @@ let IO = {
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3333');
+        this.UI.log(0, 'record playing stopped');
     }
 
 
@@ -162,10 +167,13 @@ let IO = {
             .then(({xhr})=>{
                 that.events_log = JSON.parse(xhr.responseText);
                 that.stop_playing();
+                that.UI.log(0, 'record loaded');
+                that.UI.toast('recorder_msg', 'record loaded', 2000);
             })
             .catch(({xhr, error})=>{
-                that.UI.log(0, 'could not load recording:', error, xhr);
                 that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
+                that.UI.log(0, 'could not load recording:', error, xhr);
+                that.UI.toast('recorder_msg', 'could not load recording: ' + error, 2000);
             });
     }
 
@@ -182,10 +190,13 @@ let IO = {
         return this.request('/record.save', JSON.stringify(message))
             .then(()=>{
                 that.stop_playing();
+                that.UI.log(0, 'record saved');
+                that.UI.toast('recorder_msg', 'record saved', 2000);
             })
             .catch(({error, xhr})=>{
-                that.UI.log(0, 'could not save recording:', error, xhr);
                 that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
+                that.UI.log(0, 'could not save recording:', error, xhr);
+                that.UI.toast('recorder_msg', 'could not save recording:' + error, 2000);
             });
     }
 
