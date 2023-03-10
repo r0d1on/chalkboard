@@ -26,6 +26,18 @@ let SAVE = {
     ,is_syncing : false
     ,canvas_sync : null
 
+    ,_fetch_stream : function(stream) {
+        const reader = stream.getReader();
+        let result = [];
+        function get_some({done, value}) {
+            if (done)
+                return result;
+            result.push(value);
+            return reader.read().then(get_some);
+        }
+        return reader.read().then(get_some);
+    }
+
     ,_strokes_to_save : function(from_version) {
         let out_strokes = {};
 
@@ -235,17 +247,18 @@ let SAVE = {
     ,download : function() {
         let [board_data, ] = SAVE._persist();
 
-        let a = document.createElement('a');
-        // "octet/stream" | "application/json"
-        let blob = new Blob([board_data], {'type':'application/octet-stream'});
-        let exportUrl = URL.createObjectURL(blob);
-        a.href = exportUrl;
-        a.download = BOARD.board_name + '.board.json';
-        a.click();
-
-        URL.revokeObjectURL(exportUrl);
-
-        SAVE.sent_version = null; // reset remote watermark to update the whole board
+        SAVE._fetch_stream(
+            new Blob([board_data]).stream().pipeThrough(new CompressionStream('gzip')) // eslint-disable-line no-undef
+        ).then((chunks)=>{
+            let blob = new Blob(chunks, {'type': 'application/octet-stream'});
+            let exportUrl = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = exportUrl;
+            a.download = BOARD.board_name + '.board.json.gzip';
+            a.click();
+            URL.revokeObjectURL(exportUrl);
+            SAVE.sent_version = null; // reset remote watermark to update the whole board
+        });
 
         SAVE.MENU_main.hide('save_group');
     }
@@ -272,8 +285,10 @@ let SAVE = {
     }
 
     ,handleFiles : function(e) {
-        if (e.target.files.length != 1)
+        if (e.target.files.length != 1) {
+            UI.log(0, 'failed attempt to load multiple files:', e.target.files);
             return;
+        }
 
         SAVE.on_file(e.target.files[0]);
     }
@@ -440,22 +455,52 @@ let SAVE = {
     }
 
     ,on_file : function(file) {
+        function load_json_data(json_data) {
+            SAVE._unpersist_board(json_data);
+            UI.redraw();
+        }
+
+        function load_gzip_data(gzip_data) {
+            SAVE._fetch_stream(
+                (new Blob([new Uint8Array(gzip_data)]))
+                    .stream()
+                    .pipeThrough(new DecompressionStream('gzip')) // eslint-disable-line no-undef
+            ).then((chunks)=>{
+                let json_data = chunks.reduce((r, chunk)=>{
+                    return r + chunk.reduce((a, v)=>{
+                        a.push(String.fromCharCode(v));
+                        return a;
+                    }, []).join('');
+                }, '');
+                load_json_data(json_data);
+            });
+        }
+
         const reader = new FileReader();
 
-        reader.addEventListener('load',
-            ((file)=>{
-                let name = file.name;
-                return (ee)=>{
-                    const board_data = ee.target.result;
-                    UI.log(0, 'loaded file: ', name);
-                    SAVE._unpersist_board(board_data);
-                    UI.redraw();
-                };
-            })(file)
-            ,false
-        );
+        reader.addEventListener('load', ((file)=>{
+            return (event)=>{
+                let board_data = event.target.result;
+                if (Object.prototype.toString.apply(board_data).split(' ')[1]=='ArrayBuffer]') {
+                    load_gzip_data(board_data);
+                } else {
+                    UI.log(0, 'loaded file:', file.name);
+                    load_json_data(board_data);
+                }
+            };
+        })(file), false);
 
-        reader.readAsText(file);
+        if (file.name.endsWith('.json')) {
+            reader.readAsText(file);
+        } else if (file.name.endsWith('.gzip')) {
+            reader.readAsArrayBuffer(file);
+        } else {
+            UI.log(0, 'can\'t load file: ', file);
+            UI.toast('local.loading', 'can\'t load file : ' + file.name, 2000);
+            return false;
+        }
+
+        return true;
     }
 
     ,init : function(MENU_main) {
