@@ -26,6 +26,18 @@ let SAVE = {
     ,is_syncing : false
     ,canvas_sync : null
 
+    ,_fetch_stream : function(stream) {
+        const reader = stream.getReader();
+        let result = [];
+        function get_some({done, value}) {
+            if (done)
+                return result;
+            result.push(value);
+            return reader.read().then(get_some);
+        }
+        return reader.read().then(get_some);
+    }
+
     ,_strokes_to_save : function(from_version) {
         let out_strokes = {};
 
@@ -235,17 +247,18 @@ let SAVE = {
     ,download : function() {
         let [board_data, ] = SAVE._persist();
 
-        let a = document.createElement('a');
-        // "octet/stream" | "application/json"
-        let blob = new Blob([board_data], {'type':'application/octet-stream'});
-        let exportUrl = URL.createObjectURL(blob);
-        a.href = exportUrl;
-        a.download = BOARD.board_name + '.board.json';
-        a.click();
-
-        URL.revokeObjectURL(exportUrl);
-
-        SAVE.sent_version = null; // reset remote watermark to update the whole board
+        SAVE._fetch_stream(
+            new Blob([board_data]).stream().pipeThrough(new CompressionStream('gzip')) // eslint-disable-line no-undef
+        ).then((chunks)=>{
+            let blob = new Blob(chunks, {'type': 'application/octet-stream'});
+            let exportUrl = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = exportUrl;
+            a.download = BOARD.board_name + '.board.json.gzip';
+            a.click();
+            URL.revokeObjectURL(exportUrl);
+            SAVE.sent_version = null; // reset remote watermark to update the whole board
+        });
 
         SAVE.MENU_main.hide('save_group');
     }
@@ -272,8 +285,10 @@ let SAVE = {
     }
 
     ,handleFiles : function(e) {
-        if (e.target.files.length != 1)
+        if (e.target.files.length != 1) {
+            UI.log(0, 'failed attempt to load multiple files:', e.target.files);
             return;
+        }
 
         SAVE.on_file(e.target.files[0]);
     }
@@ -343,6 +358,16 @@ let SAVE = {
         }
     }
 
+    ,sync_begin : function() {
+        SAVE.is_syncing = true;
+        UI.set_busy('SAVER', true);
+    }
+
+    ,sync_end : function() {
+        SAVE.is_syncing = false;
+        UI.set_busy('SAVER', false);
+    }
+
     ,sync : function(full) {
         if (SAVE.is_syncing) {
             UI.log(0, 'skipping sync() - already syncing');
@@ -377,22 +402,25 @@ let SAVE = {
 
         //console.log("sending: ", message_out.version, "L=", message_out.strokes.length, message_out);
 
-        SAVE.is_syncing = true;
-        UI.IO.request('/sync', message_out, (xhr, message)=>{
-            if (xhr.status == 200) {
+        SAVE.sync_begin();
+
+        UI.IO.request('/sync', message_out)
+            .then(({xhr})=>{
                 SAVE._consume_message(xhr.responseText, true);
                 if (full)
                     UI.toast('backend.saving', 'board saved on the backend', 2000);
-            } else {
-                UI.log(0, 'could not send the data:', xhr);
+            })
+            .catch(({xhr, error, message})=>{
+                UI.log(0, 'could not send the data:', error, xhr);
                 UI.log(1, 'message:', message);
                 UI.toast('backend.saving', 'connection to backend is broken, could not sync the board', 2000);
                 if (SAVE.autosync) {
                     SAVE.sync_switch();
                 }
-            }
-            SAVE.is_syncing = false;
-        });
+            })
+            .finally(()=>{
+                SAVE.sync_end();
+            });
 
         //console.log("=> |msg|:", sizeof(message_out.strokes), " ver:", message_out.version);
     }
@@ -427,22 +455,52 @@ let SAVE = {
     }
 
     ,on_file : function(file) {
+        function load_json_data(json_data) {
+            SAVE._unpersist_board(json_data);
+            UI.redraw();
+        }
+
+        function load_gzip_data(gzip_data) {
+            SAVE._fetch_stream(
+                (new Blob([new Uint8Array(gzip_data)]))
+                    .stream()
+                    .pipeThrough(new DecompressionStream('gzip')) // eslint-disable-line no-undef
+            ).then((chunks)=>{
+                let json_data = chunks.reduce((r, chunk)=>{
+                    return r + chunk.reduce((a, v)=>{
+                        a.push(String.fromCharCode(v));
+                        return a;
+                    }, []).join('');
+                }, '');
+                load_json_data(json_data);
+            });
+        }
+
         const reader = new FileReader();
 
-        reader.addEventListener('load',
-            ((file)=>{
-                let name = file.name;
-                return (ee)=>{
-                    const board_data = ee.target.result;
-                    UI.log(0, 'loaded file: ', name);
-                    SAVE._unpersist_board(board_data);
-                    UI.redraw();
-                };
-            })(file)
-            ,false
-        );
+        reader.addEventListener('load', ((file)=>{
+            return (event)=>{
+                let board_data = event.target.result;
+                if (Object.prototype.toString.apply(board_data).split(' ')[1]=='ArrayBuffer]') {
+                    load_gzip_data(board_data);
+                } else {
+                    UI.log(0, 'loaded file:', file.name);
+                    load_json_data(board_data);
+                }
+            };
+        })(file), false);
 
-        reader.readAsText(file);
+        if (file.name.endsWith('.json')) {
+            reader.readAsText(file);
+        } else if (file.name.endsWith('.gzip')) {
+            reader.readAsArrayBuffer(file);
+        } else {
+            UI.log(0, 'can\'t load file: ', file);
+            UI.toast('local.loading', 'can\'t load file : ' + file.name, 2000);
+            return false;
+        }
+
+        return true;
     }
 
     ,init : function(MENU_main) {
@@ -485,10 +543,11 @@ let SAVE = {
         };
 
 
-        SAVE.is_syncing = true;
-        UI.IO.request('/sync', message_out, (xhr)=>{
-            let loaded = false;
-            if (xhr.status == 200) {
+        let loaded = false;
+        SAVE.sync_begin();
+
+        UI.IO.request('/sync', message_out)
+            .then(({xhr})=>{
                 UI.log(0, 'backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
                 let ctx = SAVE.canvas_sync.getContext('2d');
@@ -496,14 +555,16 @@ let SAVE = {
 
                 loaded = SAVE._consume_message(xhr.responseText, false);
                 UI.toast('backend.loading', 'loaded from backend', 2000);
-            } else {
-                UI.log(0, 'backend unavailable: ', xhr);
-                UI.toast('backend.loading', 'backend is not available', 2000);
-            }
-            SAVE.is_syncing = false;
-            if (!loaded)
-                SAVE.load();
-        }, 8000);
+            })
+            .catch(({xhr, error})=>{
+                UI.log(0, 'backend unavailable: ', error, xhr);
+                UI.toast('backend.loading', 'backend is not available : ' + error, 2000);
+            })
+            .finally(()=>{
+                SAVE.sync_end();
+                if (!loaded)
+                    SAVE.load();
+            });
 
     }
 

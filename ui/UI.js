@@ -3,37 +3,13 @@
 import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
 import {ImageStroke} from '../util/Strokes.js';
+import {Logger} from '../util/Logger.js';
 
 import {Settings} from '../actions/Settings.js';
 
 import {BOARD} from './BOARD.js';
 import {BRUSH} from './BRUSH.js';
 import {TOOLS} from './TOOLS.js';
-
-
-let LOG=[];
-function log(level, ...args) {
-    if (level > UI.log_level)
-        return;
-    console.log(...args);
-    if (BOARD.board_name=='debug') {
-        LOG.splice(0, 0, args.join(' '));
-        LOG.slice(0, 40);
-
-        UI.reset_layer('debug');
-
-        let ctx = UI.contexts[UI.LAYERS.indexOf('debug')];
-
-        for(let i=0; i < LOG.length; i++) {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(10, (i+2)*25, 20*LOG[i].length, 20);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'black';
-            ctx.font='20px courier';
-            ctx.strokeText(''+(i)+'::'+LOG[i], 10, 20+(i+2)*25);
-        }
-    }
-}
 
 
 let UI = {
@@ -56,7 +32,7 @@ let UI = {
         ,()=>{UI.redraw();}
     )
 
-    ,log_level : 0
+    ,logger : Logger.new(null, 0)
 
     ,_last_point : null
     ,_under_focus : false
@@ -66,6 +42,7 @@ let UI = {
     ,is_dirty : false
     ,view_id : 'xx'
     ,view_mode : undefined
+    ,view_params : undefined
 
     ,window_width : null
     ,window_height : null
@@ -93,6 +70,8 @@ let UI = {
         , null : true
     }
     ,special_active : 0
+
+    ,busy_modules : {}
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
@@ -398,30 +377,53 @@ let UI = {
 
     ,_sel_loglevel : function(level) {
         if (level!==undefined) {
-            UI.log_level = level;
+            UI.logger.log_level = level;
             return;
         }
 
-        UI.log_level = 0;
+        UI.logger.log_level = 0;
+        UI.logger.ctx = null;
 
         if (BOARD.board_name.startsWith('test'))
-            UI.log_level = 1;
+            UI.logger.log_level = 1;
 
-        if (BOARD.board_name=='debug')
-            UI.log_level = 2;
+        if (BOARD.board_name=='debug') {
+            UI.logger.log_level = 2;
+            UI.logger.ctx = UI.contexts[UI.LAYERS.indexOf('debug')];
+        }
 
         if (UI.view_mode=='debug')
-            UI.log_level += 2;
+            UI.logger.log_level += 2;
 
-        UI.log(1, 'log_level:', UI.log_level);
+        UI.log(1, 'log_level:', UI.logger.log_level);
     }
 
     ,_hash_board_mode : function() {
         let hash = window.location.hash.slice(1,);
-        // index.html#tablename$viewmode
+        let tokens = hash.split('$');
+        if (tokens.length > 1) {
+            tokens[1].split('?').map((v, i)=>{
+                tokens[1 + i] = v;
+            });
+        } else {
+            tokens[1] = '';
+        }
+
+        if (tokens.length > 2) {
+            tokens[2] = tokens[2].split('&').reduce((d, p)=>{
+                p = p.split('=');
+                d[p[0]] = p[1];
+                return d;
+            }, {});
+        } else {
+            tokens[2] = {};
+        }
+
+        // index.html#tablename$viewmode$param1=value1&param2=value2
         return [
-            hash.split('$')[0] // table name
-            ,hash.split('$')[1] // view mode
+            tokens[0] // table name
+            ,tokens[1] // view mode
+            ,tokens[2] // extraparameters
         ];
     }
 
@@ -429,7 +431,7 @@ let UI = {
         let old_name = BOARD.board_name;
         let old_view_mode = UI.view_mode;
 
-        [BOARD.board_name, UI.view_mode] = UI._hash_board_mode();
+        [BOARD.board_name, UI.view_mode, UI.view_params] = UI._hash_board_mode();
 
         return (old_name!=BOARD.board_name)||(old_view_mode!=UI.view_mode);
     }
@@ -504,6 +506,7 @@ let UI = {
 
         ,'on_color' : []
         ,'on_setting_changed' : []
+        ,'on_stale' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -511,6 +514,24 @@ let UI = {
             UI._event_handlers[event_type].push(event_handler);
         } else {
             throw ('Unknown event type: ' + event_type);
+        }
+    }
+
+    ,dropEventListener : function(event_type, event_handler) {
+        if ((event_type === undefined)||(event_handler === undefined)) {
+            if ( (UI.__handling_event === undefined) || (UI.__handling_handler === undefined) ) {
+                throw 'dropEventListener() called outside event handler';
+            }
+            UI.dropEventListener(UI.__handling_event, UI.__handling_handler);
+        } else {
+            if (event_type in UI._event_handlers) {
+                let index = UI._event_handlers[event_type].indexOf(event_handler);
+                if (index < 0)
+                    throw ('Trying to drop unexistent handler');
+                UI._event_handlers[event_type].splice(index, 1);
+            } else {
+                throw ('Unknown event type: ' + event_type);
+            }
         }
     }
 
@@ -565,27 +586,29 @@ let UI = {
         }
     }
 
+    ,_handle_event : function(event, data) {
+        UI.__handling_event = event;
+        let handled = UI._event_handlers[event].reduce((handled, handler)=>{
+            UI.__handling_handler = handler;
+            return handled||handler.apply(null, data);
+        }, false);
+        UI.__handling_event = null;
+        UI.__handling_handler = null;
+        return handled;
+    }
 
     ,on_start : function(lp, button) {
-        let handled = UI._event_handlers['on_start'].reduce((handled, handler)=>{
-            return handled||handler(lp.copy(), button);
-        }, false);
+        let handled = UI._handle_event('on_start', [lp.copy(), button]);
         UI._last_button = button;
         return handled;
     }
 
     ,on_move : function(lp) {
-        let handled = UI._event_handlers['on_move'].reduce((handled, handler)=>{
-            return handled||handler(lp.copy());
-        }, false);
-        return handled;
+        return UI._handle_event('on_move', [lp.copy()]);
     }
 
     ,on_stop : function(lp) {
-        let handled = UI._event_handlers['on_stop'].reduce((handled, handler)=>{
-            return handled||handler(lp.copy());
-        }, false);
-        return handled;
+        return UI._handle_event('on_stop', [lp.copy()]);
     }
 
     ,_update_special : function() {
@@ -616,10 +639,7 @@ let UI = {
             UI._update_special();
         }
 
-        let handled = UI._event_handlers['on_key_down'].reduce((handled, handler)=>{
-            return handled||handler(key);
-        }, false);
-
+        let handled = UI._handle_event('on_key_down', [key]);
         if (!handled)
             handled = UI.on_key_down_default(key);
 
@@ -629,10 +649,7 @@ let UI = {
     ,on_key_up : function(key) {
         UI.log(1, 'ui.key_up:', key);
 
-        let handled = UI._event_handlers['on_key_up'].reduce((handled, handler)=>{
-            return handled||handler(key);
-        }, false);
-
+        let handled = UI._handle_event('on_key_up', [key]);
         if (!handled)
             UI.on_key_up_default(key);
 
@@ -645,10 +662,7 @@ let UI = {
     ,on_wheel : function(delta, deltaX) {
         UI.log(1, 'ui.on_wheel:', delta, deltaX);
 
-        let handled = UI._event_handlers['on_wheel'].reduce((handled, handler)=>{
-            return handled||handler(delta, deltaX);
-        }, false);
-
+        let handled = UI._handle_event('on_wheel', [delta, deltaX]);
         if (!handled)
             UI.on_wheel_default(delta, deltaX);
     }
@@ -707,19 +721,13 @@ let UI = {
     }
 
     ,on_paste_text : function(text) {
-        let handled = UI._event_handlers['on_paste_text'].reduce((handled, handler)=>{
-            return handled||handler(text);
-        }, false);
-
+        let handled = UI._handle_event('on_paste_text', [text]);
         if (!handled)
             UI.on_paste_text_default(text);
     }
 
     ,on_paste_strokes : function(strokes) {
-        let handled = UI._event_handlers['on_paste_strokes'].reduce((handled, handler)=>{
-            return handled||handler(strokes);
-        }, false);
-
+        let handled = UI._handle_event('on_paste_strokes', [strokes]);
         if (!handled)
             UI.on_paste_strokes_default(strokes);
     }
@@ -751,10 +759,7 @@ let UI = {
     }
 
     ,on_file : function(file) {
-        let handled = UI._event_handlers['on_file'].reduce((handled, handler)=>{
-            return handled||handler(file);
-        }, false);
-
+        let handled = UI._handle_event('on_file', [file]);
         if (!handled)
             UI.log(0, 'unhandled file transfer:', file);
     }
@@ -774,16 +779,12 @@ let UI = {
 
     ,on_focus : function() {
         UI._on_focus_change(true);
-        UI._event_handlers['on_focus'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_focus', []);
     }
 
     ,on_blur : function() {
         UI._on_focus_change(false);
-        UI._event_handlers['on_blur'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_blur', []);
     }
 
     ,on_hash_change : function() {
@@ -795,47 +796,48 @@ let UI = {
 
 
     ,on_before_redraw : function() {
-        UI._event_handlers['on_before_redraw'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_before_redraw', []);
     }
 
     ,on_after_redraw : function() {
-        UI._event_handlers['on_after_redraw'].reduce((handled, handler)=>{
-            return handled||handler();
-        }, false);
+        return UI._handle_event('on_after_redraw', []);
     }
 
 
     ,on_persist : function(json, partial) {
-        let handled = UI._event_handlers['on_persist'].reduce((handled, handler)=>{
-            return handled||handler(json, partial);
-        }, false);
-        return handled;
+        return UI._handle_event('on_persist', [json, partial]);
     }
 
     ,on_unpersist : function(json, partial) {
-        let handled = UI._event_handlers['on_unpersist'].reduce((handled, handler)=>{
-            return handled||handler(json, partial);
-        }, false);
+        let handled = UI._handle_event('on_unpersist', [json, partial]);
         return handled;
     }
 
     ,on_color : function(color) {
-        let handled = UI._event_handlers['on_color'].reduce((handled, handler)=>{
-            return handled||handler(color);
-        }, false);
-        return handled;
+        return UI._handle_event('on_color', [color]);
     }
 
     ,on_setting_changed : function(name, value) {
-        let handled = UI._event_handlers['on_setting_changed'].reduce((handled, handler)=>{
-            return handled||handler(name, value);
-        }, false);
-        return handled;
+        return UI._handle_event('on_setting_changed', [name, value]);
     }
 
-    // Stroke handling
+    ,on_stale : function() {
+        UI.log(1, 'ui.on_stale');
+        return UI._handle_event('on_stale', []);
+    }
+
+
+    // state tracking
+    ,set_busy : function(owner, flag) {
+        UI.busy_modules[owner] = flag;
+        let total_busy = 0;
+        for (const key in UI.busy_modules)
+            total_busy += (UI.busy_modules[key])*1;
+        if (total_busy==0)
+            UI.on_stale();
+    }
+
+    // stroke handling
     ,global_to_local : function(point, viewpoint) {
         if (point==null) return null;
         let vp = (viewpoint===undefined)?UI.viewpoint:viewpoint;
@@ -939,6 +941,7 @@ let UI = {
         ctx.lineTo(lp1.x, lp1.y);
         ctx.stroke();
         ctx.closePath();
+        UI._canvas_changed();
     }
 
     ,draw_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
@@ -966,6 +969,32 @@ let UI = {
             }
         });
         return rect;
+    }
+
+
+    ,_set_redraw_hook : function(callback) {
+        UI._redraw_hook = callback;
+    }
+
+    ,_canvas_changed : function(stamp, retry) {
+        retry = (retry===undefined)? 3 : retry;
+        if (UI._redraw_hook) {
+            UI._redraw_hook((stamp||1)*((new Date()).valueOf()));
+            UI._redraw_hook = undefined;
+        } else {
+            if (stamp!==undefined) {
+                if (retry) {
+                    UI.log(0, 'retrying canvas change ' + stamp);
+                    setTimeout(((stamp, retry)=>{
+                        return ()=>{
+                            UI._canvas_changed(stamp, retry-1);
+                        };
+                    })(stamp, retry), 50);
+                } else {
+                    UI.log(0, 'missed canvas change ' + stamp);
+                }
+            }
+        }
     }
 
     ,_redraw : function(target_ctx, extra_strokes) {
@@ -1004,6 +1033,8 @@ let UI = {
         UI.on_after_redraw();
 
         BRUSH.update_size();
+
+        UI._canvas_changed();
     }
 
     ,redraw : function(target_ctx, immediate, extra_strokes) {
@@ -1029,9 +1060,9 @@ let UI = {
     ,redraw_background : function(ctx, grid) {
         let background_colors = ['#FFF','#111','#030'];
         let grid_colors = [
-            ['#333','#CCC']
-            ,['#CCC','#333']
-            ,['#CCC','#222']
+            ['#333', '#CCC']
+            ,['#CCC', '#333']
+            ,['#CCC', '#222']
         ];
 
         ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
@@ -1067,12 +1098,14 @@ let UI = {
 
     }
 
+
+    // logging , alerting
     ,toast : function(topic, text, lifespan, align, reset) {
         return Toast.new(topic, text, lifespan, align, reset);
     }
 
     ,log : function(...args) {
-        log(...args);
+        UI.logger.log(...args);
     }
 
 };

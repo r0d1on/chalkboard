@@ -26,13 +26,14 @@ let BOARD = {
             pressure = lp1.pressure||lp0.pressure;
 
         if (pressure) {
-            if ((BRUSH.PRESSURE.value + 1) & 1) {
-                alpha = Math.round(((pressure + 0.0) - 0.5) * 10);
-                alpha = ((BRUSH.OPACITY.value + 1) * 5) + alpha;
-                alpha = (alpha).toString(16).toUpperCase();
+            if ((BRUSH.PRESSURE.value + 1) & 1) { // pressure -> opacity
+                alpha = Math.round(((pressure + 0.0) - 0.5) * 10); // 0..1 -> -5..+5
+                alpha = ((BRUSH.OPACITY.value + 1) * 5) + alpha; // ((0..2)+1)*5+(-5..+5)
+                alpha = (Math.max(0, Math.min(15, alpha))); // -> 0..15
+                alpha = alpha.toString(16).toUpperCase(); // -> 0..F
             }
-            if ((BRUSH.PRESSURE.value + 1) & 2) {
-                width = Math.round(width*((pressure + 0.5))); // 0-0.2-1 :=>: 0.5-0.7-1.5
+            if ((BRUSH.PRESSURE.value + 1) & 2) { // pressure -> width
+                width = Math.round(width*((pressure + 0.5))); // 0..0.2..1 -> 0.5..0.7..1.5
             }
         }
 
@@ -162,9 +163,22 @@ let BOARD = {
     }
 
 
-    ,op_start : function() {
+    ,lock : function() {
         if (BOARD.locked)
             throw 'board is locked';
+        BOARD.locked = true;
+        UI.set_busy('BOARD', true);
+    }
+
+    ,unlock : function() {
+        if (!BOARD.locked)
+            throw 'board is not locked';
+        BOARD.locked = false;
+        UI.set_busy('BOARD', false);
+    }
+
+    ,op_start : function() {
+        BOARD.lock();
 
         BOARD.drop_redo();
 
@@ -172,8 +186,6 @@ let BOARD = {
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
         BOARD.strokes[BOARD.commit_id] = {};
         BOARD.max_commit_id = BOARD.commit_id;
-
-        BOARD.locked = true;
     }
 
     ,commit_stroke : function(stroke) {
@@ -196,9 +208,7 @@ let BOARD = {
     }
 
     ,op_commit : function() {
-        if (!BOARD.locked)
-            throw 'board is not locked';
-        BOARD.locked = false;
+        BOARD.unlock();
         UI.is_dirty = true;
     }
 

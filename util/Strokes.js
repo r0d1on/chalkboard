@@ -399,6 +399,7 @@ let ImageStroke = {
             ,lp1.x - lp0.x
             ,lp1.y - lp0.y
         );
+        UI._canvas_changed();
     }
 
     ,rect : function() {

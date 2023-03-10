@@ -68,9 +68,11 @@ let IO = {
                     replay(index + 1);
                 }, event['-'] / speedup);
             } else {
+                that.UI.log(0, 'recording ended');
                 that.position = 0;
                 that.stop_playing();
                 that.status = IO.STATUSES.PLAYED;
+                that.UI._canvas_changed(-1);
             }
         }
         replay(this.position||0);
@@ -125,19 +127,22 @@ let IO = {
         this.events_log = [];
         let toast = this.UI.toast('recorder', '◉', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#F333');
+        this.UI.log(0, 'recording started');
     }
 
     ,stop_recording : function() { // CapsLock
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3333');
+        this.UI.log(0, 'recording stopped');
     }
 
-    ,start_playing : function() { // F9
+    ,start_playing : function(speedup) { // F9
         let toast = this.UI.toast('recorder', '▶', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3F33');
+        this.UI.log(0, 'playing record, speedup: ' + speedup);
         this.status = IO.STATUSES.PLAYING;
-        this.replay_events();
+        this.replay_events(speedup);
     }
 
     ,stop_playing : function() { // F9
@@ -145,44 +150,54 @@ let IO = {
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3333');
+        this.UI.log(0, 'record playing stopped');
     }
 
 
     ,load_recording : function() { // F1
-        let toast = this.UI.toast('recorder', '💾', -1, 1);
-        toast.set_bg_color('#33F3');
+        this.UI.toast('recorder', '💾', -1, 1).set_bg_color('#33F3');
+
         let message = {
             'name' : this.UI._hash_board_mode()[0]
         };
 
-        this.request('/record.load', JSON.stringify(message), (xhr)=>{
-            if (xhr.status == 200) {
-                this.events_log = JSON.parse(xhr.responseText);
-                this.stop_playing();
-            } else {
-                let toast = this.UI.toast('recorder', '💾', -1, 1);
-                toast.set_bg_color('#F333');
-            }
-        }, 1000);
+        const that = this;
+
+        return this.request('/record.load', JSON.stringify(message))
+            .then(({xhr})=>{
+                that.events_log = JSON.parse(xhr.responseText);
+                that.stop_playing();
+                that.UI.log(0, 'record loaded');
+                that.UI.toast('recorder_msg', 'record loaded', 2000);
+            })
+            .catch(({xhr, error})=>{
+                that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
+                that.UI.log(0, 'could not load recording:', error, xhr);
+                that.UI.toast('recorder_msg', 'could not load recording: ' + error, 2000);
+            });
     }
 
     ,save_recording : function () { // F2
-        let toast = this.UI.toast('recorder', '💾', -1, 1);
-        toast.set_bg_color('#33F3');
+        this.UI.toast('recorder', '💾', -1, 1).set_bg_color('#33F3');
 
         let message = {
             'name' : this.UI._hash_board_mode()[0]
             ,'log' : this.events_log
         };
 
-        this.request('/record.save', JSON.stringify(message), (xhr)=>{
-            if (xhr.status == 200) {
-                this.stop_playing();
-            } else {
-                let toast = this.UI.toast('recorder', '💾', -1, 1);
-                toast.set_bg_color('#F333');
-            }
-        }, 1000);
+        const that = this;
+
+        return this.request('/record.save', JSON.stringify(message))
+            .then(()=>{
+                that.stop_playing();
+                that.UI.log(0, 'record saved');
+                that.UI.toast('recorder_msg', 'record saved', 2000);
+            })
+            .catch(({error, xhr})=>{
+                that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
+                that.UI.log(0, 'could not save recording:', error, xhr);
+                that.UI.toast('recorder_msg', 'could not save recording:' + error, 2000);
+            });
     }
 
 

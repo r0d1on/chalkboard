@@ -21,10 +21,15 @@ let Toast = {
     ,TOASTS : {}
     ,TOPICS : [[], [], [], []]
 
+    ,_ignore_topics : {}
     /* Class methods */
 
     ,init : function() {
         UI.addEventListener('on_setting_changed', Toast.on_setting_changed);
+    }
+
+    ,ignore_topic : function(topic) {
+        Toast._ignore_topics[topic] = true;
     }
 
     ,on_setting_changed : function(name, value) {
@@ -43,9 +48,6 @@ let Toast = {
 
             Toast.DEFAULT_CLASSES[1] = new_class;
         }
-
-
-
     }
 
     /* Instance methods */
@@ -71,7 +73,8 @@ let Toast = {
         add_class(this.div, Toast.DEFAULT_CLASSES);
         this.div.id = topic;
         this.div.innerHTML = this.text;
-        document.body.appendChild(this.div);
+        if (!Toast._ignore_topics[topic])
+            document.body.appendChild(this.div);
 
         this.ix = 0;
         while(
@@ -155,7 +158,8 @@ let Toast = {
     }
 
     ,drop : function() {
-        document.body.removeChild(this.div);
+        if (!Toast._ignore_topics[this.topic])
+            document.body.removeChild(this.div);
         clearTimeout(this.timeout);
         Toast.TOPICS[this.align][this.ix] = undefined;
         delete Toast.TOASTS[this.topic];

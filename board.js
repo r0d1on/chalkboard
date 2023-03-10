@@ -7,7 +7,7 @@ import {UI} from './ui/UI.js';
 import {BOARD} from './ui/BOARD.js';
 import {BRUSH} from './ui/BRUSH.js';
 
-
+import {Toast} from './util/Toast.js';
 
 // drawing tools handler: menu, events
 import {TOOLS} from './ui/TOOLS.js';
@@ -41,8 +41,8 @@ let MENU_main = null;
 let MENU_options = null;
 
 function get_io_type() {
-    let [board_name, view_mode] = UI._hash_board_mode(); // eslint-disable-line no-unused-vars
-    if (view_mode=='recorder') {
+    let [board_name, view_mode, params] = UI._hash_board_mode(); // eslint-disable-line no-unused-vars
+    if ((view_mode=='record')||(view_mode=='play')) {
         return '.recorder';
     } else {
         return '';
@@ -140,6 +140,21 @@ document.addEventListener('DOMContentLoaded', function(){
             let IO = module.IO.new();
             console.log('IO type: ', IO.type);
             init(IO);
+
+            if (UI.view_mode=='play') {
+
+                if (BOARD.board_name.startsWith('test'))
+                    Toast.ignore_topic('recorder');
+
+                UI.addEventListener('on_stale', ()=>{
+                    IO.load_recording().then(()=>{
+                        IO.start_playing((UI.view_params['speedup']||1.0)*1);
+                    });
+                    UI.dropEventListener(); // ensure it's called only once
+                });
+
+            }
+
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
         });
