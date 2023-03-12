@@ -3,6 +3,9 @@ import re
 import os
 import sys
 import json
+import gzip
+from io import BytesIO, StringIO
+
 
 CONFIG = {
     "dry" : False
@@ -18,6 +21,7 @@ app = flask.Flask(__name__
 def http_root():
     return flask.redirect(flask.url_for('static',filename='index.html#about').replace('%23','#'))
 
+
 def sync_message(loc, msg):
     for in_commit, in_strokes in msg['strokes'].items():
         loc['strokes'][in_commit] = loc['strokes'].get(in_commit, {})
@@ -27,6 +31,7 @@ def sync_message(loc, msg):
                 loc['strokes'][in_commit][in_idx] = in_stroke
 
     return
+
 
 def update_modules(loc, msg):
     def upd(t, s):
@@ -86,35 +91,65 @@ def update_modules(loc, msg):
     return changed
 
 
+def _compress(s):
+    out = BytesIO()
+    with gzip.GzipFile(fileobj=out, mode="w") as f:
+      f.write(s.encode())
+    return out.getvalue()
+
+
 @app.route("/record.load", methods=['POST'])
 def http_record_load():
     msg = flask.request.get_json(force=True)
-    msg = json.loads(msg);
     print(">= rec:", msg['name'])
 
     bname = msg['name'].split('!', 1)[0]
     bfile = "records/brd_" + (re.sub("\\\|/|%|\.", "_", bname)) + ".json"
 
-    if (os.path.isfile(bfile)):
-        with open(bfile, 'rt') as f:
-            log = json.loads(f.read())
+    if (os.path.isfile(bfile + '.gzip')):
+        with open(bfile + '.gzip', 'rb') as f:
+            content = f.read()
+        print('sending gzipped record:', len(content))
     else:
-        log = []
+        if (os.path.isfile(bfile)):
+            with open(bfile, 'rt') as f:
+                log = json.loads(f.read())
+        else:
+            log = []
+        content = _compress(json.dumps({
+            "name": msg['name']
+            ,"log": log
+        }))
+        print('sending json record:', len(content))
 
-    return json.dumps(log)
+    return flask.Response(content, headers={
+        'Content-Type': 'application/octet-stream'
+    })
 
 
 @app.route("/record.save", methods=['POST'])
 def http_record_save():
-    msg = flask.request.get_json(force=True)
-    msg = json.loads(msg);
+    content_type = flask.request.headers['Content-Type'].split(";")[0]
+    content = None
+    
+    if (content_type == 'application/json'):
+        msg = flask.request.get_json(force=True)
+        content = _compress(json.dumps(msg))
+    elif (content_type == 'application/octet-stream'):
+        content = flask.request.data
+        msg = json.loads(gzip.GzipFile(fileobj=BytesIO(content)).read().decode())
+    else:
+        print("Unsupported content type: ", content_type)
+        raise(Exception("unsupported content type: " + content_type))
+        
     print("<= rec:", msg['name'], len(msg['log']))
+    print("content:", type(content), len(content))
 
     bname = msg['name'].split('!', 1)[0]
-    bfile = "records/brd_" + (re.sub("\\\|/|%|\.", "_", bname)) + ".json"
+    bfile = "records/brd_" + (re.sub("\\\|/|%|\.", "_", bname)) + ".json.gzip"
 
-    with open(bfile, 'wt') as f:
-        f.write(json.dumps(msg['log']))
+    with open(bfile, 'wb') as f:
+        f.write(content)
     
     return json.dumps([])
 
