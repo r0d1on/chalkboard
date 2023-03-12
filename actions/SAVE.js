@@ -26,18 +26,6 @@ let SAVE = {
     ,is_syncing : false
     ,canvas_sync : null
 
-    ,_fetch_stream : function(stream) {
-        const reader = stream.getReader();
-        let result = [];
-        function get_some({done, value}) {
-            if (done)
-                return result;
-            result.push(value);
-            return reader.read().then(get_some);
-        }
-        return reader.read().then(get_some);
-    }
-
     ,_strokes_to_save : function(from_version) {
         let out_strokes = {};
 
@@ -247,9 +235,7 @@ let SAVE = {
     ,download : function() {
         let [board_data, ] = SAVE._persist();
 
-        SAVE._fetch_stream(
-            new Blob([board_data]).stream().pipeThrough(new CompressionStream('gzip')) // eslint-disable-line no-undef
-        ).then((chunks)=>{
+        UI.IO.compress(board_data).then((chunks)=>{
             let blob = new Blob(chunks, {'type': 'application/octet-stream'});
             let exportUrl = URL.createObjectURL(blob);
             let a = document.createElement('a');
@@ -404,7 +390,7 @@ let SAVE = {
 
         SAVE.sync_begin();
 
-        UI.IO.request('/sync', message_out)
+        UI.IO.request('/sync', message_out, {})
             .then(({xhr})=>{
                 SAVE._consume_message(xhr.responseText, true);
                 if (full)
@@ -460,29 +446,15 @@ let SAVE = {
             UI.redraw();
         }
 
-        function load_gzip_data(gzip_data) {
-            SAVE._fetch_stream(
-                (new Blob([new Uint8Array(gzip_data)]))
-                    .stream()
-                    .pipeThrough(new DecompressionStream('gzip')) // eslint-disable-line no-undef
-            ).then((chunks)=>{
-                let json_data = chunks.reduce((r, chunk)=>{
-                    return r + chunk.reduce((a, v)=>{
-                        a.push(String.fromCharCode(v));
-                        return a;
-                    }, []).join('');
-                }, '');
-                load_json_data(json_data);
-            });
-        }
-
         const reader = new FileReader();
 
         reader.addEventListener('load', ((file)=>{
             return (event)=>{
                 let board_data = event.target.result;
                 if (Object.prototype.toString.apply(board_data).split(' ')[1]=='ArrayBuffer]') {
-                    load_gzip_data(board_data);
+                    UI.IO.decompress(new Uint8Array(board_data)).then((json_data)=>{
+                        load_json_data(json_data);
+                    });
                 } else {
                     UI.log(0, 'loaded file:', file.name);
                     load_json_data(board_data);
@@ -546,7 +518,7 @@ let SAVE = {
         let loaded = false;
         SAVE.sync_begin();
 
-        UI.IO.request('/sync', message_out)
+        UI.IO.request('/sync', message_out, {})
             .then(({xhr})=>{
                 UI.log(0, 'backend available: ', xhr);
                 SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];

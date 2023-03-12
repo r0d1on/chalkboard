@@ -163,9 +163,9 @@ let IO = {
 
         const that = this;
 
-        return this.request('/record.load', JSON.stringify(message))
+        return this.request('/record.load', message, {})
             .then(({xhr})=>{
-                that.events_log = JSON.parse(xhr.responseText);
+                that.events_log = JSON.parse(xhr.responseText)['log'];
                 that.stop_playing();
                 that.UI.log(0, 'record loaded');
                 that.UI.toast('recorder_msg', 'record loaded', 2000);
@@ -187,7 +187,7 @@ let IO = {
 
         const that = this;
 
-        return this.request('/record.save', JSON.stringify(message))
+        return this.request('/record.save', message, {compress: true})
             .then(()=>{
                 that.stop_playing();
                 that.UI.log(0, 'record saved');
