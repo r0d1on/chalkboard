@@ -31,6 +31,7 @@ def get_tests():
         for testdir in sorted(glob.glob("/chalkboard/tests/selenium/*"))
         for name in [testdir.split('/')[~0]]
     ])
+    
     for test in tests.values():
         if (os.path.isfile(f"{test['dir']}/settings.json")):
             with open(f"{test['dir']}/settings.json", "rt") as f:
@@ -40,13 +41,22 @@ def get_tests():
             with open(f"{test['dir']}/.output/.checked", "rt") as f:
                 test['passed'] = (f.read().strip()=='passed')
         TESTS[test['name']] = test
+    
     return
     
 
 def playback_test(test):
+    
+    if (not os.path.isfile(f"{test['dir']}/test.json.gzip")):
+        fail_test(test, "test recording is not found", "?")
+        return 1
+    else:
+        shutil.copyfile(f"{test['dir']}/test.json.gzip", f"/chalkboard/records/brd_test-selenium-ui.json.gzip")
+    
     test['time'] = time.time()
-    result = os.system(f"python3.8 play.py {SETTINGS['owner']} {SETTINGS['ip']} test-{test['name']} {test['settings']['speedup']} {test['dir']}/.output {say.__level}")
+    result = os.system(f"python3.8 play.py {SETTINGS['owner']} {SETTINGS['ip']} test-selenium-ui {test['settings']['speedup']} {test['dir']}/.output {say.__level}")
     test['time'] = time.time() - test['time']
+
     return result
     
     
