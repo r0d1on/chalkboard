@@ -3,10 +3,10 @@
 import {deepcopy, sizeof, has, is_instance_of} from '../base/objects.js';
 
 import {Stroke, ErasureStroke} from '../util/Strokes.js';
+import {db_get, db_set} from '../util/db.js';
 
 import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
-
 
 // SAVE ITEMS
 let SAVE = {
@@ -73,27 +73,32 @@ let SAVE = {
     }
 
     ,save : function() {
-        let old = JSON.parse(localStorage.getItem('local_board_' + BOARD.board_name));
+        db_get('local_board_' + BOARD.board_name)
+            .then((old)=>{
+                old = JSON.parse(old);
+                let [board_data, new_size] = SAVE._persist();
 
-        let [board_data, new_size] = SAVE._persist();
+                if (old!=null) {
+                    if (!confirm('overwrite board old board [' + sizeof(old.strokes) + '] with [' + new_size + '] ?'))
+                        return;
+                }
 
-        if (old!=null) {
-            if (!confirm('overwrite board old board [' + sizeof(old.strokes) + '] with [' + new_size + '] ?'))
-                return;
-        }
+                UI.log(0, 'version', BOARD.version, ',saving', new_size, 'commits out of', sizeof(BOARD.strokes));
 
-        UI.log(0, 'version', BOARD.version, ',saving', new_size, 'commits out of', sizeof(BOARD.strokes));
+                db_set('local_board_' + BOARD.board_name, board_data)
+                    .then(()=>{
+                        SAVE.sent_version = null; // reset remote watermark to update the whole board
+                        UI.is_dirty = false;
+                    }).catch((error)=>{
+                        UI.log(0, 'Error saving board to local storage:', error);
+                        UI.toast('local.saving', 'Error saving board to local storage:' + error, 2000);
+                    });
 
-        try {
-            localStorage.setItem('local_board_' + BOARD.board_name, board_data);
-        } catch (error) {
-            alert('Can\'t save board to local storage: ' + error);
-        }
-
-        SAVE.sent_version = null; // reset remote watermark to update the whole board
-
+            }).catch((error)=>{
+                UI.log(0, 'Error accessing local storage:', error);
+                UI.toast('local.saving', 'error:' + error, 2000);
+            });
         SAVE.MENU_main.hide('save_group');
-        UI.is_dirty = false;
     }
 
     ,_unpersist_message : function(msg) {
@@ -216,20 +221,22 @@ let SAVE = {
     }
 
     ,load : function() {
-        let board_data = localStorage.getItem('local_board_' + BOARD.board_name);
-        if (board_data==null) {
-            UI.toast('local.loading', 'board is not in local storage', 2000);
-            return;
-        }
-
-        SAVE._unpersist_board(board_data);
-
-        SAVE.sent_version = null; // reset remote watermark to update the whole board
-
+        db_get('local_board_' + BOARD.board_name)
+            .then((board_data)=>{
+                if (board_data==null) {
+                    UI.toast('local.loading', 'board is not in local storage', 2000);
+                    return;
+                }
+                SAVE._unpersist_board(board_data);
+                SAVE.sent_version = null; // reset remote watermark to update the whole board
+                UI.redraw();
+                UI.toast('local.loading', 'loaded from local storage', 2000);
+                UI.is_dirty = false;
+            }).catch((error)=>{
+                UI.log(0, 'Error loading board from local storage:', error);
+                UI.toast('local.loading', 'Error loading board from local storage:' + error, 2000);
+            });
         SAVE.MENU_main.hide('save_group');
-        UI.redraw();
-        UI.toast('local.loading', 'loaded from local storage', 2000);
-        UI.is_dirty = false;
     }
 
     ,download : function() {
@@ -513,7 +520,6 @@ let SAVE = {
             ,strokes : {}
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
         };
-
 
         let loaded = false;
         SAVE.sync_begin();
