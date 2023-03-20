@@ -136,13 +136,16 @@ let DrawToolBase = {
     }
 
     ,on_stop : function(lp) {
+        let handled = false;
         if (this.activated) {
             UI.reset_layer('overlay');
             this.draw(this.start_point, lp, BOARD.add_line);
             BOARD.flush_commit();
+            handled = true;
         }
         this.activated = false;
         this.last_point = lp;
+        return handled;
     }
 
     ,cancel : function() {

@@ -46,8 +46,8 @@ function db_get(key) {
 function db_set(key, value) {
     let local_value = localStorage.getItem(key);
     if (local_value!=null) {
-        localStorage.setItem(key + '/backup', local_value);
         localStorage.removeItem(key);
+        localStorage.setItem(key + '/backup', local_value);
     }
 
     if (value==null) {
