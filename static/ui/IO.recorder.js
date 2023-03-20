@@ -48,6 +48,7 @@ let IO = {
         let event = {
             preventDefault : function(){}
             ,stopPropagation : function(){}
+            ,stopImmediatePropagation : function(){}
         };
         for(let key in props)
             event[key] = props[key];
@@ -121,7 +122,7 @@ let IO = {
         this.ts = ts;
     }
 
-    ,start_recording : function() { // CapsLock
+    ,start_recording : function() { // `
         this.status = IO.STATUSES.RECORDING;
         this.ts = (+new Date());
         this.events_log = [];
@@ -130,7 +131,7 @@ let IO = {
         this.UI.log(0, 'recording started');
     }
 
-    ,stop_recording : function() { // CapsLock
+    ,stop_recording : function() { // `
         this.status = IO.STATUSES.PASS;
         let toast = this.UI.toast('recorder', '⏸', -1, 1); // TOP_RIGHT
         toast.set_bg_color('#3333');
@@ -207,7 +208,7 @@ let IO = {
         if (event_type === 'keydown') {
             if (e.key == 'F9') { // play / pause
                 handled = true;
-            } else if (e.key == 'CapsLock') { // record on / off
+            } else if (e.key == '`') { // record on / off
                 handled = true;
             } else if (e.key == 'F1') { // load record
                 if (this.status in [IO.STATUSES.PASS, IO.STATUSES.PLAYED])
@@ -229,7 +230,7 @@ let IO = {
                 else
                     this.start_playing();
                 handled = true;
-            } else if (e.key == 'CapsLock') {
+            } else if (e.key == '`') {
                 if (this.status == IO.STATUSES.PLAYING)
                     this.stop_playing();
                 if (this.status == IO.STATUSES.RECORDING)
