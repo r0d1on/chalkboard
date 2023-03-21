@@ -450,6 +450,7 @@ let SAVE = {
     ,on_file : function(file) {
         function load_json_data(json_data) {
             SAVE._unpersist_board(json_data);
+            UI.on_key_down('Escape'); // force cancel active tool if any
             UI.redraw();
         }
 

@@ -597,6 +597,11 @@ let SelectorBase = {
         // TODO: DrawToolBase.call('on_activated',this)
     }
 
+    ,cancel : function() {
+        this.cancel_selection();
+        DrawToolBase.cancel.call(this);
+    }
+
     ,on_deactivated : function() {
         this.activated = false;
         //DrawToolBase.on_deactivated.call(this);
@@ -993,4 +998,4 @@ let SelectorTool = {
 
 SelectorTool = _class('SelectorTool', SelectorTool);
 
-export {SelectorBase, SelectorTool};
+export {SelectorTool};
