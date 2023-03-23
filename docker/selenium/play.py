@@ -73,9 +73,9 @@ def take_screenshots(driver, output_dir):
             say(0, "received error:", type(error[0]), error[0])
             say(0, "trace: ", error[1])
             break
-    
+
     return screenshots, error
-    
+
 def main(user, ip, uri, speedup, output_dir):
     """
     ip = '172.17.0.2'
@@ -84,16 +84,16 @@ def main(user, ip, uri, speedup, output_dir):
     output_dir = '/chalkboard/tmp'    
     """
     speedup = float(speedup) 
-    
+
     driver = get_driver() 
     url = f'http://{ip}:5000/index.html#{uri}$play?speedup={speedup}'
-    
+
     say(2, f"selenium fetching URL: {url} into {output_dir}")
     driver.get(url)
-    
+
     say(2, "selenium waiting for scripts")
     wait_for_scripts(driver)
-    
+
     say(2, "capturing screenshots")
     screenshots, error = take_screenshots(driver, output_dir)
 
@@ -103,7 +103,7 @@ def main(user, ip, uri, speedup, output_dir):
         say(0, "[s]", end='')
         say(2, "waiting for settlement")
         time.sleep(3)
-    
+
     say(0, "[c]", end='')
     say(2, "taking final screenshot")
     driver.save_screenshot(f"{output_dir}/result.png")
@@ -131,13 +131,13 @@ def main(user, ip, uri, speedup, output_dir):
         say(2, '.', end='', flush=True)
         os.remove(f["name"])
     say(2, '')
-    
+
     say(0, "[o]", end='')
     say(2, "switching ownership")
     os.system(f"chown -R {user} {output_dir}/*")
-    
+
     return ((error is not None)and(error[1] is not None))*1
-    
+
 
 if __name__ == "__main__":
     if (len(sys.argv) != 7) or (sys.argv[1] == "?"):
@@ -146,7 +146,10 @@ if __name__ == "__main__":
 
     say.__level = int(sys.argv[6])
     say(2, "args: ", sys.argv)
-        
-    code = main(*sys.argv[1:-1])
-    
+
+    try:
+        code = main(*sys.argv[1:-1])
+    except KeyboardInterrupt:
+        code = -2
+
     sys.exit(code)

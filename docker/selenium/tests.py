@@ -15,7 +15,9 @@ SETTINGS = {
     ,"owner": ""
 }
 
-def get_tests():
+def get_tests(tests_mask):
+    say(0,"tests mask:", "/chalkboard/tests/selenium/" + tests_mask)
+
     tests = dict([
         (name, 
         {
@@ -28,7 +30,7 @@ def get_tests():
             ,"settings": {"speedup": 0.2}
             ,"checked": False
         })
-        for testdir in sorted(glob.glob("/chalkboard/tests/selenium/*"))
+        for testdir in sorted(glob.glob("/chalkboard/tests/selenium/" + tests_mask))
         for name in [testdir.split('/')[~0]]
     ])
 
@@ -117,9 +119,13 @@ def run_test(test, fast=True):
     play_result = playback_test(test)
     say(2, "play result: ", play_result)
 
+    if str(play_result) == "2":
+        raise KeyboardInterrupt
+
     if (play_result!=0):
-        fail_test(test, "test replay failed", "?")
+        fail_test(test, f"test replay failed [{play_result}]", "?")
         return
+
 
     image_diff = get_image_diff(test)
     if image_diff is None:
@@ -148,12 +154,12 @@ def get_report():
     return 0 if not failed else 1
 
 
-def main(owner, ip, fast):
+def main(owner, ip, fast, verbosity, tests_mask):
     SETTINGS["ip"] = ip
     SETTINGS["owner"] = owner
     fast = int(fast)
 
-    get_tests()
+    get_tests(tests_mask)
     print(f"Running {len(TESTS)} tests, fast = {fast}")
 
     for test in TESTS.values():
@@ -166,13 +172,18 @@ def main(owner, ip, fast):
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) != 5) or (sys.argv[1] == "?"):
-        print("usage: tests.py <owner> <ip> <fast> <verbosity>")
+    if (len(sys.argv) != 6) or (sys.argv[1] == "?"):
+        print("usage: tests.py <owner> <ip> <fast> <verbosity> <tests_mask>")
+        say.__level = 0
+        say(0, "args given: ", sys.argv)
         sys.exit(-1)
 
     say.__level = int(sys.argv[4])
     say(2, "args: ", sys.argv)
 
-    code = main(*sys.argv[1:-1])
+    try:
+        code = main(*sys.argv[1:])
+    except KeyboardInterrupt:
+        code = 2
     sys.exit(code)
 

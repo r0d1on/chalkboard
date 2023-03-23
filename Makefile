@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help jekyll_image lint_image selenium_image backend_image lint lintfix start_backend build run test quicktest
+.PHONY: help jekyll_image lint_image selenium_image backend_image lint lintfix start_backend build run test quicktest runtest
 
 help:
 	@echo ''
@@ -45,10 +45,13 @@ start_backend: backend_image
 	scripts/redirect_logs.sh $(CURDIR)
 
 test: lint selenium_image start_backend
-	scripts/start_selenium_tests.sh $(CURDIR)
+	scripts/start_selenium_tests.sh $(CURDIR) 0 "*"
 	scripts/stop_backend.sh $(CURDIR)
 
 quicktest: lint selenium_image start_backend
-	scripts/start_selenium_tests.sh $(CURDIR) 1
+	scripts/start_selenium_tests.sh $(CURDIR) 1 "*"
 	scripts/stop_backend.sh $(CURDIR)
 
+runtest: lint selenium_image start_backend
+	scripts/start_selenium_tests.sh $(CURDIR) 0 ${test}
+	scripts/stop_backend.sh $(CURDIR)
