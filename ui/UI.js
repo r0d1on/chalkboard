@@ -472,7 +472,7 @@ let UI = {
 
         UI._on_focus_change(true);
 
-        UI.addEventListener('on_file', UI._on_file);
+        UI.addEventListener('on_file', UI.on_file_default);
 
         UI._last_point = Point.new(UI.window_width/2, UI.window_height/2);
 
@@ -586,6 +586,33 @@ let UI = {
         }
     }
 
+    ,on_file_default : function(file) {
+        if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                const image = new Image();
+                image.title = file.name;
+                image.src = reader.result;
+                setTimeout(((image, p0)=>{
+                    return ()=>{
+                        BOARD.op_start();
+                        BOARD.commit_stroke(ImageStroke.new(
+                            image
+                            ,UI.local_to_global(p0)
+                            ,UI.local_to_global(p0.add(Point.new(image.width, image.height)))
+                        ));
+                        BOARD.op_commit();
+                        UI.redraw();
+                    };
+                })(image, UI._last_point), 10);
+            }, false);
+            reader.readAsDataURL(file);
+            return true;
+        }
+        return false;
+    }
+
+
     ,_handle_event : function(event, data) {
         UI.__handling_event = event;
         let handled = UI._event_handlers[event].reduce((handled, handler)=>{
@@ -693,7 +720,7 @@ let UI = {
                 UI.on_file(file);
 
             } else {
-                UI.log(0, 'Unknown data transfer kind received:', data_item.kind);
+                UI.log(-1, 'Unknown data transfer kind received:', data_item.kind);
             }
         }
     }
@@ -706,7 +733,7 @@ let UI = {
             UI.on_paste_strokes(js.strokes);
             return;
         } catch (ex) {
-            UI.log(0, 'pasted text is not parseable:', ex);
+            UI.log(-1, 'pasted text is not parseable:', ex);
         }
         UI.on_paste_text(text);
     }
@@ -732,36 +759,10 @@ let UI = {
             UI.on_paste_strokes_default(strokes);
     }
 
-    ,_on_file : function(file) {
-        if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
-            const reader = new FileReader();
-            reader.addEventListener('load', () => {
-                const image = new Image();
-                image.title = file.name;
-                image.src = reader.result;
-                setTimeout(((image, p0)=>{
-                    return ()=>{
-                        BOARD.op_start();
-                        BOARD.commit_stroke(ImageStroke.new(
-                            image
-                            ,UI.local_to_global(p0)
-                            ,UI.local_to_global(p0.add(Point.new(image.width, image.height)))
-                        ));
-                        BOARD.op_commit();
-                        UI.redraw();
-                    };
-                })(image, UI._last_point), 10);
-            }, false);
-            reader.readAsDataURL(file);
-            return true;
-        }
-        return false;
-    }
-
     ,on_file : function(file) {
         let handled = UI._handle_event('on_file', [file]);
         if (!handled)
-            UI.log(0, 'unhandled file transfer:', file);
+            UI.log(-1, 'unhandled file transfer:', file);
     }
 
 
@@ -984,14 +985,14 @@ let UI = {
         } else {
             if (stamp!==undefined) {
                 if (retry) {
-                    UI.log(0, 'retrying canvas change ' + stamp);
+                    UI.log(-1, 'retrying canvas change ' + stamp);
                     setTimeout(((stamp, retry)=>{
                         return ()=>{
                             UI._canvas_changed(stamp, retry-1);
                         };
                     })(stamp, retry), 50);
                 } else {
-                    UI.log(0, 'missed canvas change ' + stamp);
+                    UI.log(-1, 'missed canvas change ' + stamp);
                 }
             }
         }

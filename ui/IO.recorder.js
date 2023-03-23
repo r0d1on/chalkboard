@@ -64,7 +64,13 @@ let IO = {
                 let event = that.events_log[index];
                 that.timer = setTimeout(()=>{
                     const handler = that.handlers[event['t']][event['k']];
-                    handler(that.unmap_event(event['c'], event['k'], event['p']));
+                    try {
+                        handler(that.unmap_event(event['c'], event['k'], event['p']));
+                    } catch (error) {
+                        that.UI.log(-2, 'Caught error while playing:', error.message);
+                        that.UI.log(-2, 'Stacktrace', error.stack);
+                        throw error;
+                    }
                     that.position = index + 1;
                     replay(index + 1);
                 }, event['-'] / speedup);
@@ -173,7 +179,7 @@ let IO = {
             })
             .catch(({xhr, error})=>{
                 that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
-                that.UI.log(0, 'could not load recording:', error, xhr);
+                that.UI.log(-2, 'could not load recording:', error, xhr);
                 that.UI.toast('recorder_msg', 'could not load recording: ' + error, 2000);
             });
     }
@@ -196,7 +202,7 @@ let IO = {
             })
             .catch(({error, xhr})=>{
                 that.UI.toast('recorder', '💾', -1, 1).set_bg_color('#F333');
-                that.UI.log(0, 'could not save recording:', error, xhr);
+                that.UI.log(-2, 'could not save recording:', error, xhr);
                 that.UI.toast('recorder_msg', 'could not save recording:' + error, 2000);
             });
     }

@@ -134,11 +134,7 @@ let Menu = {
         dom_elem.style['position'] = 'fixed';
         add_class(dom_elem, 'menu_item');
 
-        UI.IO.add_event(dom_elem, 'mousedown', this.onpush(id, false));
-        UI.IO.add_event(dom_elem, 'touchstart', this.onpush(id, true));
         UI.IO.add_event(dom_elem, 'pointerdown', this.onpush(id, true));
-        UI.IO.add_event(dom_elem, 'mouseup', this.onclick(id, onclick, false));
-        UI.IO.add_event(dom_elem, 'touchend', this.onclick(id, onclick, true));
         UI.IO.add_event(dom_elem, 'pointerup', this.onclick(id, onclick, true));
         UI.IO.add_event(dom_elem, 'contextmenu', e => {
             e.stopPropagation();
