@@ -281,10 +281,12 @@ let SAVE = {
         if (e.target.files.length != 1) {
             UI.log(-1, 'loading more than one file at a time is not supported:', e.target.files);
             UI.toast('backend.loading', 'loading more than one file at a time is not supported', 2000);
+            e.target.value = null;
             return;
         }
 
         UI.on_file(e.target.files[0]);
+        e.target.value = null;
     }
 
     ,upload : function() {
