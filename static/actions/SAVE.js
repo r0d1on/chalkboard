@@ -284,7 +284,7 @@ let SAVE = {
             return;
         }
 
-        SAVE.on_file(e.target.files[0]);
+        UI.on_file(e.target.files[0]);
     }
 
     ,upload : function() {
@@ -507,7 +507,7 @@ let SAVE = {
         UI.draw_glyph(SAVE.icon_download_png, ctx);
 
 
-        ctx = MENU_main.add('save_group', 'upload', SAVE.upload, 'canvas', 'upload board')[1].getContext('2d');
+        ctx = MENU_main.add('save_group', 'upload', SAVE.upload, 'canvas', 'upload board / image')[1].getContext('2d');
         UI.draw_glyph(SAVE.icon_upload, ctx);
 
         //SAVE.sync_switch();
