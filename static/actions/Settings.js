@@ -28,7 +28,7 @@ let Settings = {
         try {
             localStorage.setItem('settings', JSON.stringify(Settings.VALUES));
         } catch (error) {
-            UI.log(0, ' can\'t save settings to local storage: ' + error);
+            UI.log(-2, ' can\'t save settings to local storage: ' + error);
         }
     }
 

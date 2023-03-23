@@ -90,12 +90,12 @@ let SAVE = {
                         SAVE.sent_version = null; // reset remote watermark to update the whole board
                         UI.is_dirty = false;
                     }).catch((error)=>{
-                        UI.log(0, 'Error saving board to local storage:', error);
+                        UI.log(-2, 'Error saving board to local storage:', error);
                         UI.toast('local.saving', 'Error saving board to local storage:' + error, 2000);
                     });
 
             }).catch((error)=>{
-                UI.log(0, 'Error accessing local storage:', error);
+                UI.log(-2, 'Error accessing local storage:', error);
                 UI.toast('local.saving', 'error:' + error, 2000);
             });
         SAVE.MENU_main.hide('save_group');
@@ -233,7 +233,7 @@ let SAVE = {
                 UI.toast('local.loading', 'loaded from local storage', 2000);
                 UI.is_dirty = false;
             }).catch((error)=>{
-                UI.log(0, 'Error loading board from local storage:', error);
+                UI.log(-2, 'Error loading board from local storage:', error);
                 UI.toast('local.loading', 'Error loading board from local storage:' + error, 2000);
             });
         SAVE.MENU_main.hide('save_group');
@@ -279,7 +279,8 @@ let SAVE = {
 
     ,handleFiles : function(e) {
         if (e.target.files.length != 1) {
-            UI.log(0, 'failed attempt to load multiple files:', e.target.files);
+            UI.log(-1, 'loading more than one file at a time is not supported:', e.target.files);
+            UI.toast('backend.loading', 'loading more than one file at a time is not supported', 2000);
             return;
         }
 
@@ -343,7 +344,7 @@ let SAVE = {
     ,_consume_message : function(str_json, is_sync) {
         let message_in = JSON.parse(str_json);
         if ((message_in.resync)||(BOARD.locked)) {
-            UI.log(0, 'will resync:', message_in);
+            UI.log(-1, 'will resync:', message_in);
             return false;
         } else {
             SAVE.sent_version = message_in.received_version;
@@ -404,7 +405,7 @@ let SAVE = {
                     UI.toast('backend.saving', 'board saved on the backend', 2000);
             })
             .catch(({xhr, error, message})=>{
-                UI.log(0, 'could not send the data:', error, xhr);
+                UI.log(-1, 'could not send the data:', error, xhr);
                 UI.log(1, 'message:', message);
                 UI.toast('backend.saving', 'connection to backend is broken, could not sync the board', 2000);
                 if (SAVE.autosync) {
@@ -475,7 +476,7 @@ let SAVE = {
         } else if (file.name.endsWith('.gzip')) {
             reader.readAsArrayBuffer(file);
         } else {
-            UI.log(0, 'can\'t load file: ', file);
+            UI.log(-1, 'can\'t load file: ', file);
             UI.toast('local.loading', 'can\'t load file : ' + file.name, 2000);
             return false;
         }
@@ -536,7 +537,7 @@ let SAVE = {
                 UI.toast('backend.loading', 'loaded from backend', 2000);
             })
             .catch(({xhr, error})=>{
-                UI.log(0, 'backend unavailable: ', error, xhr);
+                UI.log(-1, 'backend unavailable: ', error, xhr);
                 UI.toast('backend.loading', 'backend is not available : ' + error, 2000);
             })
             .finally(()=>{
