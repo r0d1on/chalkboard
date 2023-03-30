@@ -452,34 +452,17 @@ let SAVE = {
 
     ,on_file : function(file) {
         function load_json_data(json_data) {
+            UI.log(0, 'loaded board file:', file.name);
             SAVE._unpersist_board(json_data);
             UI.on_key_down('Escape'); // force cancel active tool if any
             UI.redraw();
         }
 
-        const reader = new FileReader();
-
-        reader.addEventListener('load', ((file)=>{
-            return (event)=>{
-                let board_data = event.target.result;
-                if (Object.prototype.toString.apply(board_data).split(' ')[1]=='ArrayBuffer]') {
-                    UI.IO.decompress(new Uint8Array(board_data)).then((json_data)=>{
-                        load_json_data(json_data);
-                    });
-                } else {
-                    UI.log(0, 'loaded file:', file.name);
-                    load_json_data(board_data);
-                }
-            };
-        })(file), false);
-
         if (file.name.endsWith('.json')) {
-            reader.readAsText(file);
-        } else if (file.name.endsWith('.gzip')) {
-            reader.readAsArrayBuffer(file);
+            UI.IO.read_file(file, 'text').then(load_json_data);
+        } else if (file.name.endsWith('.board.json.gzip')) {
+            UI.IO.read_file(file, 'gzip').then(load_json_data);
         } else {
-            UI.log(-1, 'can\'t load file: ', file);
-            UI.toast('local.loading', 'can\'t load file : ' + file.name, 2000);
             return false;
         }
 

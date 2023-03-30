@@ -13,6 +13,36 @@ let IO = {
         this.handlers = {};
     }
 
+    ,init : function(MENU_main) {
+        this.MENU_main = MENU_main;
+    }
+
+    ,read_file : function(file, as) {
+        let that = this;
+        const reader = new FileReader();
+
+        return new Promise((resolve, reject)=>{
+            reader.addEventListener('load', (event)=>{
+                let data = event.target.result;
+                if (as=='gzip') {
+                    that.decompress(new Uint8Array(data)).then(resolve);
+                } else if (as=='text') {
+                    resolve(data);
+                }
+            }, false);
+
+            if (as=='gzip') {
+                reader.readAsArrayBuffer(file);
+            } else if (as=='text') {
+                reader.readAsText(file);
+            } else if (as=='image') {
+                reader.readAsDataURL(file);
+            } else {
+                reject('unknown file type:' + as);
+            }
+        });
+    }
+
     ,_fetch_stream : function(stream) {
         const reader = stream.getReader();
         let result = [];
@@ -71,7 +101,7 @@ let IO = {
                 return ()=>{
                     if (xhr.readyState == 4) {
                         if (xhr.status != 200) {
-                            IO.log(0, 'rejected', xhr);
+                            that.UI.log(0, 'rejected', xhr);
                             reject({'xhr': xhr, 'error': 'rejected', 'message': message});
                             return;
                         }
@@ -106,14 +136,14 @@ let IO = {
             xhr.timeout = timeout;
             xhr.ontimeout = ((xhr, message)=>{
                 return ()=>{
-                    IO.log(0, 'timeout', xhr);
+                    that.UI.log(0, 'timeout', xhr);
                     reject({'xhr': xhr, 'error': 'timeout', 'message': message});
                 };
             })(xhr, message);
 
             xhr.onerror = ((xhr, message)=>{
                 return ()=>{
-                    IO.log(0, 'error', xhr);
+                    that.UI.log(0, 'error', xhr);
                     reject({'xhr': xhr, 'error': 'error', 'message': message});
                 };
             })(xhr, message);
@@ -142,7 +172,7 @@ let IO = {
 
     ,add_event : function(target, event_type, event_handler) {
         let target_name = (target.tagName||(typeof(target)+':'+target)) + '.' + (target.id||'');
-        this.log(2, '+listener:', target_name, ' :: ', event_type);
+        this.UI.log(2, '+listener:', target_name, ' :: ', event_type);
         const proxy = this.handler_proxy(target, event_type, event_handler);
 
         let target_type = (typeof(target)=='object')?target.constructor.name:typeof(target);
