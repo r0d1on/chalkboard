@@ -25,6 +25,7 @@ let IO = {
         ,PLAYED : 2
         ,RECORDING : 3
     }
+    ,icon : [null,[8,49],[8,9],[50,9],null,[8,49],[29,49],null,[50,29],[50,9],[8,9],null,[50,9],[50,29],null,[8,9],[8,49],[29,49],null,[47,52],[39,52],null,[34,47],[34,39],null,[52,39],[52,47],null,[39,34],[47,34],null,[50,35],[50,35],null,[50,51],[50,51],null,[36,50],[36,50],null,[36,35],[36,35],null,[38,43],[43,48],[48,43],null,[43,38],[43,48],[38,43],null,[48,43],[43,48],[43,38],null,[15,28],[15,15],[15,28],null,[21,15],[15,15],[21,15],null,[26,28],[26,15],[26,28],null,[31,15],[26,15],[31,15],null,[30,21],[26,21],[30,21],null,[31,28],[26,28],[31,28],null,[36,28],[36,15],[36,28],[42,28],[36,28],null,[22,21],[21,15],[22,21],[15,21],[22,21],null,[21,28],[15,21],[21,28],null,[42,15],[36,15],[42,15]]
 
     ,UI : null
 
@@ -42,6 +43,55 @@ let IO = {
         this.status = IO.STATUSES.PASS;
         this.timer = null;
         this.position = null;
+    }
+
+    ,init : function(MENU_main) {
+        IO.super.init.call(this, MENU_main);
+        let ctx = MENU_main.add('download_group', 'download_rec', ()=>{
+            this.download_rec();
+        }, 'canvas', 'download recording')[1].getContext('2d');
+        this.UI.draw_glyph(IO.icon, ctx);
+        this.UI.addEventListener('on_file', (file)=>{
+            this.on_file(file);
+        });
+    }
+
+    ,on_file : function(file) {
+        let that = this;
+
+        if (file.name.endsWith('.record.gzip')) {
+            this.read_file(file, 'gzip').then((json_data)=>{
+                that.events_log = JSON.parse(json_data);
+                that.stop_playing();
+                that.UI.log(0, 'record loaded');
+                that.UI.toast('recorder_msg', 'record loaded', 2000);
+
+                that.UI.on_key_down('Escape'); // force cancel active tool if any
+                that.UI.redraw();
+
+                that.start_playing();
+            });
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    ,download_rec : function() {
+        let record = JSON.stringify(this.events_log);
+        let that = this;
+        this.compress(record).then((chunks)=>{
+            let blob = new Blob(chunks, {'type': 'application/octet-stream'});
+            let exportUrl = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = exportUrl;
+            a.download = that.UI._hash_board_mode()[0] + '.record.gzip';
+            a.click();
+            URL.revokeObjectURL(exportUrl);
+        });
+
+        this.MENU_main.hide('save_group');
     }
 
     ,unmap_event : function(cls, type, props) {

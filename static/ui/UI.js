@@ -446,8 +446,6 @@ let UI = {
 
     ,init : function(IO) {
         UI.IO = IO;
-
-        IO.log = UI.log;
         IO.UI = UI;
 
         // parse out board name and view mode from location hash
@@ -588,11 +586,10 @@ let UI = {
 
     ,on_file_default : function(file) {
         if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
-            const reader = new FileReader();
-            reader.addEventListener('load', () => {
+            UI.IO.read_file(file, 'image').then((data_url)=>{
                 const image = new Image();
                 image.title = file.name;
-                image.src = reader.result;
+                image.src = data_url;
                 setTimeout(((image, p0)=>{
                     return ()=>{
                         BOARD.op_start();
@@ -605,8 +602,7 @@ let UI = {
                         UI.redraw();
                     };
                 })(image, UI._last_point), 10);
-            }, false);
-            reader.readAsDataURL(file);
+            });
             return true;
         }
         return false;
@@ -761,8 +757,10 @@ let UI = {
 
     ,on_file : function(file) {
         let handled = UI._handle_event('on_file', [file]);
-        if (!handled)
-            UI.log(-1, 'unhandled file transfer:', file);
+        if (!handled) {
+            UI.log(-1, 'can\'t load file: ', file);
+            UI.toast('ui.files_load', 'can\'t load file : ' + file.name, 2000);
+        }
     }
 
 

@@ -115,6 +115,10 @@ function init(IO) {
     // about menu
     ABOUT.init(MENU_main);
 
+    // IO-owned menu items
+    IO.init(MENU_main);
+
+
     UI.redraw();
 
     if (BOARD.board_name=='') {
