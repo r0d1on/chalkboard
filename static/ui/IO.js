@@ -28,6 +28,8 @@ let IO = {
                     that.decompress(new Uint8Array(data)).then(resolve);
                 } else if (as=='text') {
                     resolve(data);
+                } else if (as=='image') {
+                    resolve(data);
                 }
             }, false);
 
