@@ -103,7 +103,7 @@ let IO = {
                 return ()=>{
                     if (xhr.readyState == 4) {
                         if (xhr.status != 200) {
-                            that.UI.log(0, 'rejected', xhr);
+                            that.UI.log(1, 'rejected', xhr);
                             reject({'xhr': xhr, 'error': 'rejected', 'message': message});
                             return;
                         }
