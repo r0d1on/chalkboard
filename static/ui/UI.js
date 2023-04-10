@@ -996,11 +996,12 @@ let UI = {
         }
     }
 
-    ,_redraw : function(target_ctx, extra_strokes) {
+    ,_redraw : function(target_ctx, extra_strokes, draw_grid) {
         let ctx = null;
         let ctx_back = null;
 
         extra_strokes = (extra_strokes===undefined)?[]:extra_strokes;
+        draw_grid = (draw_grid===undefined)?UI.GRID_MODE.value:draw_grid;
 
         if (target_ctx === undefined) {
             UI.update_layers(true);
@@ -1011,7 +1012,7 @@ let UI = {
             ctx_back = target_ctx;
         }
 
-        UI.redraw_background(ctx_back, UI.GRID_MODE.value);
+        UI.redraw_background(ctx_back, draw_grid);
 
         UI.on_before_redraw();
 
@@ -1036,12 +1037,12 @@ let UI = {
         UI._canvas_changed();
     }
 
-    ,redraw : function(target_ctx, immediate, extra_strokes) {
+    ,redraw : function(target_ctx, immediate, extra_strokes, draw_grid) {
         if (immediate) {
-            UI._redraw(target_ctx, extra_strokes);
+            UI._redraw(target_ctx, extra_strokes, draw_grid);
         } else {
             window.requestAnimationFrame(()=>{
-                UI._redraw(target_ctx, extra_strokes);
+                UI._redraw(target_ctx, extra_strokes, draw_grid);
             });
         }
         if (UI.view_mode=='debug') {
@@ -1056,7 +1057,10 @@ let UI = {
         }
     }
 
-    ,redraw_background : function(ctx, grid) {
+    ,redraw_background : function(ctx, draw_grid) {
+        const width = ctx.canvas.width;
+        const height = ctx.canvas.height;
+
         let background_colors = ['#FFF','#111','#030'];
         let grid_colors = [
             ['#333', '#CCC']
@@ -1066,15 +1070,15 @@ let UI = {
 
         ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
 
-        if (!grid)
+        if (!draw_grid)
             return;
 
         //h
         let y = - (UI.viewpoint.dy % UI.GRID) * UI.viewpoint.scale;
-        while (y < UI.window_height) {
+        while (y < height) {
             UI.draw_line(
                 Point.new(0, y)
-                ,Point.new(UI.window_width, y)
+                ,Point.new(width, y)
                 ,grid_colors[UI.THEME.value][(Math.abs(y / UI.viewpoint.scale + UI.viewpoint.dy)>0.1)*1]
                 ,1
                 ,ctx
@@ -1084,10 +1088,10 @@ let UI = {
 
         //w
         let x = - (UI.viewpoint.dx % UI.GRID) * UI.viewpoint.scale;
-        while (x < UI.window_width) {
+        while (x < width) {
             UI.draw_line(
                 Point.new(x, 0)
-                ,Point.new(x, UI.window_height)
+                ,Point.new(x, height)
                 ,grid_colors[UI.THEME.value][(Math.abs(x / UI.viewpoint.scale + UI.viewpoint.dx)>0.1)*1]
                 ,1
                 ,ctx
