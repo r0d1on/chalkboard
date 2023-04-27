@@ -6,6 +6,15 @@ import {DrawToolBase} from './Base.js';
 
 import {BOARD} from '../ui/BOARD.js';
 
+/**
+ * Pen tool draws a line following the mouse or pointer movement after the tool was activated
+ * either with touch / mouse or pen event.
+ *
+ * @tool.name Pen
+ * @tool.demo demo-pen
+ * @tool.hotkey ctrl+p
+ * @tool.iconpath PenTool.icon|meta.code.value
+ */
 
 let PenTool = {
     super : DrawToolBase

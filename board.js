@@ -145,6 +145,11 @@ document.addEventListener('DOMContentLoaded', function(){
             console.log('IO type: ', IO.type);
             init(IO);
 
+            window.bp = ()=>{debugger;}; // eslint-disable-line no-debugger
+            window.UI = UI;
+            window.BOARD = BOARD;
+            window.timeit = (...args)=>{UI.IO.timeit(...args);};
+
             if (UI.view_mode=='play') {
 
                 if (BOARD.board_name.startsWith('test'))
@@ -159,19 +164,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
             }
 
+
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
         });
 
     }, 100);
 
-    window.bp = ()=>{debugger;}; // eslint-disable-line no-debugger
-
-    window.UI = UI;
-    window.BOARD = BOARD;
-    window.TOOLS = TOOLS;
-    window.SAVE = SAVE;
-    window.SLIDER = SLIDER;
 
 });
 

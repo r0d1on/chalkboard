@@ -185,6 +185,22 @@ let IO = {
 
         target.addEventListener(event_type, proxy);
     }
+
+    ,timeit : function(callable, rounds) {
+        rounds = (rounds===undefined)?10:rounds;
+
+        let times = [];
+        for(let i=0; i<rounds; i++) {
+            times.push((new(Date)).valueOf());
+            callable();
+            times[i] = (new(Date)).valueOf() - times[i];
+        }
+
+        this.log(0, 'times:', times);
+        this.log(0, 'avg:', times.reduce((a, v)=>a + v, 0) / rounds);
+    }
+
+
 };
 
 IO = _class('IO', IO);
