@@ -10,6 +10,15 @@ import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
+/**
+ * Eraser tool erases either full strokes or only the touched area of the stroke depending on the operation mode
+ *
+ * @tool.name Eraser
+ * @tool.demo demo-eraser
+ * @tool.hotkey ctrl+e
+ * @tool.iconpath EraserTool.icon|meta.code.value
+ */
+
 let EraserTool = {
     super : DrawToolBase
 
