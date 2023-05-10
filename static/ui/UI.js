@@ -1016,18 +1016,23 @@ let UI = {
 
         UI.on_before_redraw();
 
+        let global_viewrect = [
+            UI.local_to_global(Point.new(0, 0))
+            ,UI.local_to_global(Point.new(UI.window_width, UI.window_height))
+        ];
+
         for(let commit_id in BOARD.strokes) {
             if (commit_id > BOARD.commit_id)
                 break;
 
             for(let i in BOARD.strokes[commit_id]) {
                 let stroke = BOARD.strokes[commit_id][i];
-                stroke.draw(ctx);
+                stroke.draw(ctx, global_viewrect);
             }
         }
 
         extra_strokes.map((stroke)=>{
-            stroke.draw(ctx);
+            stroke.draw(ctx, global_viewrect);
         });
 
         UI.on_after_redraw();
@@ -1041,10 +1046,15 @@ let UI = {
         if (immediate) {
             UI._redraw(target_ctx, extra_strokes, draw_grid);
         } else {
-            window.requestAnimationFrame(()=>{
-                UI._redraw(target_ctx, extra_strokes, draw_grid);
-            });
+            if (!UI._redrawing) {
+                UI._redrawing = true;
+                window.requestAnimationFrame(()=>{
+                    UI._redraw(target_ctx, extra_strokes, draw_grid);
+                    UI._redrawing = false;
+                });
+            }
         }
+
         if (UI.view_mode=='debug') {
             let now = (new Date()).valueOf();
             UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
