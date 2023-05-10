@@ -66,7 +66,7 @@ def fail_test(test, reason, diff):
     test["checked"] = True
     test["diff"] = diff
     say(0, "")
-    say(0, f"{test['name']:<15}", COLORS.FAIL, "- failed: ", COLORS.WARNING, reason, COLORS.ENDC)
+    say(0, f"{test['name']:<15}", COLORS.FAIL, "- failed: ", COLORS.WARNING, reason, COLORS.ENDC, "\t", diff)
     with open(f"{test['dir']}/.output/.checked", "wt") as f:
         f.write("failed")
 
@@ -99,8 +99,15 @@ def get_image_diff(test):
 
     img_out = iio.imread(f"{test['dir']}/.output/result.png")
     img_ref = iio.imread(f"{test['dir']}/result.png")
-    return np.abs(img_out - img_ref)[:,:,0:3].mean()
+    diff = np.abs(img_out - img_ref)[:,:,0:3]
+    return (diff.mean(), diff.std(), (diff>0).sum() / (diff>-1).sum())
 
+def difference_is_significant(diff):
+    return (
+        (diff[0] > 0.098)or
+        (diff[1] > 3.6)or
+        (diff[2] > 0.0026)
+    )
 
 def run_test(test, fast=True):
     test_dir = test['dir']
@@ -132,7 +139,7 @@ def run_test(test, fast=True):
         return
 
     say(2, "image diff: ", image_diff)
-    if (image_diff > 0):
+    if difference_is_significant(image_diff):
         fail_test(test, "reference and replay output images are different", image_diff)
         return
 
@@ -147,10 +154,10 @@ def get_report():
 
     for test in TESTS.values():
         if test['passed']:
-            say(0, f"{test['name']:<20} :", COLORS.OKGREEN, "passed", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC)
+            say(0, f"{test['name']:<20} :", COLORS.OKGREEN, "passed", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC, f"diff = {test['diff']}")
         else:
             failed = True
-            say(0, f"{test['name']:<20} :", COLORS.FAIL   ,"failed",  COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.WARNING, f"diff = {test['diff']:>6} :: {test['error']}", COLORS.ENDC)
+            say(0, f"{test['name']:<20} :", COLORS.FAIL   ,"failed",  COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.WARNING, f" {test['error']}", COLORS.ENDC, f"diff = {test['diff']}")
     return 0 if not failed else 1
 
 

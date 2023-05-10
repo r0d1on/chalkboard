@@ -112,7 +112,7 @@ def main(user, ip, uri, speedup, output_dir):
     say(2, "saving js logs")
     logs = driver.execute_script("return UI.logger.logs")
     with open(f"{output_dir}/js_log.txt", "wt") as f:
-        f.write("\n".join(logs[::-1]))
+        f.write("\n".join(map(lambda l:str(l[1]) + '::' + str(l[0]), logs[::-1])))
 
     say(0, "[d]", end='')
     say(2, "closing selenium driver")
