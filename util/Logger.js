@@ -8,6 +8,7 @@ let Logger = {
         this.ctx = ctx;
         this.log_level = log_level;
         this.messages = [];
+        this.logs = [];
     }
 
     ,log : function(level, ...args) {
@@ -26,6 +27,7 @@ let Logger = {
             font_color = 'orange';
         }
 
+        this.logs.splice(0, 0, [args.join(' '), level]);
         this.messages.splice(0, 0, [args.join(' '), font_color]);
         this.messages.slice(0, 40);
 

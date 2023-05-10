@@ -123,27 +123,58 @@ let Stroke = {
 };
 Stroke = _class('Stroke', Stroke);
 
-let LineStroke = {
+let RectableStroke = {
     super :  Stroke
 
-    ,LineStroke : function(p0, p1, color, width) {
+    ,RectableStroke : function(p0, p1) {
         Stroke.__init__.call(this);
         this.p0 = p0;
         this.p1 = p1;
-        this.color = color;
-        this.width = width;
     }
 
-    ,draw : function(ctx) {
+    ,draw : function(gr) {
         if (!Stroke.draw.call(this))
             return false;
-        let lp0 = UI.global_to_local(this.p0);
-        let lp1 = UI.global_to_local(this.p1);
-        UI.draw_line(lp0, lp1, this.color, this.width * UI.viewpoint.scale, ctx);
+
+        if (gr===undefined)
+            return true;
+
+        if (
+            ((this.p0.x < gr[0].x)&&(this.p1.x < gr[0].x))||
+                ((gr[1].x < this.p0.x)&&(gr[1].x < this.p1.x))||
+                ((this.p0.y < gr[0].y)&&(this.p1.y < gr[0].y))||
+                ((gr[1].y < this.p0.y)&&(gr[1].y < this.p1.y))
+        ) {
+            return false;
+        }
+
+        return true;
     }
 
     ,rect : function() {
         return UI.get_rect([this.p0, this.p1]);
+    }
+
+
+};
+RectableStroke = _class('RectableStroke', RectableStroke);
+
+let LineStroke = {
+    super :  RectableStroke
+
+    ,LineStroke : function(p0, p1, color, width) {
+        RectableStroke.__init__.call(this, p0, p1);
+        this.color = color;
+        this.width = width;
+    }
+
+    ,draw : function(ctx, gr) {
+        if (!RectableStroke.draw.call(this, gr))
+            return false;
+
+        let lp0 = UI.global_to_local(this.p0);
+        let lp1 = UI.global_to_local(this.p1);
+        UI.draw_line(lp0, lp1, this.color, this.width * UI.viewpoint.scale, ctx);
     }
 
     ,center : function() {
@@ -265,7 +296,6 @@ let LineStroke = {
         return [ip, t, u];
     }
 
-
     ,get_point : function(point_idx) {
         return this['p' + point_idx];
     }
@@ -330,7 +360,8 @@ Stroke._register_json_class('l', LineStroke);
 
 
 let ErasureStroke = {
-    super :  Stroke
+    super :  RectableStroke
+
     ,ErasureStroke : function() {
         Stroke.__init__.call(this);
     }
@@ -379,18 +410,17 @@ ErasureStroke = _class('ErasureStroke', ErasureStroke);
 Stroke._register_json_class('d', ErasureStroke);
 
 let ImageStroke = {
-    super :  Stroke
+    super :  RectableStroke
 
     ,ImageStroke : function(image, p0, p1) {
-        Stroke.__init__.call(this);
-        this.p0 = p0;
-        this.p1 = p1;
+        RectableStroke.__init__.call(this, p0, p1);
         this.image = image;
     }
 
-    ,draw : function(ctx) {
-        if (!Stroke.draw.call(this))
+    ,draw : function(ctx, gr) {
+        if (!RectableStroke.draw.call(this, gr))
             return false;
+
         let lp0 = UI.global_to_local(this.p0);
         let lp1 = UI.global_to_local(this.p1);
         ctx.drawImage(this.image
@@ -400,10 +430,6 @@ let ImageStroke = {
             ,lp1.y - lp0.y
         );
         UI._canvas_changed();
-    }
-
-    ,rect : function() {
-        return UI.get_rect([this.p0, this.p1]);
     }
 
     ,selection : function(rect) {

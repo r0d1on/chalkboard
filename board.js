@@ -164,13 +164,12 @@ document.addEventListener('DOMContentLoaded', function(){
 
             }
 
-
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
         });
 
     }, 100);
 
-
+    window.UI = UI;
 });
 
