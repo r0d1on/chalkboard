@@ -1018,7 +1018,7 @@ let UI = {
 
         let global_viewrect = [
             UI.local_to_global(Point.new(0, 0))
-            ,UI.local_to_global(Point.new(UI.window_width, UI.window_height))
+            ,UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
         ];
 
         for(let commit_id in BOARD.strokes) {
