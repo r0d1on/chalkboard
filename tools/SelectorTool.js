@@ -16,8 +16,10 @@ import {TOOLS} from '../ui/TOOLS.js';
 let SelectorBase = {
     super : DrawToolBase
 
-    ,COLOR : '#F33A'
-    ,COLOR_COPYPASTE : '#3F3A'
+    ,COLOR_RECT : '#F33A'
+    ,COLOR_SELECTION : '#F333'
+    ,COLOR_HOTPOINT_BG : '#000A'
+    ,COLOR_HOTPOINT : '#3F3A'
     ,WIDTH : 6
     ,MODES : {
         SELECTING : 0
@@ -151,6 +153,19 @@ let SelectorBase = {
             ,[Point.new(box[3].x+d, box[3].y  ), box[3], Point.new(box[3].x  , box[3].y-d)]
         ];
 
+
+        // draw selected points
+        this._selected_strokes().map((s)=>{
+            if (is_instance_of(s, LineStroke))
+                UI.draw_line(
+                    UI.global_to_local(s.p0)
+                    ,UI.global_to_local(s.p1)
+                    ,SelectorBase.COLOR_SELECTION
+                    ,s.width * UI.viewpoint.scale * 1.3
+                    ,ctx
+                );
+        });
+
         // draw rect
         brackets.map((f)=>{
             f.map((p,pi)=>{
@@ -158,7 +173,7 @@ let SelectorBase = {
                     UI.draw_line(
                         p
                         ,f[(pi+1) % f.length]
-                        ,SelectorBase.COLOR
+                        ,SelectorBase.COLOR_RECT
                         ,W
                         ,ctx
                     );
@@ -168,8 +183,8 @@ let SelectorBase = {
         // draw selected center
         if (this.allowed_modes.has(SelectorBase.MODES.MOVING)) {
             lp = UI.global_to_local(this.selection_center);
-            UI.draw_line(lp, lp, SelectorBase.COLOR, W * 3, ctx);
-            UI.draw_line(lp, lp, SelectorBase.COLOR_COPYPASTE, W, ctx);
+            UI.draw_line(lp, lp, SelectorBase.COLOR_HOTPOINT_BG, W * 3, ctx);
+            UI.draw_line(lp, lp, SelectorBase.COLOR_HOTPOINT, W, ctx);
         }
 
         // draw ancor mode selectors
@@ -197,10 +212,10 @@ let SelectorBase = {
                 ,(box[1].y + box[2].y)/2
             );
             UI.draw_line(Point.new(lp.x-d/2, lp.y-d/2), Point.new(lp.x+d/2, lp.y+d/2)
-                , SelectorBase.COLOR_COPYPASTE, W, ctx
+                , SelectorBase.COLOR_HOTPOINT, W, ctx
             );
             UI.draw_line(Point.new(lp.x+d/2, lp.y-d/2), Point.new(lp.x-d/2, lp.y+d/2)
-                , SelectorBase.COLOR_COPYPASTE, W, ctx
+                , SelectorBase.COLOR_HOTPOINT, W, ctx
             );
         }
 
@@ -208,34 +223,22 @@ let SelectorBase = {
         if (this.allowed_modes.has(SelectorBase.MODES.COPY)) {
             lp = box[0];
             UI.draw_line(Point.new(lp.x, lp.y), Point.new(lp.x-d, lp.y-d)
-                ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+                ,SelectorBase.COLOR_HOTPOINT, W, ctx);
             UI.draw_line(Point.new(lp.x-d, lp.y-d), Point.new(lp.x, lp.y-d)
-                ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+                ,SelectorBase.COLOR_HOTPOINT, W, ctx);
             UI.draw_line(Point.new(lp.x-d, lp.y-d), Point.new(lp.x-d, lp.y)
-                ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+                ,SelectorBase.COLOR_HOTPOINT, W, ctx);
             // paste
             if (this.clipboard.length) {
                 lp = box[3];
                 UI.draw_line(Point.new(lp.x, lp.y), Point.new(lp.x-d, lp.y+d)
-                    ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+                    ,SelectorBase.COLOR_HOTPOINT, W, ctx);
                 UI.draw_line(Point.new(lp.x, lp.y), Point.new(lp.x-d, lp.y)
-                    ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+                    ,SelectorBase.COLOR_HOTPOINT, W, ctx);
                 UI.draw_line(Point.new(lp.x, lp.y), Point.new(lp.x, lp.y+d)
-                    ,SelectorBase.COLOR_COPYPASTE, W, ctx);
+                    ,SelectorBase.COLOR_HOTPOINT, W, ctx);
             }
         }
-
-        // draw over selected points
-        this._selected_strokes().map((s)=>{
-            if (is_instance_of(s, LineStroke))
-                UI.draw_line(
-                    UI.global_to_local(s.p0)
-                    ,UI.global_to_local(s.p1)
-                    ,'#F335'
-                    ,s.width * UI.viewpoint.scale * 1.3
-                    ,ctx
-                );
-        });
 
         return ctx;
     }
@@ -259,7 +262,8 @@ let SelectorBase = {
             if (pi % 2 == 0)
                 return;
             UI.draw_line(p, figure[(pi+1) % figure.length]
-                , SelectorBase.COLOR, SelectorBase.WIDTH
+                , SelectorBase.COLOR_RECT
+                , SelectorBase.WIDTH
                 , ctx);
         });
     }
