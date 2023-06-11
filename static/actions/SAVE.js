@@ -91,6 +91,7 @@ let SAVE = {
                     .then(()=>{
                         SAVE.sent_version = null; // reset remote watermark to update the whole board
                         UI.is_dirty = false;
+                        UI.toast('local.saving', 'saved to local storage', 2000);
                     }).catch((error)=>{
                         UI.log(-2, 'Error saving board to local storage:', error);
                         UI.toast('local.saving', 'Error saving board to local storage:' + error, 2000);
@@ -570,7 +571,8 @@ let SAVE = {
                 UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
 
                 loaded = SAVE._consume_message(xhr.responseText, false);
-                UI.toast('backend.loading', 'loaded from backend', 2000);
+                if (loaded)
+                    UI.toast('backend.loading', 'loaded from backend', 2000);
             })
             .catch(({xhr, error})=>{
                 UI.log(-1, 'backend unavailable: ', error, xhr);
