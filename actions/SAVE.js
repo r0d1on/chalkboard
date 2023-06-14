@@ -204,12 +204,7 @@ let SAVE = {
         return msg;
     }
 
-    ,_unpersist_board : function(json) {
-        let msg = SAVE._unpersist_message(JSON.parse(json));
-        UI.on_unpersist(msg);
-
-        BOARD.strokes = msg.strokes;
-
+    ,_update_ids : function() {
         for(let commit_id in BOARD.strokes) {
             BOARD.commit_id = (BOARD.commit_id > commit_id) ? BOARD.commit_id : commit_id;
             for(let idx in BOARD.strokes[commit_id]) {
@@ -221,6 +216,14 @@ let SAVE = {
             }
         }
         BOARD.max_commit_id = BOARD.commit_id;
+    }
+
+    ,_unpersist_board : function(json) {
+        let msg = SAVE._unpersist_message(JSON.parse(json));
+        UI.on_unpersist(msg);
+
+        BOARD.strokes = msg.strokes;
+        SAVE._update_ids();
     }
 
     ,load : function() {
@@ -374,6 +377,9 @@ let SAVE = {
             }
         }
 
+        if (!is_sync)
+            SAVE._update_ids();
+
         if (sizeof(msg.strokes) > 0) {
             BOARD.drop_redo();
 
@@ -401,7 +407,8 @@ let SAVE = {
             return false;
         } else {
             SAVE.sent_version = message_in.received_version;
-            return SAVE.sync_message(message_in, is_sync);
+            let consumed = SAVE.sync_message(message_in, is_sync);
+            return consumed;
         }
     }
 
