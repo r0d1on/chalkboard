@@ -142,13 +142,19 @@ let BOARD = {
         if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id))
             return [];
 
-        let commit_id = BOARD.commit_id;
+        let commit_id_was = BOARD.commit_id;
         BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
         UI.redraw();
 
         let undone = [];
-        for (let i in BOARD.strokes[commit_id])
-            undone.push(BOARD.strokes[commit_id][i]);
+        for(let commit_id in BOARD.strokes) {
+            if ((BOARD.commit_id < commit_id)&&(commit_id <= commit_id_was)) {
+                if (undone.length > 0)
+                    UI.log(-1, 'undoing more than 1 commit');
+                for (let i in BOARD.strokes[commit_id])
+                    undone.push(BOARD.strokes[commit_id][i]);
+            }
+        }
 
         UI.is_dirty = true;
         return undone;
@@ -156,8 +162,10 @@ let BOARD = {
 
     ,drop_redo : function() {
         if (BOARD.commit_id < BOARD.max_commit_id) {
-            for(let commit_id=BOARD.id_next(BOARD.commit_id); commit_id <= BOARD.max_commit_id; commit_id=BOARD.id_next(commit_id)) {
-                delete BOARD.strokes[commit_id];
+            for(let commit_id in BOARD.strokes) {
+                if ((BOARD.commit_id < commit_id)&&(commit_id <= BOARD.max_commit_id)) {
+                    delete BOARD.strokes[commit_id];
+                }
             }
         }
     }

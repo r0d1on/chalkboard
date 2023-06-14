@@ -25,8 +25,20 @@ let RedoTool = { // background tool
         if (BOARD.commit_id >= BOARD.max_commit_id) {
             return;
         }
+
+        let commit_id_was = BOARD.commit_id;
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
-        let redone = BOARD.strokes[BOARD.commit_id];
+        let redone = [];
+
+        for(let commit_id in BOARD.strokes) {
+            if ((BOARD.commit_id > commit_id)&&(commit_id >= commit_id_was)) {
+                if (redone.length > 0)
+                    UI.log(-1, 'redoing more than 1 commit');
+                for (let i in BOARD.strokes[commit_id])
+                    redone.push(BOARD.strokes[commit_id][i]);
+            }
+        }
+
         for(let i in redone) {
             if (is_instance_of(redone[i], ErasureStroke)) {
                 BOARD.version += 1;
