@@ -1069,20 +1069,15 @@ let UI = {
         ];
 
         // last_cached_image.draw(ctx)
-
         {
-            for(let commit_id in BOARD.strokes) { // !!!
-                if (commit_id > BOARD.commit_id)
-                    break;
-
+            BOARD.get_commits().map((commit)=>{
                 // if commit_id < last_cached_image.commit_id
                 //     continue;
-
-                for(let i in BOARD.strokes[commit_id]) {
-                    let stroke = BOARD.strokes[commit_id][i];
+                for(let i in commit) {
+                    let stroke = commit[i];
                     stroke.draw(ctx, global_viewrect);
                 }
-            }
+            })
         }
 
         extra_strokes.map((stroke)=>{

@@ -146,14 +146,12 @@ let BOARD = {
         BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
         let undone = [];
 
-        for(let commit_id in BOARD.strokes) {
-            if ((BOARD.commit_id < commit_id)&&(commit_id <= commit_id_was)) {
-                if (undone.length > 0)
-                    UI.log(-1, 'undoing more than 1 commit');
-                for (let i in BOARD.strokes[commit_id])
-                    undone.push(BOARD.strokes[commit_id][i]);
-            }
-        }
+        BOARD.get_commits(BOARD.commit_id, commit_id_was).map((commit)=>{
+            if (undone.length > 0)
+                UI.log(-1, 'undoing more than 1 commit');
+            for (let i in commit)
+                undone.push(commit[i]);
+        })
 
         UI.is_dirty = true;
         return undone;
@@ -178,14 +176,15 @@ let BOARD = {
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
         let redone = [];
 
-        for(let commit_id in BOARD.strokes) {
-            if ((BOARD.commit_id > commit_id)&&(commit_id >= commit_id_was)) {
-                if (redone.length > 0)
-                    UI.log(-1, 'redoing more than 1 commit');
-                for (let i in BOARD.strokes[commit_id])
-                    redone.push(BOARD.strokes[commit_id][i]);
-            }
-        }
+        BOARD.get_commits(BOARD.id_prev(commit_id_was), BOARD.id_prev(BOARD.commit_id)).map((commit)=>{
+            if (redone.length > 0)
+                UI.log(-1, 'redoing more than 1 commit');
+            for (let i in commit)
+                redone.push(commit[i]);
+        })
+        
+        UI.is_dirty = true;
+        return redone;
     }
 
     ,lock : function() {
@@ -238,17 +237,30 @@ let BOARD = {
     }
 
 
+    ,get_commits : function(commit_min, commit_max) {
+        // commit_min < x <= commit_max
+        let commits = [];
+        
+        commit_min = (commit_min===undefined)? null : commit_min;
+        commit_max = (commit_max===undefined)? BOARD.commit_id : commit_max;
+
+        for(let commit_id in BOARD.strokes) {
+            if (commit_id <= commit_min)
+                continue;
+            if (commit_id > commit_max)
+                continue;
+            commits.push(BOARD.strokes[commit_id])
+        };
+                
+        return commits;
+    }
+
     ,get_points : function(rect, classes) {
         let ret = [];
 
-        for(let commit_id in BOARD.strokes) { // !!!
-            if (commit_id > BOARD.commit_id)
-                continue;
-
-            let strokes_group = BOARD.strokes[commit_id];
-
-            for(let stroke_idx in strokes_group) {
-                let stroke = strokes_group[stroke_idx];
+        BOARD.get_commits().map((commit)=>{
+            for(let stroke_idx in commit) {
+                let stroke = commit[stroke_idx];
 
                 if (stroke.is_hidden())
                     continue;
@@ -260,7 +272,7 @@ let BOARD = {
                     ret.push(sel);
                 });
             }
-        }
+        })
 
         return ret;
     }
