@@ -3,6 +3,7 @@
 import {deepcopy, sizeof, has, is_instance_of} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
+
 import {Stroke, ErasureStroke} from '../util/Strokes.js';
 import {db_get, db_set} from '../util/db.js';
 
@@ -204,6 +205,14 @@ let SAVE = {
         return msg;
     }
 
+    ,_unpersist_board : function(json) {
+        let msg = SAVE._unpersist_message(JSON.parse(json));
+        UI.on_unpersist(msg);
+
+        BOARD.strokes = msg.strokes;
+        SAVE._update_ids();
+    }
+
     ,_update_ids : function() {
         for(let commit_id in BOARD.strokes) {
             BOARD.commit_id = (BOARD.commit_id > commit_id) ? BOARD.commit_id : commit_id;
@@ -216,14 +225,6 @@ let SAVE = {
             }
         }
         BOARD.max_commit_id = BOARD.commit_id;
-    }
-
-    ,_unpersist_board : function(json) {
-        let msg = SAVE._unpersist_message(JSON.parse(json));
-        UI.on_unpersist(msg);
-
-        BOARD.strokes = msg.strokes;
-        SAVE._update_ids();
     }
 
     ,load : function() {
@@ -264,33 +265,31 @@ let SAVE = {
 
     ,download_png_view : function(e, id, long) {
         UI.log(1, 'saver.download_png_view: ', id, long, e);
+
+        let c = UI.layers[UI.LAYERS.indexOf('overlay')];
+        let view_rect = [
+            UI.local_to_global(Point.new(0, 0))
+            ,UI.local_to_global(Point.new(c.width, c.height))
+        ];
+
         let a = document.createElement('a');
-        a.download = BOARD.board_name + '.png';
-        if (long) {
-            a.href = UI.layers[UI.LAYERS.indexOf('board')].toDataURL();
-        } else {
-            let overlay = UI.layers[UI.LAYERS.indexOf('overlay')];
-            let ctx = overlay.getContext('2d');
-            ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
-            ctx.fillRect(0, 0, overlay.width, overlay.height);
-            UI.redraw(ctx, true);
-            a.href = overlay.toDataURL();
-            let canvas = UI.reset_layer('overlay');
-            canvas.style['background-color'] = '';
-        }
-        a.click();
+        a.download = BOARD.board_name + '.view.png';
+
+        let canvas = UI._get_image_data(view_rect, 2.0, long, !long);
+
+        canvas.convertToBlob().then((blob)=>{
+            a.href =  URL.createObjectURL(blob);
+            UI.log(2, 'png url size', a.href.length);
+            a.click();
+        });
 
         SAVE.MENU_main.hide('save_group');
     }
 
     ,download_png_board : function(e, id, long) {
-        const scale = 2.0;
-
         UI.log(1, 'saver.download_png_board: ', id, long, e);
-        let a = document.createElement('a');
-        a.download = BOARD.board_name + '.png';
 
-        let rect = UI.get_rect(BOARD.get_points(
+        let board_rect = UI.get_rect(BOARD.get_points(
             UI.get_rect([
                 Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY),
                 Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)
@@ -303,33 +302,21 @@ let SAVE = {
                 });
             }
             return a;
-        }, []));
+        }, [])); // 100ms
 
-        let canvas = document.createElement('canvas');
-        canvas.width = (rect[1].x - rect[0].x) * scale;
-        canvas.height = (rect[1].y - rect[0].y) * scale;
+        let a = document.createElement('a');
+        a.download = BOARD.board_name + '.png';
 
-        let ctx = canvas.getContext('2d');
+        let canvas = UI._get_image_data(board_rect, 2.0, long, !long);
 
-        if (!long) {
-            ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        let vp = deepcopy(UI.viewpoint);
-        UI.viewpoint.dx = rect[0].x;
-        UI.viewpoint.dy = rect[0].y;
-        UI.viewpoint.scale = scale;
-        UI.redraw(ctx, true, [], !long);
-        UI.viewpoint = vp;
-
-        a.href = canvas.toDataURL();
-
-        a.click();
+        canvas.convertToBlob().then((blob)=>{
+            a.href =  URL.createObjectURL(blob);
+            UI.log(2, 'png url size', a.href.length);
+            a.click();
+        });
 
         SAVE.MENU_main.hide('save_group');
     }
-
 
     ,handleFiles : function(e) {
         if (e.target.files.length != 1) {
@@ -349,7 +336,7 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
     }
 
-    ,sync_message : function(msg, is_sync) {
+    ,sync_message : function(msg, is_sync) { // ###
         let max_commit = '';
         let max_stroke_id = '';
         let loaded = false;

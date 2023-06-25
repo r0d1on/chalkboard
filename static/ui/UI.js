@@ -1,5 +1,7 @@
 'use strict';
 
+import {deepcopy, obj_type} from '../base/objects.js';
+
 import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
 import {ImageStroke} from '../util/Strokes.js';
@@ -820,6 +822,50 @@ let UI = {
         return UI._handle_event('on_setting_changed', [name, value]);
     }
 
+
+    ,_get_image_data : function(rect, scale, transparent, draw_grid) {
+
+        /*
+        let canvas = document.createElement('canvas');
+        canvas.width = (rect[1].x - rect[0].x) * scale;
+        canvas.height = (rect[1].y - rect[0].y) * scale;
+        canvas.convertToBlob = ()=>{
+            return new Promise((resolve, reject) => {
+                try {
+                    canvas.toBlob(resolve)
+                } catch(ex) {
+                    reject(ex)
+                }
+            });
+        }
+        /**/
+
+        /**/
+        let canvas = new OffscreenCanvas(
+            (rect[1].x - rect[0].x) * scale,
+            (rect[1].y - rect[0].y) * scale
+        );
+        /**/
+
+        let ctx = canvas.getContext('2d');
+
+        if (!transparent) {
+            ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+        }
+
+        let vp = deepcopy(UI.viewpoint);
+        UI.viewpoint.dx = rect[0].x;
+        UI.viewpoint.dy = rect[0].y;
+        UI.viewpoint.scale = scale;
+        UI.redraw(ctx, true, [], transparent, draw_grid);
+        UI.viewpoint = vp;
+
+        return canvas;
+    }
+
     ,on_stale : function() {
         UI.log(1, 'ui.on_stale');
         return UI._handle_event('on_stale', []);
@@ -996,12 +1042,13 @@ let UI = {
         }
     }
 
-    ,_redraw : function(target_ctx, extra_strokes, draw_grid) {
+    ,_redraw : function(target_ctx, extra_strokes, transparent, draw_grid) {
         let ctx = null;
         let ctx_back = null;
 
         extra_strokes = (extra_strokes===undefined)?[]:extra_strokes;
         draw_grid = (draw_grid===undefined)?UI.GRID_MODE.value:draw_grid;
+        transparent = (transparent===undefined)?false:transparent;
 
         if (target_ctx === undefined) {
             UI.update_layers(true);
@@ -1012,22 +1059,29 @@ let UI = {
             ctx_back = target_ctx;
         }
 
-        UI.redraw_background(ctx_back, draw_grid);
+        UI.redraw_background(ctx_back, transparent, draw_grid);
 
         UI.on_before_redraw();
 
         let global_viewrect = [
-            UI.local_to_global(Point.new(0, 0))
-            ,UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
+            UI.local_to_global(Point.new(0, 0)),
+            UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
         ];
 
-        for(let commit_id in BOARD.strokes) {
-            if (commit_id > BOARD.commit_id)
-                break;
+        // last_cached_image.draw(ctx)
 
-            for(let i in BOARD.strokes[commit_id]) {
-                let stroke = BOARD.strokes[commit_id][i];
-                stroke.draw(ctx, global_viewrect);
+        {
+            for(let commit_id in BOARD.strokes) { // !!!
+                if (commit_id > BOARD.commit_id)
+                    break;
+
+                // if commit_id < last_cached_image.commit_id
+                //     continue;
+
+                for(let i in BOARD.strokes[commit_id]) {
+                    let stroke = BOARD.strokes[commit_id][i];
+                    stroke.draw(ctx, global_viewrect);
+                }
             }
         }
 
@@ -1042,14 +1096,14 @@ let UI = {
         UI._canvas_changed();
     }
 
-    ,redraw : function(target_ctx, immediate, extra_strokes, draw_grid) {
+    ,redraw : function(target_ctx, immediate, extra_strokes, transparent, draw_grid) {
         if (immediate) {
-            UI._redraw(target_ctx, extra_strokes, draw_grid);
+            UI._redraw(target_ctx, extra_strokes, transparent, draw_grid);
         } else {
             if (!UI._redrawing) {
                 UI._redrawing = true;
                 window.requestAnimationFrame(()=>{
-                    UI._redraw(target_ctx, extra_strokes, draw_grid);
+                    UI._redraw(target_ctx, extra_strokes, transparent, draw_grid);
                     UI._redrawing = false;
                 });
             }
@@ -1067,18 +1121,27 @@ let UI = {
         }
     }
 
-    ,redraw_background : function(ctx, draw_grid) {
+    ,redraw_background : function(ctx, transparent, draw_grid) {
         const width = ctx.canvas.width;
         const height = ctx.canvas.height;
 
         let background_colors = ['#FFF','#111','#030'];
         let grid_colors = [
-            ['#333', '#CCC']
-            ,['#CCC', '#333']
-            ,['#CCC', '#222']
+            ['#333', '#CCC'],
+            ['#CCC', '#333'],
+            ['#CCC', '#222']
         ];
 
-        ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
+        let ctx_type = obj_type(ctx);
+
+        if (!transparent) {
+            if (ctx_type == 'OffscreenCanvasRenderingContext2D') {
+                ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
+                ctx.fillRect(0, 0, width, height);
+            } else if (ctx_type == 'CanvasRenderingContext2D') {
+                ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
+            }
+        }
 
         if (!draw_grid)
             return;
@@ -1120,6 +1183,29 @@ let UI = {
     ,log : function(...args) {
         UI.logger.log(...args);
     }
+
+    ,timeit : function(callable, rounds) {
+        rounds = (rounds===undefined)?10:rounds;
+
+        let times = [];
+        for(let i=0; i<rounds; i++) {
+            times.push((new(Date)).valueOf());
+            callable();
+            times[i] = (new(Date)).valueOf() - times[i];
+        }
+
+        UI.log(0, 'times:', times);
+        UI.log(0, 'avg:', times.reduce((a, v)=>a + v, 0) / rounds);
+    }
+
+    /*
+    times: (10) [1366, 1080, 1079, 1131, 1076, 1134, 1076, 1147, 1136, 1076]
+    Logger.js:20 avg: 1130.1
+
+    times: (10) [580, 463, 471, 467, 492, 470, 462, 461, 466, 446]
+    Logger.js:20 avg: 477.8
+    */
+
 
 };
 

@@ -18,6 +18,10 @@ function sizeof(o) {
     return Object.keys(o).length;
 }
 
+function obj_type(o) {
+    return ('' + o).split(/ |\[|\]/g)[2];
+}
+
 function deepcopy(o) {
     if (typeof(o) in {'number':1, 'string':1}) {
         return o;
@@ -26,7 +30,7 @@ function deepcopy(o) {
     } else if (o==null) {
         return null;
     } else if (typeof(o)=='object') {
-        let obj = ('' + o).split(/ |\[|\]/g)[2];
+        let obj = obj_type(o);
         let co = null;
         if (obj == 'Object') {
             if (typeof(o['copy']) == 'function') {
@@ -213,4 +217,4 @@ function _new(T, params, dry) {
     return obj;
 }
 
-export {copy, sizeof, deepcopy, extend, _class, _new, has, is_instance_of};
+export {copy, sizeof, deepcopy, extend, _class, _new, has, is_instance_of, obj_type};
