@@ -22,7 +22,7 @@ let BOARD = {
         let width = params.width||BRUSH.get_local_width();
         let color = params.color;
         let pressure = params.pressure;
-        if (pressure===undefined)
+        if (pressure === undefined)
             pressure = lp1.pressure||lp0.pressure;
 
         if (pressure) {
@@ -111,8 +111,8 @@ let BOARD = {
         ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
         ctx.clearRect(brect[0].x - maxw
             , brect[0].y - maxw
-            , brect[1].x - brect[0].x + 2*maxw
-            , brect[1].y - brect[0].y + 2*maxw
+            , brect[1].x - brect[0].x + 2 * maxw
+            , brect[1].y - brect[0].y + 2 * maxw
         );
 
         if (clear)
@@ -138,15 +138,14 @@ let BOARD = {
         BOARD.op_commit();
     }
 
-    ,undo : function() {
+    ,undo : function() { // ###
         if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id))
             return [];
 
         let commit_id_was = BOARD.commit_id;
         BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
-        UI.redraw();
-
         let undone = [];
+
         for(let commit_id in BOARD.strokes) {
             if ((BOARD.commit_id < commit_id)&&(commit_id <= commit_id_was)) {
                 if (undone.length > 0)
@@ -170,6 +169,24 @@ let BOARD = {
         }
     }
 
+    ,redo : function() { // ###
+        if (BOARD.commit_id >= BOARD.max_commit_id) {
+            return [];
+        }
+
+        let commit_id_was = BOARD.commit_id;
+        BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
+        let redone = [];
+
+        for(let commit_id in BOARD.strokes) {
+            if ((BOARD.commit_id > commit_id)&&(commit_id >= commit_id_was)) {
+                if (redone.length > 0)
+                    UI.log(-1, 'redoing more than 1 commit');
+                for (let i in BOARD.strokes[commit_id])
+                    redone.push(BOARD.strokes[commit_id][i]);
+            }
+        }
+    }
 
     ,lock : function() {
         if (BOARD.locked)
@@ -196,7 +213,7 @@ let BOARD = {
         BOARD.max_commit_id = BOARD.commit_id;
     }
 
-    ,commit_stroke : function(stroke) {
+    ,commit_stroke : function(stroke) { // ###
         stroke.version = BOARD.version;
 
         let id_next = BOARD.id_next(BOARD.stroke_id, 5);
@@ -224,7 +241,7 @@ let BOARD = {
     ,get_points : function(rect, classes) {
         let ret = [];
 
-        for(let commit_id in BOARD.strokes) {
+        for(let commit_id in BOARD.strokes) { // !!!
             if (commit_id > BOARD.commit_id)
                 continue;
 
