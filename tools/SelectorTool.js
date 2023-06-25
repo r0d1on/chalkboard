@@ -269,7 +269,7 @@ let SelectorBase = {
     }
 
 
-    ,_scale_selection : function(lpc, cx, cy) {
+    ,_scale_selection : function(lpc, cx, cy) { // ###
         this.selection.map((sel)=>{
             let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
             pnt.x -= this.selection_center.x;
@@ -294,7 +294,7 @@ let SelectorBase = {
     }
 
 
-    ,_repaint_selection : function(color) {
+    ,_repaint_selection : function(color) { // ###
         console.log(color);
         this.selection.map((sel)=>{
             let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
@@ -305,7 +305,7 @@ let SelectorBase = {
     }
 
 
-    ,_move_selection : function(dx, dy) {
+    ,_move_selection : function(dx, dy) { // ###
         this.selection.map((sel)=>{
             let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
             pnt.x += dx;
@@ -327,7 +327,7 @@ let SelectorBase = {
         }
     }
 
-    ,move_rotate : function(lp) {
+    ,move_rotate : function(lp) { // ###
         if (this.activated) {
             let lcp = UI.global_to_local(this.selection_center);
             let p0 = this.last_point.sub(lcp);
@@ -413,12 +413,9 @@ let SelectorBase = {
 
         if (this.cutter == 1) { // cutter mode - add intersected strokes
             // collect touched committed strokes on the board
-            for(let commit_id in BOARD.strokes) {
-                if (commit_id > BOARD.commit_id)
-                    continue;
-                let strokes_group = BOARD.strokes[commit_id];
-                for(let i in strokes_group) {
-                    let stroke = strokes_group[i];
+            BOARD.get_commits().map((commit)=>{
+                for(let i in commit) {
+                    let stroke = commit[i];
                     if (stroke.is_hidden()||(!is_instance_of(stroke, LineStroke)))
                         continue;
                     lbox.map((seg)=>{
@@ -429,7 +426,7 @@ let SelectorBase = {
                         }
                     });
                 }
-            }
+            });
         }
 
         if (this.selection.length > 0) {
@@ -460,7 +457,7 @@ let SelectorBase = {
                     }
 
                     // hide original stroke
-                    stroke.erased = '+';
+                    stroke.erased = '+'; // ###
                     // append splits
                     stroke_splits.map((split)=>{
                         this.extra_strokes.push(split);
@@ -485,7 +482,7 @@ let SelectorBase = {
         }
     }
 
-    ,_replace_changed : function() {
+    ,_replace_changed : function() { // ###
         let changed_strokes = [];
         let old_strokes = [];
         for(let id in this.original_strokes) {

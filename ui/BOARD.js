@@ -22,7 +22,7 @@ let BOARD = {
         let width = params.width||BRUSH.get_local_width();
         let color = params.color;
         let pressure = params.pressure;
-        if (pressure===undefined)
+        if (pressure === undefined)
             pressure = lp1.pressure||lp0.pressure;
 
         if (pressure) {
@@ -111,8 +111,8 @@ let BOARD = {
         ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
         ctx.clearRect(brect[0].x - maxw
             , brect[0].y - maxw
-            , brect[1].x - brect[0].x + 2*maxw
-            , brect[1].y - brect[0].y + 2*maxw
+            , brect[1].x - brect[0].x + 2 * maxw
+            , brect[1].y - brect[0].y + 2 * maxw
         );
 
         if (clear)
@@ -138,23 +138,20 @@ let BOARD = {
         BOARD.op_commit();
     }
 
-    ,undo : function() {
+    ,undo : function() { // ###
         if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id))
             return [];
 
         let commit_id_was = BOARD.commit_id;
         BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
-        UI.redraw();
-
         let undone = [];
-        for(let commit_id in BOARD.strokes) {
-            if ((BOARD.commit_id < commit_id)&&(commit_id <= commit_id_was)) {
-                if (undone.length > 0)
-                    UI.log(-1, 'undoing more than 1 commit');
-                for (let i in BOARD.strokes[commit_id])
-                    undone.push(BOARD.strokes[commit_id][i]);
-            }
-        }
+
+        BOARD.get_commits(BOARD.commit_id, commit_id_was).map((commit)=>{
+            if (undone.length > 0)
+                UI.log(-1, 'undoing more than 1 commit');
+            for (let i in commit)
+                undone.push(commit[i]);
+        });
 
         UI.is_dirty = true;
         return undone;
@@ -170,6 +167,25 @@ let BOARD = {
         }
     }
 
+    ,redo : function() { // ###
+        if (BOARD.commit_id >= BOARD.max_commit_id) {
+            return [];
+        }
+
+        let commit_id_was = BOARD.commit_id;
+        BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
+        let redone = [];
+
+        BOARD.get_commits(BOARD.id_prev(commit_id_was), BOARD.id_prev(BOARD.commit_id)).map((commit)=>{
+            if (redone.length > 0)
+                UI.log(-1, 'redoing more than 1 commit');
+            for (let i in commit)
+                redone.push(commit[i]);
+        });
+
+        UI.is_dirty = true;
+        return redone;
+    }
 
     ,lock : function() {
         if (BOARD.locked)
@@ -196,7 +212,7 @@ let BOARD = {
         BOARD.max_commit_id = BOARD.commit_id;
     }
 
-    ,commit_stroke : function(stroke) {
+    ,commit_stroke : function(stroke) { // ###
         stroke.version = BOARD.version;
 
         let id_next = BOARD.id_next(BOARD.stroke_id, 5);
@@ -221,17 +237,30 @@ let BOARD = {
     }
 
 
+    ,get_commits : function(commit_min, commit_max) {
+        // commit_min < x <= commit_max
+        let commits = [];
+
+        commit_min = (commit_min===undefined)? null : commit_min;
+        commit_max = (commit_max===undefined)? BOARD.commit_id : commit_max;
+
+        for(let commit_id in BOARD.strokes) {
+            if (commit_id <= commit_min)
+                continue;
+            if (commit_id > commit_max)
+                continue;
+            commits.push(BOARD.strokes[commit_id]);
+        }
+
+        return commits;
+    }
+
     ,get_points : function(rect, classes) {
         let ret = [];
 
-        for(let commit_id in BOARD.strokes) {
-            if (commit_id > BOARD.commit_id)
-                continue;
-
-            let strokes_group = BOARD.strokes[commit_id];
-
-            for(let stroke_idx in strokes_group) {
-                let stroke = strokes_group[stroke_idx];
+        BOARD.get_commits().map((commit)=>{
+            for(let stroke_idx in commit) {
+                let stroke = commit[stroke_idx];
 
                 if (stroke.is_hidden())
                     continue;
@@ -243,7 +272,7 @@ let BOARD = {
                     ret.push(sel);
                 });
             }
-        }
+        });
 
         return ret;
     }

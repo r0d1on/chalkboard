@@ -64,12 +64,9 @@ let EraserTool = {
             diameter /= UI.viewpoint.scale;
 
         // collect touched committed strokes on the board
-        for(let commit_id in BOARD.strokes) {
-            if (commit_id > BOARD.commit_id)
-                continue;
-            let strokes_group = BOARD.strokes[commit_id];
-            for(let i in strokes_group) {
-                let stroke = strokes_group[i];
+        BOARD.get_commits().map((commit)=>{
+            for(let i in commit) {
+                let stroke = commit[i];
                 if (stroke.is_hidden())
                     continue;
                 if (stroke.touched_by(gp, diameter)) {
@@ -79,7 +76,7 @@ let EraserTool = {
                     stroke.flip_by(BOARD.stroke_id);
                 }
             }
-        }
+        });
 
         // check touched buffered strokes
         this._buffer_strokes = this._buffer_strokes.reduce((buf, stroke)=>{
@@ -120,7 +117,7 @@ let EraserTool = {
         let erased = [];
 
         // "unerase" directly erased strokes
-        for(let commit_id in BOARD.strokes) {
+        for(let commit_id in BOARD.strokes) { // TODO: reduce search, look for linked strokes only
             let strokes_group = BOARD.strokes[commit_id];
             for(let i in strokes_group) {
                 if (strokes_group[i].erased==BOARD.stroke_id) {
@@ -135,7 +132,7 @@ let EraserTool = {
             ErasureStroke.flip_strokes(erased, undefined, true);
         }
 
-        // add new strokes created
+        // add new strokes created to board buffer
         this._buffer_strokes.map((stroke)=>{
             BOARD.add_line(
                 UI.global_to_local(stroke.p0)

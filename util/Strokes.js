@@ -32,7 +32,7 @@ let Stroke = {
         );
     }
 
-    ,flip_by : function(eraser_id) {
+    ,flip_by : function(eraser_id) { // ###
         if (this.erased!=undefined) {
             if (this.erased[0]=='-') {
                 this.erased = this.erased.substr(1);
@@ -367,7 +367,7 @@ let ErasureStroke = {
     }
     ,draw : function(){}
 
-    ,flip_strokes : function(strokes, eraser_id, finalize) {
+    ,flip_strokes : function(strokes, eraser_id, finalize) { // ###
         let flipped = strokes.reduce((sub, stroke)=>{
             stroke.flip_by(eraser_id).map((flipped_stroke)=>{
                 sub.push(flipped_stroke);
@@ -384,7 +384,7 @@ let ErasureStroke = {
 
     ,flip_by : function(eraser_id) { // eslint-disable-line no-unused-vars
         let flipped = [];
-        for(let commit_id in BOARD.strokes) {
+        for(let commit_id in BOARD.strokes) { // TODO: reduce search, look for linked strokes only
             let strokes_group = BOARD.strokes[commit_id];
             for(let i in strokes_group) {
                 if (strokes_group[i].erased_by(this.stroke_id))
