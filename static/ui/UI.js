@@ -1077,7 +1077,7 @@ let UI = {
                     let stroke = commit[i];
                     stroke.draw(ctx, global_viewrect);
                 }
-            })
+            });
         }
 
         extra_strokes.map((stroke)=>{

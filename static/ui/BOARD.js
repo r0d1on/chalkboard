@@ -151,7 +151,7 @@ let BOARD = {
                 UI.log(-1, 'undoing more than 1 commit');
             for (let i in commit)
                 undone.push(commit[i]);
-        })
+        });
 
         UI.is_dirty = true;
         return undone;
@@ -181,8 +181,8 @@ let BOARD = {
                 UI.log(-1, 'redoing more than 1 commit');
             for (let i in commit)
                 redone.push(commit[i]);
-        })
-        
+        });
+
         UI.is_dirty = true;
         return redone;
     }
@@ -240,7 +240,7 @@ let BOARD = {
     ,get_commits : function(commit_min, commit_max) {
         // commit_min < x <= commit_max
         let commits = [];
-        
+
         commit_min = (commit_min===undefined)? null : commit_min;
         commit_max = (commit_max===undefined)? BOARD.commit_id : commit_max;
 
@@ -249,9 +249,9 @@ let BOARD = {
                 continue;
             if (commit_id > commit_max)
                 continue;
-            commits.push(BOARD.strokes[commit_id])
-        };
-                
+            commits.push(BOARD.strokes[commit_id]);
+        }
+
         return commits;
     }
 
@@ -272,7 +272,7 @@ let BOARD = {
                     ret.push(sel);
                 });
             }
-        })
+        });
 
         return ret;
     }

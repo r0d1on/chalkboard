@@ -50,7 +50,7 @@ let SAVE = {
 
                 stroke.commit_id = commit_id;
                 stroke.stroke_idx = stroke_idx;
-                if (stroke.version===undefined)
+                if (stroke.version === undefined)
                     stroke.version = BOARD.version;
 
                 out_strokes[commit_id] = out_strokes[commit_id] || {};
@@ -289,7 +289,7 @@ let SAVE = {
     ,download_png_board : function(e, id, long) {
         UI.log(1, 'saver.download_png_board: ', id, long, e);
 
-        let board_rect = UI.get_rect(BOARD.get_points(
+        let board_rect = UI.get_rect(BOARD.get_points( // TODO: keep track of board rect
             UI.get_rect([
                 Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY),
                 Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)

@@ -426,7 +426,7 @@ let SelectorBase = {
                         }
                     });
                 }
-            })
+            });
         }
 
         if (this.selection.length > 0) {

@@ -73,10 +73,10 @@ let EraserTool = {
                     let clean_stroke = stroke.copy();
                     clean_stroke.erased=undefined;
                     erased.push(clean_stroke);
-                    stroke.flip_by(BOARD.stroke_id); // ###
+                    stroke.flip_by(BOARD.stroke_id);
                 }
             }
-        })
+        });
 
         // check touched buffered strokes
         this._buffer_strokes = this._buffer_strokes.reduce((buf, stroke)=>{
