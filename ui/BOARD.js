@@ -139,14 +139,16 @@ let BOARD = {
     }
 
     ,undo : function() { // ###
-        if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id))
+        let commit_id_prev = BOARD.id_prev(BOARD.commit_id);
+
+        if (BOARD.commit_id == commit_id_prev)
             return [];
 
         let commit_id_was = BOARD.commit_id;
-        BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
+        BOARD.commit_id = commit_id_prev;
         let undone = [];
 
-        BOARD.get_commits(BOARD.commit_id, commit_id_was).map((commit)=>{
+        BOARD.get_commits(commit_id_prev, commit_id_was).map((commit)=>{
             if (undone.length > 0)
                 UI.log(-1, 'undoing more than 1 commit');
             for (let i in commit)
@@ -168,15 +170,14 @@ let BOARD = {
     }
 
     ,redo : function() { // ###
-        if (BOARD.commit_id >= BOARD.max_commit_id) {
+        if (BOARD.commit_id >= BOARD.max_commit_id)
             return [];
-        }
 
         let commit_id_was = BOARD.commit_id;
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
         let redone = [];
 
-        BOARD.get_commits(BOARD.id_prev(commit_id_was), BOARD.id_prev(BOARD.commit_id)).map((commit)=>{
+        BOARD.get_commits(commit_id_was, BOARD.commit_id).map((commit)=>{
             if (redone.length > 0)
                 UI.log(-1, 'redoing more than 1 commit');
             for (let i in commit)
@@ -241,15 +242,12 @@ let BOARD = {
         // commit_min < x <= commit_max
         let commits = [];
 
-        commit_min = (commit_min===undefined)? null : commit_min;
+        commit_min = (commit_min===undefined)? '' : commit_min;
         commit_max = (commit_max===undefined)? BOARD.commit_id : commit_max;
 
         for(let commit_id in BOARD.strokes) {
-            if (commit_id <= commit_min)
-                continue;
-            if (commit_id > commit_max)
-                continue;
-            commits.push(BOARD.strokes[commit_id]);
+            if ((commit_min < commit_id)&&(commit_id <= commit_max))
+                commits.push(BOARD.strokes[commit_id]);
         }
 
         return commits;

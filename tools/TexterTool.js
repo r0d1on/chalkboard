@@ -177,6 +177,9 @@ let TexterTool = {
             BOARD.flush_commit();
 
         this.draw_cursor(lcursor);
+
+        UI.redraw();
+
         return true;
     }
 
