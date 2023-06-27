@@ -139,14 +139,16 @@ let BOARD = {
     }
 
     ,undo : function() { // ###
-        if (BOARD.commit_id == BOARD.id_prev(BOARD.commit_id))
+        let commit_id_prev = BOARD.id_prev(BOARD.commit_id);
+
+        if (BOARD.commit_id == commit_id_prev)
             return [];
 
         let commit_id_was = BOARD.commit_id;
-        BOARD.commit_id = BOARD.id_prev(BOARD.commit_id);
+        BOARD.commit_id = commit_id_prev;
         let undone = [];
 
-        BOARD.get_commits(BOARD.commit_id, commit_id_was).map((commit)=>{
+        BOARD.get_commits(commit_id_prev, commit_id_was).map((commit)=>{
             if (undone.length > 0)
                 UI.log(-1, 'undoing more than 1 commit');
             for (let i in commit)
@@ -168,9 +170,8 @@ let BOARD = {
     }
 
     ,redo : function() { // ###
-        if (BOARD.commit_id >= BOARD.max_commit_id) {
+        if (BOARD.commit_id >= BOARD.max_commit_id)
             return [];
-        }
 
         let commit_id_was = BOARD.commit_id;
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
