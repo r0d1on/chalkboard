@@ -235,10 +235,11 @@ let SAVE = {
                     return;
                 }
                 SAVE._unpersist_board(board_data);
+                UI.is_dirty = false;
                 SAVE.sent_version = null; // reset remote watermark to update the whole board
+                UI.on_key_down('Escape'); // force cancel active tool if any
                 UI.redraw();
                 UI.toast('local.loading', 'loaded from local storage', 2000);
-                UI.is_dirty = false;
             }).catch((error)=>{
                 UI.log(-2, 'Error loading board from local storage:', error);
                 UI.toast('local.loading', 'Error loading board from local storage:' + error, 2000);
