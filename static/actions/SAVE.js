@@ -32,9 +32,10 @@ let SAVE = {
     ,_strokes_to_save : function(from_version) {
         let out_strokes = {};
 
-        for(let commit_id in BOARD.strokes) {
-            for(let stroke_idx in BOARD.strokes[commit_id]) {
-                let stroke = BOARD.strokes[commit_id][stroke_idx];
+        BOARD.get_commits().map((commit)=>{
+            for(let stroke_idx in commit) {
+                let stroke = commit[stroke_idx];
+                let commit_id = stroke.commit_id;
 
                 if (from_version === undefined) {
                     if (stroke.is_hidden())
@@ -48,7 +49,7 @@ let SAVE = {
                         continue;
                 }
 
-                stroke.commit_id = commit_id;
+                // stroke.commit_id = commit_id;
                 stroke.stroke_idx = stroke_idx;
                 if (stroke.version === undefined)
                     stroke.version = BOARD.version;
@@ -57,7 +58,8 @@ let SAVE = {
 
                 out_strokes[commit_id][sizeof(out_strokes[commit_id])] = stroke.to_json();
             }
-        }
+
+        });
 
         return out_strokes;
     }
