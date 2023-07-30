@@ -623,12 +623,11 @@ let UI = {
                 UI.__tl = UI.__tl.slice(1);
 
             // board rect boundaries
-            let p0 = UI.global_to_local(Point.new(BOARD.XList.a[0], BOARD.YList.a[0]));
-            let p1 = UI.global_to_local(Point.new(BOARD.XList.a[BOARD.XList.a.length - 1], BOARD.YList.a[BOARD.YList.a.length - 1]));
-            UI.draw_overlay_stroke(p0, Point.new(p0.x,p1.y), {color:'555',width:1});
-            UI.draw_overlay_stroke(Point.new(p0.x,p1.y), p1, {color:'555',width:1});
-            UI.draw_overlay_stroke(p1, Point.new(p1.x,p0.y), {color:'555',width:1});
-            UI.draw_overlay_stroke(Point.new(p1.x,p0.y), p0, {color:'555',width:1});
+            let p = BOARD.get_global_rect().map((point)=>{return UI.global_to_local(point);});
+            UI.draw_overlay_stroke(p[0], Point.new(p[0].x, p[1].y), {color:'555',width:1});
+            UI.draw_overlay_stroke(Point.new(p[0].x, p[1].y), p[1], {color:'555',width:1});
+            UI.draw_overlay_stroke(p[1], Point.new(p[1].x, p[0].y), {color:'555',width:1});
+            UI.draw_overlay_stroke(Point.new(p[1].x, p[0].y), p[0], {color:'555',width:1});
         }
     }
 

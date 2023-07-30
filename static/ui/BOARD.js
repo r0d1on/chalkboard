@@ -285,6 +285,13 @@ let BOARD = {
         BOARD.YList.remove(stroke);
     }
 
+    ,get_global_rect : function() {
+        return [
+            Point.new(BOARD.XList.a[0], BOARD.YList.a[0]),
+            Point.new(BOARD.XList.a[BOARD.XList.a.length-1], BOARD.YList.a[BOARD.YList.a.length-1])
+        ];
+    }
+
     ,get_commits : function(commit_min, commit_max) {
         // commit_min < x <= commit_max
         let commits = [];
