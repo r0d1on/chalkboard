@@ -71,6 +71,11 @@ let SLIDER = {
         if ((rect===undefined)||(rect==null))
             return;
 
+        if (rect[1].x - rect[0].x <= 0) {
+            console.error('SLIDER, erroneous rect: ', rect);
+            return;
+        }
+
         if ((rect0[0].x==rect[0].x)&&(rect0[0].y==rect[0].y)
         //&&(rect0[1].X==rect[1].X)&&(rect0[1].Y==rect[1].Y)
         )

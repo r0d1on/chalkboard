@@ -77,6 +77,10 @@ let UI = {
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
+        if (scale<=0) {
+            console.error('UI.viewpoint_set : negative scale');
+            return;
+        }
         UI.viewpoint.dx = dx;
         UI.viewpoint.dy = dy;
         UI.viewpoint.scale = scale;

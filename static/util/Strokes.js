@@ -140,11 +140,11 @@ let RectableStroke = {
         if (gr===undefined)
             return true;
 
-        if (
+        if ( // if stroke is out of viewport bounds
             ((this.p0.x < gr[0].x)&&(this.p1.x < gr[0].x))||
-                ((gr[1].x < this.p0.x)&&(gr[1].x < this.p1.x))||
-                ((this.p0.y < gr[0].y)&&(this.p1.y < gr[0].y))||
-                ((gr[1].y < this.p0.y)&&(gr[1].y < this.p1.y))
+            ((gr[1].x < this.p0.x)&&(gr[1].x < this.p1.x))||
+            ((this.p0.y < gr[0].y)&&(this.p1.y < gr[0].y))||
+            ((gr[1].y < this.p0.y)&&(gr[1].y < this.p1.y))
         ) {
             return false;
         }
