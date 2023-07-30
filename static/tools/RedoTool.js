@@ -24,10 +24,10 @@ let RedoTool = { // background tool
     ,on_activated : function() {
         let redone = BOARD.redo();
         redone.map((stroke)=>{
-            if (is_instance_of(stroke, ErasureStroke)) {
-                BOARD.version += 1;
+            BOARD.version += 1;
+            BOARD.register(stroke);
+            if (is_instance_of(stroke, ErasureStroke))
                 stroke.flip_by();
-            }
         });
         UI.redraw();
     }

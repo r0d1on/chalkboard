@@ -211,7 +211,7 @@ let SAVE = {
         let msg = SAVE._unpersist_message(JSON.parse(json));
         UI.on_unpersist(msg);
 
-        BOARD.strokes = msg.strokes;
+        BOARD.register(msg.strokes, true);
         SAVE._update_ids();
     }
 
@@ -339,7 +339,7 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
     }
 
-    ,sync_message : function(msg, is_sync) { // ###
+    ,sync_message : function(msg, is_sync) {
         let max_commit = '';
         let max_stroke_id = '';
         let loaded = false;
@@ -358,8 +358,9 @@ let SAVE = {
                 let in_stroke = in_strokes[in_idx];
                 let own_stroke = BOARD.strokes[in_commit][in_idx];
 
-                if ((own_stroke===undefined)||(in_stroke['version'] > own_stroke['version']))
-                    BOARD.strokes[in_commit][in_idx] = in_stroke;
+                if ((own_stroke===undefined)||(in_stroke['version'] > own_stroke['version'])) {
+                    BOARD.register(in_stroke);
+                }
 
                 BOARD.version = (BOARD.version > in_stroke.version) ? BOARD.version : in_stroke.version;
                 max_commit = (max_commit > in_stroke.commit_id) ? max_commit : in_stroke.commit_id;

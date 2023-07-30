@@ -36,7 +36,7 @@ let Stroke = {
         if (this.erased!=undefined) {
             if (this.erased[0]=='-') {
                 this.erased = this.erased.substr(1);
-                if ((eraser_id!==undefined)&&(this.erased!=eraser_id)) {
+                if ( (eraser_id!==undefined) && (this.erased!=eraser_id) ) {
                     //throw 'stroke ' + this.stroke_id + ' flipped from '+this.erased+' by '+eraser_id;
                     console.error('stroke ' + this.stroke_id + ' flipped from ' + this.erased + ' by ' + eraser_id);
                     this.erased = eraser_id;
@@ -47,6 +47,7 @@ let Stroke = {
         } else {
             this.erased = eraser_id;
         }
+        BOARD.register(this);
         return [this];
     }
 
@@ -61,7 +62,7 @@ let Stroke = {
         for(const k in this) {
             if ((has(this, k))&&(!k.startsWith('__'))&&(this[k]!==undefined)) {
                 let value = this[k];
-                if ((typeof(value)=='object')&&('str' in value)&&(typeof(value['str']) == 'function')) {
+                if ((typeof(value) == 'object') && ('str' in value) && (typeof(value['str']) == 'function')) {
                     ret.push(k + ':' + value.str());
                 } else {
                     ret.push(k + ':' + value);
@@ -358,9 +359,8 @@ let LineStroke = {
 LineStroke = _class('LineStroke', LineStroke);
 Stroke._register_json_class('l', LineStroke);
 
-
 let ErasureStroke = {
-    super :  RectableStroke
+    super :  Stroke
 
     ,ErasureStroke : function() {
         Stroke.__init__.call(this);
@@ -531,4 +531,4 @@ let ImageStroke = {
 ImageStroke = _class('ImageStroke', ImageStroke);
 Stroke._register_json_class('i', ImageStroke);
 
-export {Stroke, LineStroke, ErasureStroke, ImageStroke};
+export {Stroke, RectableStroke, LineStroke, ErasureStroke, ImageStroke};
