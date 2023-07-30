@@ -211,7 +211,7 @@ let SAVE = {
         let msg = SAVE._unpersist_message(JSON.parse(json));
         UI.on_unpersist(msg);
 
-        BOARD.strokes = msg.strokes;
+        BOARD.register(msg.strokes, true);
         SAVE._update_ids();
     }
 
@@ -292,20 +292,7 @@ let SAVE = {
     ,download_png_board : function(e, id, long) {
         UI.log(1, 'saver.download_png_board: ', id, long, e);
 
-        let board_rect = UI.get_rect(BOARD.get_points( // TODO: keep track of board rect
-            UI.get_rect([
-                Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY),
-                Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)
-            ])
-        ).reduce((a, s)=>{
-            let stroke = BOARD.strokes[s.commit_id][s.stroke_idx];
-            if (!is_instance_of(stroke, ErasureStroke)) {
-                stroke.rect().map((p)=>{
-                    a.push(p);
-                });
-            }
-            return a;
-        }, [])); // 100ms
+        let board_rect =  BOARD.get_global_rect();
 
         let a = document.createElement('a');
         a.download = BOARD.board_name + '.png';
@@ -339,7 +326,7 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
     }
 
-    ,sync_message : function(msg, is_sync) { // ###
+    ,sync_message : function(msg, is_sync) {
         let max_commit = '';
         let max_stroke_id = '';
         let loaded = false;
@@ -358,8 +345,9 @@ let SAVE = {
                 let in_stroke = in_strokes[in_idx];
                 let own_stroke = BOARD.strokes[in_commit][in_idx];
 
-                if ((own_stroke===undefined)||(in_stroke['version'] > own_stroke['version']))
-                    BOARD.strokes[in_commit][in_idx] = in_stroke;
+                if ((own_stroke===undefined)||(in_stroke['version'] > own_stroke['version'])) {
+                    BOARD.register(in_stroke);
+                }
 
                 BOARD.version = (BOARD.version > in_stroke.version) ? BOARD.version : in_stroke.version;
                 max_commit = (max_commit > in_stroke.commit_id) ? max_commit : in_stroke.commit_id;

@@ -3,7 +3,8 @@
 import {sizeof, is_instance_of} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
-import {LineStroke, ErasureStroke} from '../util/Strokes.js';
+import {LineStroke, ErasureStroke, RectableStroke} from '../util/Strokes.js';
+import {SortedList} from '../util/Structures.js';
 
 import {UI} from './UI.js';
 import {BRUSH} from './BRUSH.js';
@@ -49,6 +50,24 @@ let BOARD = {
         stroke.draw(ctx);
         BOARD.buffer.push(stroke);
     }
+
+    ,XList : SortedList.new((stroke)=>{
+        if (is_instance_of(stroke, RectableStroke)) {
+            let rect = stroke.rect();
+            return [rect[0].x, rect[1].x];
+        } else {
+            return [];
+        }
+    })
+
+    ,YList : SortedList.new((stroke)=>{
+        if (is_instance_of(stroke, RectableStroke)) {
+            let rect = stroke.rect();
+            return [rect[0].y, rect[1].y];
+        } else {
+            return [];
+        }
+    })
 
     ,version : 0
 
@@ -213,7 +232,7 @@ let BOARD = {
         BOARD.max_commit_id = BOARD.commit_id;
     }
 
-    ,commit_stroke : function(stroke) { // ###
+    ,commit_stroke : function(stroke) {
         stroke.version = BOARD.version;
 
         let id_next = BOARD.id_next(BOARD.stroke_id, 5);
@@ -226,10 +245,9 @@ let BOARD = {
 
         let idx = sizeof(BOARD.strokes[BOARD.commit_id]);
         stroke.stroke_idx = idx;
-
         stroke.commit_id = BOARD.commit_id;
 
-        BOARD.strokes[BOARD.commit_id][idx] = stroke;
+        BOARD.register(stroke);
     }
 
     ,op_commit : function() {
@@ -237,6 +255,42 @@ let BOARD = {
         UI.is_dirty = true;
     }
 
+
+    ,register : function(stroke, bulk=false) { // ###
+        if (bulk) {
+            BOARD.strokes = {};
+            for (const commit_id in stroke) {
+                BOARD.strokes[commit_id] = {};
+                for(const stroke_idx in stroke[commit_id])
+                    BOARD.register(stroke[commit_id][stroke_idx]);
+            }
+            return;
+        }
+
+        let old_stroke = BOARD.strokes[stroke.commit_id][stroke.stroke_idx];
+        if ((old_stroke!==undefined)&&(!old_stroke.is_hidden())) {
+            BOARD.unregister(old_stroke);
+        }
+        if (stroke.is_hidden())
+            BOARD.unregister(stroke);
+        else {
+            BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
+            BOARD.XList.add(stroke);
+            BOARD.YList.add(stroke);
+        }
+    }
+
+    ,unregister : function(stroke) { // ###
+        BOARD.XList.remove(stroke);
+        BOARD.YList.remove(stroke);
+    }
+
+    ,get_global_rect : function() {
+        return [
+            Point.new(BOARD.XList.a[0], BOARD.YList.a[0]),
+            Point.new(BOARD.XList.a[BOARD.XList.a.length-1], BOARD.YList.a[BOARD.YList.a.length-1])
+        ];
+    }
 
     ,get_commits : function(commit_min, commit_max) {
         // commit_min < x <= commit_max

@@ -77,6 +77,10 @@ let UI = {
 
     ,viewpoint_set : function(dx, dy, scale, maketoast) {
         maketoast = (maketoast===undefined)?true:maketoast;
+        if (scale<=0) {
+            console.error('UI.viewpoint_set : negative scale');
+            return;
+        }
         UI.viewpoint.dx = dx;
         UI.viewpoint.dy = dy;
         UI.viewpoint.scale = scale;
@@ -610,6 +614,26 @@ let UI = {
         return false;
     }
 
+    ,on_after_redraw_default : function() {
+        if (UI.view_mode=='debug') {
+            // FPS rate
+            let now = (new Date()).valueOf();
+            UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
+            UI.__tl.push(now - UI.__ts);
+            let fps = 1000 * UI.__tl.length / (UI.__tl.reduce((a,v)=>{return a + (v||1);}, 0));
+            UI.toast('fps', 'FPS: ' + Math.ceil(fps*10)/10, -1, 1);
+            UI.__ts = now;
+            if (UI.__tl.length > 20)
+                UI.__tl = UI.__tl.slice(1);
+
+            // board rect boundaries
+            let p = BOARD.get_global_rect().map((point)=>{return UI.global_to_local(point);});
+            UI.draw_overlay_stroke(p[0], Point.new(p[0].x, p[1].y), {color:'555',width:1});
+            UI.draw_overlay_stroke(Point.new(p[0].x, p[1].y), p[1], {color:'555',width:1});
+            UI.draw_overlay_stroke(p[1], Point.new(p[1].x, p[0].y), {color:'555',width:1});
+            UI.draw_overlay_stroke(Point.new(p[1].x, p[0].y), p[0], {color:'555',width:1});
+        }
+    }
 
     ,_handle_event : function(event, data) {
         UI.__handling_event = event;
@@ -801,7 +825,11 @@ let UI = {
     }
 
     ,on_after_redraw : function() {
-        return UI._handle_event('on_after_redraw', []);
+        let handled = UI._handle_event('on_after_redraw', []);
+        if (!handled)
+            handled = UI.on_after_redraw_default();
+        return handled;
+
     }
 
 
@@ -1102,17 +1130,6 @@ let UI = {
                     UI._redrawing = false;
                 });
             }
-        }
-
-        if (UI.view_mode=='debug') {
-            let now = (new Date()).valueOf();
-            UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
-            UI.__tl.push(now - UI.__ts);
-            let fps = 1000 * UI.__tl.length / (UI.__tl.reduce((a,v)=>{return a + (v||1);}, 0));
-            UI.toast('fps', 'FPS: ' + Math.ceil(fps*10)/10, -1, 1);
-            UI.__ts = now;
-            if (UI.__tl.length > 20)
-                UI.__tl = UI.__tl.slice(1);
         }
     }
 
