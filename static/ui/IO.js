@@ -186,9 +186,7 @@ let IO = {
         target.addEventListener(event_type, proxy);
     }
 
-    ,timeit : function(callable, rounds) {
-        rounds = (rounds===undefined)?10:rounds;
-
+    ,timeit : function(callable, rounds=10) {
         let times = [];
         for(let i=0; i<rounds; i++) {
             times.push((new(Date)).valueOf());

@@ -49,13 +49,11 @@ let Point = {
         return Math.sqrt(this.dst2seg2(a, b));
     }
 
-    ,add : function(other, scale) {
-        scale = (scale===undefined)?1:scale;
+    ,add : function(other, scale=1) {
         return this.sub(other, -scale);
     }
 
-    ,sub : function(other, scale) {
-        scale = (scale===undefined)?1:scale;
+    ,sub : function(other, scale=1) {
         return Point.new(this.x - other.x * scale, this.y - other.y * scale);
     }
 

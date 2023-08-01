@@ -200,8 +200,7 @@ let DistortableDrawTool = {
         });
     }
 
-    ,_pre_render : function(figure, split_mode) {
-        split_mode = (split_mode===undefined)?this.mode:split_mode;
+    ,_pre_render : function(figure, split_mode=this.mode) {
         let w = BRUSH.get_local_width();
 
         if (split_mode == 0) {
@@ -219,8 +218,7 @@ let DistortableDrawTool = {
         return figure;
     }
 
-    ,_render : function(figure, draw_line_fun, split_mode) {
-        split_mode = (split_mode===undefined)?this.mode:split_mode;
+    ,_render : function(figure, draw_line_fun, split_mode=this.mode) {
         figure.map((p, pi)=>{
             if ( (pi < figure.length-1) || (this.cyclic) ) {
                 if ( (split_mode==1) && (pi%2==1) )

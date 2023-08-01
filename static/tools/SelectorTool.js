@@ -50,10 +50,7 @@ let SelectorBase = {
         this.mode = SelectorBase.MODES.SELECTING;
     }
 
-    ,_select_commit : function(commit_id, reset) {
-        commit_id = (commit_id===undefined)?BOARD.commit_id:commit_id;
-        reset = (reset===undefined)?true:reset;
-
+    ,_select_commit : function(commit_id=BOARD.commit_id, reset=true) {
         if (reset)
             this._selection_reset();
 

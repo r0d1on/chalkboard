@@ -78,8 +78,7 @@ let BOARD = {
     ,strokes : {} // globally positioned strokes on board layer (committed ones)
     ,locked : false
 
-    ,id_next : function(id, pad) {
-        pad = (pad===undefined)?4:pad;
+    ,id_next : function(id, pad=4) {
         let iid = id.split('-')[0];
         let vid = id.split('-')[1] || UI.view_id;
 
@@ -92,8 +91,7 @@ let BOARD = {
         return iid + '-' + vid;
     }
 
-    ,id_prev : function(id, pad) {
-        pad = (pad===undefined)?4:pad;
+    ,id_prev : function(id, pad=4) {
         let iid = id.split('-')[0];
         let vid = id.split('-')[1] || UI.view_id;
 
@@ -107,8 +105,7 @@ let BOARD = {
     }
 
 
-    ,flush : function(buffer, clear) {
-        clear = (clear===undefined)?true:clear;
+    ,flush : function(buffer, clear=true) {
         let ctx = UI.contexts[UI.LAYERS.indexOf('board')];
         let maxw = -1e10;
 
@@ -292,18 +289,12 @@ let BOARD = {
         ];
     }
 
-    ,get_commits : function(commit_min, commit_max) {
-        // commit_min < x <= commit_max
+    ,get_commits : function(commit_min='', commit_max=BOARD.commit_id) {
         let commits = [];
-
-        commit_min = (commit_min===undefined)? '' : commit_min;
-        commit_max = (commit_max===undefined)? BOARD.commit_id : commit_max;
-
         for(let commit_id in BOARD.strokes) {
             if ((commit_min < commit_id)&&(commit_id <= commit_max))
                 commits.push(BOARD.strokes[commit_id]);
         }
-
         return commits;
     }
 
@@ -329,11 +320,7 @@ let BOARD = {
         return ret;
     }
 
-    ,get_glyphs : function(col, ddx, ddy) {
-        col = (col===undefined)?0:col;
-        ddx = (ddx===undefined)?60:ddx;
-        ddy = (ddy===undefined)?60:ddy;
-
+    ,get_glyphs : function(col=0, ddx=60, ddy=60) {
         function linearize(glyph) {
             let g = glyph.reduce((a, cur)=>{
                 let prev = a.pop();

@@ -105,9 +105,8 @@ let IO = {
         return event;
     }
 
-    ,replay_events : function(speedup) {
+    ,replay_events : function(speedup=1) {
         this.status = IO.STATUSES.PLAYING;
-        speedup = (speedup===undefined)?1:speedup;
         let that = this;
         function replay(index) {
             if (index < that.events_log.length) {

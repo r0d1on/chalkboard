@@ -80,10 +80,7 @@ let TOOLS = {
         UI.draw_glyph(tool.icon, ctx);
     }
 
-    ,activate : function(tool_name, background, button, key) {
-        background = (background===undefined)?false:background;
-        button = (button===undefined)?0:button;
-
+    ,activate : function(tool_name, background=false, button=0, key) {
         if (!(button in TOOLS.binding))
             TOOLS.binding[button] = tool_name;
 
@@ -141,8 +138,7 @@ let TOOLS = {
         }
     }
 
-    ,deactivate : function(tool) {
-        tool = (tool===undefined)?TOOLS.current:tool;
+    ,deactivate : function(tool=TOOLS.current) {
         (tool.on_deactivated!==undefined)&&tool.on_deactivated();
     }
 
@@ -189,9 +185,7 @@ let TOOLS = {
         };
     }
 
-    ,add_tool : function(tool, visible, title) {
-        visible = (visible===undefined)?true:visible;
-
+    ,add_tool : function(tool, visible=true, title) {
         TOOLS.tools[tool.name] = tool;
 
         if (visible) {

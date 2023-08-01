@@ -52,10 +52,7 @@ let Toast = {
 
     /* Instance methods */
 
-    ,Toast : function(topic, text, lifespan, align, reset) {
-        align = (align===undefined)?Toast.ALIGN.CENTER:align;
-        reset = (reset===undefined)?true:reset;
-
+    ,Toast : function(topic, text, lifespan, align=Toast.ALIGN.CENTER, reset=true) {
         if (topic in Toast.TOASTS) {
             if (reset)
                 Toast.TOASTS[topic].drop();

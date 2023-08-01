@@ -75,8 +75,7 @@ let UI = {
 
     ,busy_modules : {}
 
-    ,viewpoint_set : function(dx, dy, scale, maketoast) {
-        maketoast = (maketoast===undefined)?true:maketoast;
+    ,viewpoint_set : function(dx, dy, scale, maketoast=true) {
         if (scale<=0) {
             console.error('UI.viewpoint_set : negative scale');
             return;
@@ -92,9 +91,13 @@ let UI = {
         }
     }
 
-    ,viewpoint_shift : function(dx, dy, maketoast) {
-        maketoast = (maketoast===undefined)?true:maketoast;
-        UI.viewpoint_set(UI.viewpoint.dx + dx, UI.viewpoint.dy + dy, UI.viewpoint.scale, maketoast);
+    ,viewpoint_shift : function(dx, dy, maketoast=true) {
+        UI.viewpoint_set(
+            UI.viewpoint.dx + dx,
+            UI.viewpoint.dy + dy,
+            UI.viewpoint.scale,
+            maketoast
+        );
     }
 
     ,viewpoint_zoom: function(scale, center) {
@@ -129,8 +132,7 @@ let UI = {
         return canvas;
     }
 
-    ,update_layers : function(for_redraw) {
-        for_redraw = (for_redraw===undefined)?false:for_redraw;
+    ,update_layers : function(for_redraw=false) {
         UI.window_width = window.innerWidth;
         UI.window_height = window.innerHeight;
         UI.LAYERS.map((layer_name)=>{
@@ -918,12 +920,11 @@ let UI = {
     }
 
     // stroke handling
-    ,global_to_local : function(point, viewpoint) {
+    ,global_to_local : function(point, viewpoint=UI.viewpoint) {
         if (point==null) return null;
-        let vp = (viewpoint===undefined)?UI.viewpoint:viewpoint;
         return Point.new(
-            (point.x - vp.dx) * vp.scale
-            ,(point.y - vp.dy) * vp.scale
+            (point.x - viewpoint.dx) * viewpoint.scale
+            ,(point.y - viewpoint.dy) * viewpoint.scale
         );
     }
 
@@ -936,8 +937,7 @@ let UI = {
         );
     }
 
-    ,figure_split : function(figure, cyclic, max_length) {
-        cyclic = (cyclic===undefined)?true:cyclic;
+    ,figure_split : function(figure, cyclic=true, max_length) {
         let ret = [];
         let p0, p1;
 
@@ -1056,8 +1056,7 @@ let UI = {
         UI._redraw_hook = callback;
     }
 
-    ,_canvas_changed : function(stamp, retry) {
-        retry = (retry===undefined)? 3 : retry;
+    ,_canvas_changed : function(stamp, retry=3) {
         if (UI._redraw_hook) {
             UI._redraw_hook((stamp||1)*((new Date()).valueOf()));
             UI._redraw_hook = undefined;
@@ -1077,13 +1076,9 @@ let UI = {
         }
     }
 
-    ,_redraw : function(target_ctx, extra_strokes, transparent, draw_grid) {
+    ,_redraw : function(target_ctx, extra_strokes=[], transparent=false, draw_grid=UI.GRID_MODE.value) {
         let ctx = null;
         let ctx_back = null;
-
-        extra_strokes = (extra_strokes===undefined)?[]:extra_strokes;
-        draw_grid = (draw_grid===undefined)?UI.GRID_MODE.value:draw_grid;
-        transparent = (transparent===undefined)?false:transparent;
 
         if (target_ctx === undefined) {
             UI.update_layers(true);
@@ -1203,9 +1198,7 @@ let UI = {
         UI.logger.log(...args);
     }
 
-    ,timeit : function(callable, rounds) {
-        rounds = (rounds===undefined)?10:rounds;
-
+    ,timeit : function(callable, rounds=10) {
         let times = [];
         for(let i=0; i<rounds; i++) {
             times.push((new(Date)).valueOf());
