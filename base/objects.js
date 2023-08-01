@@ -63,8 +63,7 @@ function is_instance_of(obj, classes) {
 }
 
 
-function extend(target, source) {
-    target = (target===undefined)?{}:target;
+function extend(target={}, source) {
     for (const key in source)
         target[key] = source[key];
     return target;
@@ -123,9 +122,7 @@ function _class(name, def) {
     return def;
 }
 
-function _new(T, params, dry) {
-    params = (params===undefined)?[]:params;
-
+function _new(T, params=[], dry=false) {
     let _T = getConstructor(T);
 
     let at = null;

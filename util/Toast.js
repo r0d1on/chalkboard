@@ -52,10 +52,7 @@ let Toast = {
 
     /* Instance methods */
 
-    ,Toast : function(topic, text, lifespan, align, reset) {
-        align = (align===undefined)?Toast.ALIGN.CENTER:align;
-        reset = (reset===undefined)?true:reset;
-
+    ,Toast : function(topic, text, lifespan, align=Toast.ALIGN.CENTER, reset=true) {
         if (topic in Toast.TOASTS) {
             if (reset)
                 Toast.TOASTS[topic].drop();
@@ -158,8 +155,13 @@ let Toast = {
     }
 
     ,drop : function() {
-        if (!Toast._ignore_topics[this.topic])
-            document.body.removeChild(this.div);
+        if (!Toast._ignore_topics[this.topic]) {
+            if (!document.body.contains(this.div))
+                console.warn('document.body does not contains', this.div);
+            else
+                document.body.removeChild(this.div);
+        }
+
         clearTimeout(this.timeout);
         Toast.TOPICS[this.align][this.ix] = undefined;
         delete Toast.TOASTS[this.topic];

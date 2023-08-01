@@ -36,9 +36,7 @@ let SLIDER = {
         ];
     }
 
-    ,update : function(refocus) {
-        refocus = (refocus===undefined)?true:refocus;
-
+    ,update : function(refocus=true) {
         SLIDER.canvas_current.width = SLIDER.canvas_current.width + 1 - 1;
         if (SLIDER.current_ix==null)
             return;

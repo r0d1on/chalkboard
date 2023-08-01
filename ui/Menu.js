@@ -11,11 +11,10 @@ let Menu = {
     ,SIZEY : 60
     ,LONG_CLICK_DELAY : 1000
 
-    ,Menu : function(root_name, root_div_id, top) {
+    ,Menu : function(root_name, root_div_id, top=true) {
         this.id = root_div_id;
+        this.top = top;
         this.container = document.getElementById(this.id);
-
-        this.top = (top===undefined)?true:top;
 
         if (this.top) {
             this.container.style['top'] = '0px';

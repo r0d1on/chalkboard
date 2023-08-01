@@ -77,8 +77,7 @@ let BRUSH = {
     ,MENU_main : null
     ,MENU_options : null
 
-    ,activate_color : function(button) {
-        button = (button===undefined)?0:button;
+    ,activate_color : function(button=0) {
         UI.log(1, 'activate color :', button);
         if (button in BRUSH.binding)
             BRUSH.select_color(BRUSH.binding[button]);
@@ -91,8 +90,7 @@ let BRUSH = {
         UI.on_color(BRUSH.get_color());
     }
 
-    ,attach_color : function(color_id, button) {
-        button = (button===undefined)?0:button;
+    ,attach_color : function(color_id, button=0) {
         UI.log(1, 'attached color :', color_id, button);
         BRUSH.binding[button] = color_id;
 

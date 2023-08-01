@@ -98,11 +98,9 @@ let TexterTool = {
         return; // overload base on_stop handler
     }
 
-    ,on_key_down : function(key, commit) {
+    ,on_key_down : function(key, commit=true) {
         if (this.cursor==null)
             return;
-
-        commit = (commit===undefined)?true:commit;
 
         let lcursor = UI.global_to_local(this.cursor);
 
