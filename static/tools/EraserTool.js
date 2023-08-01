@@ -64,7 +64,7 @@ let EraserTool = {
             diameter /= UI.viewpoint.scale;
 
         // collect touched committed strokes on the board
-        BOARD.get_commits().map((commit)=>{ // #TODO: check only strokes within diameter (touchable) + ones crossing the area
+        BOARD.get_commits().map((commit)=>{ // TODO: BOARD.get_visible_strokes()
             for(let i in commit) {
                 let stroke = commit[i];
                 if (stroke.is_hidden())
@@ -99,8 +99,8 @@ let EraserTool = {
             });
         }
 
-        // redraw the board + draw newly created strokes (splits) if we have any
-        UI.redraw(undefined, true, this._buffer_strokes);
+        if (this._buffer_strokes.length + erased.length > 0)
+            UI.redraw(undefined, true, this._buffer_strokes);
 
         UI.draw_overlay_stroke(lp, lp, {color : '#9335'}); // draw active eraser pointer
     }

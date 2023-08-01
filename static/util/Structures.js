@@ -54,7 +54,7 @@ let SortedList = {
 
         const p = v.map((_v)=>{
             let _p = this.position(_v);
-            while (this.a[_p]==_v) _p -= 1;
+            while (this.a[_p] == _v) _p -= 1;
             _p += 1;
 
             while (this.a[_p] == _v) {
@@ -70,6 +70,33 @@ let SortedList = {
 
         return p;
     }
+
+    ,all_le : function*(_v) {
+        let _p = this.position(_v);
+        while (this.a[_p] == _v) _p += 1;
+        _p -= 1;
+        if (this.a[_p] > _v) _p -= 1;
+        while (_p >= 0)
+            yield this.o[_p--];
+    }
+
+    ,all_ge : function*(_v) {
+        let _p = this.position(_v);
+        while (this.a[_p] == _v) _p -= 1;
+        _p += 1;
+        if (this.a[_p] < _v) _p += 1;
+        const l = this.o.length;
+        while (_p < l)
+            yield this.o[_p++];
+    }
+
+    ,all : function*() {
+        const l = this.o.length;
+        let _p = 0;
+        while (_p < l)
+            yield this.o[_p++];
+    }
+
 
 };
 

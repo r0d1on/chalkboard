@@ -113,6 +113,13 @@ let UI = {
         UI.viewpoint_shift(dx, dy, false);
     }
 
+    ,viewpoint_rect: function() {
+        const ctx = UI.contexts[UI.LAYERS.indexOf('board')];
+        return [
+            UI.local_to_global(Point.new(0, 0)),
+            UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
+        ];
+    }
 
     ,reset_layer : function(layer_name) {
         let canvas = UI.layers[UI.LAYERS.indexOf(layer_name)];
