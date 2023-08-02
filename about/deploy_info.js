@@ -1,8 +1,8 @@
 'use strict';
 
 let deploy_info = {
-    version : '0.8.14'
-    ,time : '20230801-2341'
+    version : '0.8.15'
+    ,time : '20230803-0001'
 };
 
 export {deploy_info};
