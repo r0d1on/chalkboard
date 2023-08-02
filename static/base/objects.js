@@ -132,7 +132,7 @@ function _new(T, params=[], dry=false) {
         at  = {
             'statics' : allFieldNames(T)
             ,'super' : T['super']
-            ,'mixins' : T['mixins']||[]
+            ,'mixins' : T['mixins'] || []
         };
 
         // links to super
@@ -144,10 +144,13 @@ function _new(T, params=[], dry=false) {
         }
 
         // mixin methods
+        T['mixins'] = {};
         at.mixins.map((M)=>{
             allMethodNames(M).map((method_name)=>{
                 _T.prototype[method_name] = M[method_name];
             });
+            let _M = getConstructor(M);
+            T['mixins'][_M.name] = M;
         });
 
         // own _T methods
@@ -173,7 +176,6 @@ function _new(T, params=[], dry=false) {
     let obj = Object.create(_T.prototype);
 
     if (!dry) {
-
         // mixin methods
         at.mixins.map((M)=>{
             allFieldNames(M).map((prop)=>{
@@ -189,19 +191,23 @@ function _new(T, params=[], dry=false) {
                 // as class var should be addressed through Class.var explicitly
                 get: function() {
                     return T[prop];
-                }
-                ,set: function(value) {
+                },
+                set: function(value) {
                     T[prop] = value;
                 }
             });
         });
 
+        // mixins accessor
+        Object.defineProperty(obj, '__mixins', {
+            get: function() {
+                return T['mixins'];
+            }
+        });
+
         // run mixin initializers
-        obj.__mixins = {};
         at.mixins.map((M)=>{
-            let _M = getConstructor(M);
-            obj.__mixins[_M.name] = M;
-            _M.call(obj);
+            getConstructor(M).call(obj);
         });
 
         // run own constructor
