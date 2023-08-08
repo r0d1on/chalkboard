@@ -56,6 +56,10 @@ let SelectorBase = {
 
         for(let stroke_idx in BOARD.strokes[commit_id]) {
             let stroke = BOARD.strokes[commit_id][stroke_idx];
+
+            if ((!stroke.is_drawable())||(stroke.is_hidden()))
+                continue;
+
             stroke.selection().map((sel)=>{
                 this._add_selected_point(sel.commit_id, sel.stroke_idx, sel.point_idx);
             });
@@ -413,7 +417,7 @@ let SelectorBase = {
             BOARD.get_commits().map((commit)=>{
                 for(let i in commit) {
                     let stroke = commit[i];
-                    if (stroke.is_hidden()||(!is_instance_of(stroke, LineStroke)))
+                    if ((!stroke.is_drawable())||(stroke.is_hidden())||(!is_instance_of(stroke, LineStroke)))
                         continue;
                     lbox.map((seg)=>{
                         let itu = stroke.intersection(seg[0], seg[1], 1 / UI.viewpoint.scale);

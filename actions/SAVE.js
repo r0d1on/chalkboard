@@ -545,29 +545,30 @@ let SAVE = {
             ,PERSISTENCE_VERSION : SAVE.PERSISTENCE_VERSION
         };
 
-        let loaded = false;
-        SAVE.sync_begin();
+        setTimeout(()=>{
+            let loaded = false;
+            SAVE.sync_begin();
+            UI.IO.request('/sync', message_out, {})
+                .then(({xhr})=>{
+                    UI.log(0, 'backend available: ', xhr);
+                    SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
+                    let ctx = SAVE.canvas_sync.getContext('2d');
+                    UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
 
-        UI.IO.request('/sync', message_out, {})
-            .then(({xhr})=>{
-                UI.log(0, 'backend available: ', xhr);
-                SAVE.canvas_sync = MENU_main.add('save_group', 'sync', SAVE.sync_switch, 'canvas', 'auto-sync to server')[1];
-                let ctx = SAVE.canvas_sync.getContext('2d');
-                UI.draw_glyph(SAVE.icon_sync, ctx, undefined, '#555');
-
-                loaded = SAVE._consume_message(xhr.responseText, false);
-                if (loaded)
-                    UI.toast('backend.loading', 'loaded from backend', 2000);
-            })
-            .catch(({xhr, error})=>{
-                UI.log(-1, 'backend unavailable: ', error, xhr);
-                UI.toast('backend.loading', 'backend is not available : ' + error, 2000);
-            })
-            .finally(()=>{
-                SAVE.sync_end();
-                if (!loaded)
-                    SAVE.load();
-            });
+                    loaded = SAVE._consume_message(xhr.responseText, false);
+                    if (loaded)
+                        UI.toast('backend.loading', 'loaded from backend', 2000);
+                })
+                .catch(({xhr, error})=>{
+                    UI.log(-1, 'backend unavailable: ', error, xhr);
+                    UI.toast('backend.loading', 'backend is not available : ' + error, 2000);
+                })
+                .finally(()=>{
+                    SAVE.sync_end();
+                    if (!loaded)
+                        SAVE.load();
+                });
+        }, 100);
 
     }
 

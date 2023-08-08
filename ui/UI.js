@@ -490,6 +490,7 @@ let UI = {
         UI._last_point = Point.new(UI.window_width/2, UI.window_height/2);
 
         Toast.init();
+        BOARD.init();
     }
 
 
