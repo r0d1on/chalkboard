@@ -25,6 +25,10 @@ let Stroke = {
         );
     }
 
+    ,is_drawable : function() {
+        return true;
+    }
+
     ,erased_by : function(eraser_id) {
         return (
             (this.erased == eraser_id)||
@@ -32,7 +36,7 @@ let Stroke = {
         );
     }
 
-    ,flip_by : function(eraser_id) { // ###
+    ,flip_by : function(eraser_id, register=true) { // ###
         if (this.erased!=undefined) {
             if (this.erased[0]=='-') {
                 this.erased = this.erased.substr(1);
@@ -47,7 +51,8 @@ let Stroke = {
         } else {
             this.erased = eraser_id;
         }
-        BOARD.register(this);
+        if (register)
+            BOARD.register(this);
         return [this];
     }
 
@@ -71,10 +76,6 @@ let Stroke = {
         }
         return '<' + this.__classname + ':: ' + ret.join(' , ') + '>';
     }
-
-    ,selection : function() {return [];}
-    ,touched_by : function(gp) {return false;} // eslint-disable-line no-unused-vars
-    ,intersection : function(p0, p1) {return null;} // eslint-disable-line no-unused-vars
 
     ,_register_json_class : function(type_code, klass) {
         Stroke.STROKE_TYPES[type_code] = klass;
@@ -156,30 +157,34 @@ let RectableStroke = {
         return UI.get_rect([this.p0, this.p1]);
     }
 
-
-};
-RectableStroke = _class('RectableStroke', RectableStroke);
-
-let LineStroke = {
-    super :  RectableStroke
-
-    ,LineStroke : function(p0, p1, color, width) {
-        RectableStroke.__init__.call(this, p0, p1);
-        this.color = color;
-        this.width = width;
-    }
-
-    ,draw : function(ctx, gr) {
-        if (!RectableStroke.draw.call(this, gr))
-            return false;
-
-        let lp0 = UI.global_to_local(this.p0);
-        let lp1 = UI.global_to_local(this.p1);
-        UI.draw_line(lp0, lp1, this.color, this.width * UI.viewpoint.scale, ctx);
-    }
-
     ,center : function() {
         return this.p0.add(this.p1).mul(0.5);
+    }
+
+    ,get_point : function(point_idx) {
+        return this['p' + point_idx];
+    }
+
+    ,set_point : function(point_idx, point) {
+        this['p' + point_idx] = point;
+    }
+
+    ,shift : function(dp, scale) {
+        this.p0 = this.p0.add(dp, scale);
+        this.p1 = this.p1.add(dp, scale);
+        return this;
+    }
+
+    ,to_local : function() {
+        this.p0 = UI.global_to_local(this.p0);
+        this.p1 = UI.global_to_local(this.p1);
+        return this;
+    }
+
+    ,to_global : function() {
+        this.p0 = UI.local_to_global(this.p0);
+        this.p1 = UI.local_to_global(this.p1);
+        return this;
     }
 
     ,selection : function(rect) {
@@ -201,6 +206,43 @@ let LineStroke = {
                 });
             return s;
         }, []);
+    }
+
+    ,touched_by : function(gp) {
+        return (
+            (this.p0.y <= gp.y)&&(gp.y <= this.p1.y)&&
+            (this.p0.x <= gp.x)&&(gp.x <= this.p1.x)
+        );
+    }
+
+    ,intersection : function(p0, p1) {return null;} // eslint-disable-line no-unused-vars
+
+    ,visible_cells : function*(grid) {
+        let [[i0, j0], [i1, j1]] =  grid.rect_coords(this.rect());
+        for(let i=i0; i<=i1; i++)
+            for(let j=j0; j<=j1; j++)
+                yield [i, j];
+    }
+
+};
+RectableStroke = _class('RectableStroke', RectableStroke);
+
+let LineStroke = {
+    super :  RectableStroke
+
+    ,LineStroke : function(p0, p1, color, width) {
+        RectableStroke.__init__.call(this, p0, p1);
+        this.color = color;
+        this.width = width;
+    }
+
+    ,draw : function(ctx, gr) {
+        if (!RectableStroke.draw.call(this, gr))
+            return false;
+
+        let lp0 = UI.global_to_local(this.p0);
+        let lp1 = UI.global_to_local(this.p1);
+        UI.draw_line(lp0, lp1, this.color, this.width * UI.viewpoint.scale, ctx);
     }
 
     ,touched_by : function(gp, diameter) {
@@ -297,14 +339,6 @@ let LineStroke = {
         return [ip, t, u];
     }
 
-    ,get_point : function(point_idx) {
-        return this['p' + point_idx];
-    }
-
-    ,set_point : function(point_idx, point) {
-        this['p' + point_idx] = point;
-    }
-
     ,copy : function() {
         let stroke = LineStroke.new(this.p0.copy(), this.p1.copy(), this.color, this.width);
         stroke.commit_id = this.commit_id;
@@ -315,22 +349,14 @@ let LineStroke = {
     }
 
     ,to_local : function() {
-        this.p0 = UI.global_to_local(this.p0);
-        this.p1 = UI.global_to_local(this.p1);
+        RectableStroke.to_local.call(this);
         this.width *= UI.viewpoint.scale;
         return this;
     }
 
     ,to_global : function() {
-        this.p0 = UI.local_to_global(this.p0);
-        this.p1 = UI.local_to_global(this.p1);
+        RectableStroke.to_global.call(this);
         this.width /= UI.viewpoint.scale;
-        return this;
-    }
-
-    ,shift : function(dp, scale) {
-        this.p0 = this.p0.add(dp, scale);
-        this.p1 = this.p1.add(dp, scale);
         return this;
     }
 
@@ -365,6 +391,11 @@ let ErasureStroke = {
     ,ErasureStroke : function() {
         Stroke.__init__.call(this);
     }
+
+    ,is_drawable : function() {
+        return false;
+    }
+
     ,draw : function(){}
 
     ,flip_strokes : function(strokes, eraser_id, finalize) { // ###
@@ -457,31 +488,11 @@ let ImageStroke = {
         );
 
         if (selected) {
-            return [0, 1].reduce((s, point_idx)=>{
-                //let p = this.get_point(point_idx);
-                s.push({
-                    commit_id : this.commit_id
-                    ,stroke_idx : this.stroke_idx
-                    ,stroke_id : this.stroke_id
-                    ,point_idx : point_idx
-                });
-                return s;
-            }, []);
+            return RectableStroke.selection.call(this);
         } else {
             return [];
         }
 
-    }
-
-    ,touched_by : function(gp) {
-        return (
-            (this.p0.y <= gp.y)&&(gp.y <= this.p1.y)&&
-            (this.p0.x <= gp.x)&&(gp.x <= this.p1.x)
-        );
-    }
-
-    ,get_point : function(point_idx) {
-        return this['p' + point_idx];
     }
 
     ,copy : function() {
@@ -491,24 +502,6 @@ let ImageStroke = {
         stroke.stroke_idx = this.stroke_idx;
         //version
         return stroke;
-    }
-
-    ,to_local : function() {
-        this.p0 = UI.global_to_local(this.p0);
-        this.p1 = UI.global_to_local(this.p1);
-        return this;
-    }
-
-    ,to_global : function() {
-        this.p0 = UI.local_to_global(this.p0);
-        this.p1 = UI.local_to_global(this.p1);
-        return this;
-    }
-
-    ,shift : function(dp, scale) {
-        this.p0 = this.p0.add(dp, scale);
-        this.p1 = this.p1.add(dp, scale);
-        return this;
     }
 
     ,_to_json : function() {

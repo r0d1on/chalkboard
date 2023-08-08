@@ -3,8 +3,8 @@
 import {sizeof, is_instance_of} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
-import {LineStroke, ErasureStroke, RectableStroke} from '../util/Strokes.js';
-import {SortedList} from '../util/Structures.js';
+import {LineStroke, ErasureStroke} from '../util/Strokes.js';
+import {SortedList, IndexGrid} from '../util/Structures.js';
 
 import {UI} from './UI.js';
 import {BRUSH} from './BRUSH.js';
@@ -20,11 +20,11 @@ let BOARD = {
         params = params || {};
 
         let alpha = undefined;
-        let width = params.width||BRUSH.get_local_width();
+        let width = params.width || BRUSH.get_local_width();
         let color = params.color;
         let pressure = params.pressure;
         if (pressure === undefined)
-            pressure = lp1.pressure||lp0.pressure;
+            pressure = lp1.pressure || lp0.pressure;
 
         if (pressure) {
             if ((BRUSH.PRESSURE.value + 1) & 1) { // pressure -> opacity
@@ -41,33 +41,19 @@ let BOARD = {
         color = color || BRUSH.get_color(alpha);
 
         let stroke = LineStroke.new(
-            UI.local_to_global(lp0)
-            ,UI.local_to_global(lp1)
-            ,color
-            ,width / UI.viewpoint.scale
+            UI.local_to_global(lp0),
+            UI.local_to_global(lp1),
+            color,
+            width / UI.viewpoint.scale
         );
 
         stroke.draw(ctx);
         BOARD.buffer.push(stroke);
     }
 
-    ,XList : SortedList.new((stroke)=>{
-        if (is_instance_of(stroke, RectableStroke)) {
-            let rect = stroke.rect();
-            return [rect[0].x, rect[1].x];
-        } else {
-            return [];
-        }
-    })
-
-    ,YList : SortedList.new((stroke)=>{
-        if (is_instance_of(stroke, RectableStroke)) {
-            let rect = stroke.rect();
-            return [rect[0].y, rect[1].y];
-        } else {
-            return [];
-        }
-    })
+    ,XList : null
+    ,YList : null
+    ,IGrid : null
 
     ,version : 0
 
@@ -252,15 +238,16 @@ let BOARD = {
         UI.is_dirty = true;
     }
 
-
     ,register : function(stroke, bulk=false) { // ###
         if (bulk) {
-            BOARD.strokes = {};
+            console.log(-1, 'bulk loading strokes');
+            BOARD.init();
             for (const commit_id in stroke) {
                 BOARD.strokes[commit_id] = {};
                 for(const stroke_idx in stroke[commit_id])
                     BOARD.register(stroke[commit_id][stroke_idx]);
             }
+            console.log(-1, 'bulk loading strokes done');
             return;
         }
 
@@ -274,12 +261,14 @@ let BOARD = {
             BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
             BOARD.XList.add(stroke);
             BOARD.YList.add(stroke);
+            BOARD.IGrid.add_stroke(stroke);
         }
     }
 
     ,unregister : function(stroke) { // ###
         BOARD.XList.remove(stroke);
         BOARD.YList.remove(stroke);
+        BOARD.IGrid.remove_stroke(stroke);
     }
 
     ,get_global_rect : function() {
@@ -298,6 +287,16 @@ let BOARD = {
         return commits;
     }
 
+    ,get_visible_strokes : function(rect=UI.viewpoint_rect()) {
+        let strokes = [];
+        for(let stroke of BOARD.IGrid.get_strokes_in(rect)) {
+            if (stroke.is_hidden()) // can happend for inplace hidden strokes
+                continue;
+            strokes.push(stroke);
+        }
+        return strokes;
+    }
+
     ,get_points : function(rect, classes) {
         let ret = [];
 
@@ -305,7 +304,7 @@ let BOARD = {
             for(let stroke_idx in commit) {
                 let stroke = commit[stroke_idx];
 
-                if (stroke.is_hidden())
+                if ((!stroke.is_drawable())||(stroke.is_hidden()))
                     continue;
 
                 if ((classes!==undefined)&&(!is_instance_of(stroke, classes)))
@@ -430,6 +429,28 @@ let BOARD = {
             row += 1;
         }
         return result;
+    }
+
+    ,init : function() {
+        BOARD.strokes = {};
+
+        BOARD.XList = SortedList.new((stroke)=>{
+            if (stroke.is_drawable()) {
+                let rect = stroke.rect();
+                return [rect[0].x, rect[1].x];
+            } else {
+                return [];
+            }
+        });
+        BOARD.YList = SortedList.new((stroke)=>{
+            if (stroke.is_drawable()) {
+                let rect = stroke.rect();
+                return [rect[0].y, rect[1].y];
+            } else {
+                return [];
+            }
+        });
+        BOARD.IGrid = IndexGrid.new([Point.new(0,0), Point.new(30,30)], 30);
     }
 
 };

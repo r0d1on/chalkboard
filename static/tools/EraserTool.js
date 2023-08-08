@@ -2,6 +2,7 @@
 
 import {_class, extend, is_instance_of} from '../base/objects.js';
 
+import {Point} from '../util/Point.js';
 import {LineStroke, ErasureStroke} from '../util/Strokes.js';
 
 import {DrawToolBase} from './Base.js';
@@ -63,18 +64,17 @@ let EraserTool = {
         if (!BRUSH.SCALED.value)
             diameter /= UI.viewpoint.scale;
 
-        // collect touched committed strokes on the board
-        BOARD.get_commits().map((commit)=>{ // TODO: BOARD.get_visible_strokes()
-            for(let i in commit) {
-                let stroke = commit[i];
-                if (stroke.is_hidden())
-                    continue;
-                if (stroke.touched_by(gp, diameter)) {
-                    let clean_stroke = stroke.copy();
-                    clean_stroke.erased=undefined;
-                    erased.push(clean_stroke);
-                    stroke.flip_by(BOARD.stroke_id);
-                }
+        // collect touched strokes on the board
+        BOARD.get_visible_strokes([
+            Point.new(gp.x - diameter, gp.y - diameter),
+            Point.new(gp.x + diameter, gp.y + diameter)
+        ]).map((stroke)=>{
+            if (stroke.touched_by(gp, diameter)) {
+                let clean_stroke = stroke.copy();
+                clean_stroke.erased=undefined;
+                erased.push(clean_stroke);
+                // hide but do not unregister them yet
+                stroke.flip_by(BOARD.stroke_id, false);
             }
         });
 

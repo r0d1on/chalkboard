@@ -108,7 +108,7 @@ function allFieldNames(T) {
     let fieldNames = [];
     for(const prop in T) {
         if (typeof(T[prop]) != 'function') {
-            if ((prop!='super')&&(prop!='mixins')) {
+            if ( (prop!='super') && (prop!='mixins') ) {
                 fieldNames.push(prop);
             }
         }
