@@ -128,7 +128,7 @@ let SelectorBase = {
     ,draw_selected : function() { // draws selection rectangle with keypoints
         this.get_selection_bounds();
 
-        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+        let ctx = UI.ctx['overlay'];
         UI.reset_layer('overlay');
 
         if (this.selection.length == 0) {
@@ -248,7 +248,7 @@ let SelectorBase = {
     ,draw_selecting : function(sp, lp) {
         UI.reset_layer('overlay');
 
-        let ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+        let ctx = UI.ctx['overlay'];
 
         let rect = UI.get_rect([sp, lp]);
 
