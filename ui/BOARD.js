@@ -15,7 +15,7 @@ let BOARD = {
 
     ,buffer : [] // globally positioned strokes in buffer layer
     ,add_line : function(lp0, lp1, params) {
-        let ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
+        let ctx = UI.ctx['buffer'];
 
         params = params || {};
 
@@ -92,7 +92,7 @@ let BOARD = {
 
 
     ,flush : function(buffer, clear=true) {
-        let ctx = UI.contexts[UI.LAYERS.indexOf('board')];
+        let ctx = UI.ctx['board'];
         let maxw = -1e10;
 
         let brect = UI.get_rect(buffer.reduce((a, stroke)=>{
@@ -110,7 +110,7 @@ let BOARD = {
             return a;
         }, []));
 
-        ctx = UI.contexts[UI.LAYERS.indexOf('buffer')];
+        ctx = UI.ctx['buffer'];
         ctx.clearRect(brect[0].x - maxw
             , brect[0].y - maxw
             , brect[1].x - brect[0].x + 2 * maxw
@@ -259,23 +259,16 @@ let BOARD = {
             BOARD.unregister(stroke);
         else {
             BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
-            BOARD.XList.add(stroke);
-            BOARD.YList.add(stroke);
             BOARD.IGrid.add_stroke(stroke);
         }
     }
 
     ,unregister : function(stroke) { // ###
-        BOARD.XList.remove(stroke);
-        BOARD.YList.remove(stroke);
         BOARD.IGrid.remove_stroke(stroke);
     }
 
     ,get_global_rect : function() {
-        return [
-            Point.new(BOARD.XList.a[0], BOARD.YList.a[0]),
-            Point.new(BOARD.XList.a[BOARD.XList.a.length-1], BOARD.YList.a[BOARD.YList.a.length-1])
-        ];
+        return BOARD.IGrid.bounding_rect();
     }
 
     ,get_commits : function(commit_min='', commit_max=BOARD.commit_id) {

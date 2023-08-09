@@ -269,7 +269,7 @@ let SAVE = {
     ,download_png_view : function(e, id, long) {
         UI.log(1, 'saver.download_png_view: ', id, long, e);
 
-        let c = UI.layers[UI.LAYERS.indexOf('overlay')];
+        let c = UI.canvas['overlay'];
         let view_rect = [
             UI.local_to_global(Point.new(0, 0))
             ,UI.local_to_global(Point.new(c.width, c.height))

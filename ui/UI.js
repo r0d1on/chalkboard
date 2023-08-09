@@ -49,8 +49,8 @@ let UI = {
     ,window_width : null
     ,window_height : null
 
-    ,layers : null
-    ,contexts : null
+    ,canvas : null
+    ,ctx : null
     ,viewpoint : {
         dx : 0.0
         ,dy : 0.0
@@ -117,7 +117,7 @@ let UI = {
     }
 
     ,viewpoint_rect: function() {
-        const ctx = UI.contexts[UI.LAYERS.indexOf('board')];
+        const ctx = UI.ctx['board'];
         return [
             UI.local_to_global(Point.new(0, 0)),
             UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
@@ -125,7 +125,7 @@ let UI = {
     }
 
     ,reset_layer : function(layer_name) {
-        let canvas = UI.layers[UI.LAYERS.indexOf(layer_name)];
+        let canvas = UI.canvas[layer_name];
         canvas.style['margin'] = UI.CANVAS_MARGIN + 'px';
         canvas.width = UI.window_width - 2 * UI.CANVAS_MARGIN;
         canvas.height = UI.window_height - 2 * UI.CANVAS_MARGIN;
@@ -165,7 +165,7 @@ let UI = {
         });
 
         // tool usage start events
-        let buffer_canvas = UI.layers[UI.LAYERS.indexOf('buffer')];
+        let buffer_canvas = UI.canvas['buffer'];
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
             UI._check_specials(e);
@@ -181,7 +181,7 @@ let UI = {
             UI._check_specials(e);
             UI.log(2, 'ui.touchstart', e);
             UI.is_mobile = true;
-            let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
+            let lp = UI.get_touch(UI.canvas['buffer'], e);
 
             /*
             if (false) { // &&(UI.check_mobile_keys(lp,UI._last_point!=null))
@@ -247,7 +247,7 @@ let UI = {
             UI._check_specials(e);
             UI.log(3, 'ui.touchmove', e, e.pointerId, '=>', e.pointerType,' | ',e.bubbles,' | ',e.cancelable);
             UI.is_mobile = true;
-            let lp = UI.get_touch(UI.layers[UI.LAYERS.indexOf('buffer')], e);
+            let lp = UI.get_touch(UI.canvas['buffer'], e);
 
             /*
             if (false) { // UI.check_mobile_keys(lp,UI._last_point!=null)
@@ -404,7 +404,7 @@ let UI = {
 
         if (BOARD.board_name=='debug') {
             UI.logger.log_level = 2;
-            UI.logger.ctx = UI.contexts[UI.LAYERS.indexOf('debug')];
+            UI.logger.ctx = UI.ctx['debug'];
         }
 
         if (UI.view_mode=='debug')
@@ -471,12 +471,11 @@ let UI = {
 
         UI.is_mobile = UI._is_mobile_browser();
 
-        UI.layers = (UI.LAYERS).map((id)=>{
-            return document.getElementById('canvas_' + id);
-        });
-
-        UI.contexts = UI.layers.map((canvas)=>{
-            return canvas.getContext('2d');
+        UI.canvas = {};
+        UI.ctx = {};
+        UI.LAYERS.map((id)=>{
+            UI.canvas[id] = document.getElementById('canvas_' + id);
+            UI.ctx[id] = UI.canvas[id].getContext('2d');
         });
 
         UI.update_layers();
@@ -888,7 +887,7 @@ let UI = {
         let ctx = canvas.getContext('2d');
 
         if (!transparent) {
-            ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
+            ctx.fillStyle = UI.canvas['background'].style['background-color'];
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         } else {
             ctx.clearRect(0,0, canvas.width, canvas.height);
@@ -1026,7 +1025,7 @@ let UI = {
     }
 
     ,draw_overlay_stroke : function(lp0, lp1, params) { // temporary strokes in overlay layer
-        const ctx = UI.contexts[UI.LAYERS.indexOf('overlay')];
+        const ctx = UI.ctx['overlay'];
         const {
             color : color = BRUSH.get_color()
             ,width : width = BRUSH.get_local_width()
@@ -1083,8 +1082,8 @@ let UI = {
 
         if (target_ctx === undefined) {
             UI.update_layers(true);
-            ctx = UI.contexts[UI.LAYERS.indexOf('board')];
-            ctx_back = UI.contexts[UI.LAYERS.indexOf('background')];
+            ctx = UI.ctx['board'];
+            ctx_back = UI.ctx['background'];
         } else {
             ctx = target_ctx;
             ctx_back = target_ctx;
@@ -1151,7 +1150,7 @@ let UI = {
 
         if (!transparent) {
             if (ctx_type == 'OffscreenCanvasRenderingContext2D') {
-                ctx.fillStyle = UI.layers[UI.LAYERS.indexOf('background')].style['background-color'];
+                ctx.fillStyle = UI.canvas['background'].style['background-color'];
                 ctx.fillRect(0, 0, width, height);
             } else if (ctx_type == 'CanvasRenderingContext2D') {
                 ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
