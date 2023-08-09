@@ -2,6 +2,7 @@
 
 import {_class} from '../base/objects.js';
 
+import {Point} from './Point.js';
 
 let SortedList = {
 
@@ -254,6 +255,69 @@ let IndexGrid = {
                         was[stroke_id] = true;
                     }
             }
+    }
+
+    ,bounding_rect : function() {
+        let a = this.a;
+        let l0 = a.length;
+        let l1 = a[0].length;
+
+        let minx_j = undefined;
+        let miny_i = undefined;
+        let miny = undefined;
+        let minx = undefined;
+        for(let i=0; i<l0; i++) {
+            for(let j=0; j<l1; j++) {
+                if ( (j > minx_j) && (i > miny_i) )
+                    continue;
+                if (Object.keys(a[i][j]).length > 0) {
+                    miny_i = miny_i??i;
+                    if (i == miny_i) {
+                        for(let sid in a[i][j]) {
+                            let y = a[i][j][sid].rect()[0].y;
+                            miny = Math.min(miny??y , y);
+                        }
+                    }
+
+                    minx_j = Math.min(minx_j??j, j);
+                    for(let sid in a[i][j]) {
+                        let x = a[i][j][sid].rect()[0].x;
+                        minx = Math.min(minx??x, x);
+                    }
+                }
+            }
+        }
+
+        let maxx_j = undefined;
+        let maxy_i = undefined;
+        let maxy = undefined;
+        let maxx = undefined;
+        for(let i=l0-1; i>0; i--) {
+            for(let j=l1-1; j>0; j--) {
+                if ( (j < maxx_j) && (i < maxy_i) )
+                    continue;
+                if (Object.keys(a[i][j]).length > 0) {
+                    maxy_i = maxy_i??i;
+                    if (i == maxy_i) {
+                        for(let sid in a[i][j]) {
+                            let y = a[i][j][sid].rect()[1].y;
+                            maxy = Math.max(maxy??y , y);
+                        }
+                    }
+
+                    maxx_j = Math.max(maxx_j??j, j);
+                    for(let sid in a[i][j]) {
+                        let x = a[i][j][sid].rect()[1].x;
+                        maxx = Math.max(maxx??x, x);
+                    }
+                }
+            }
+        }
+
+        return [
+            Point.new(minx, miny),
+            Point.new(maxx, maxy)
+        ];
     }
 
 };

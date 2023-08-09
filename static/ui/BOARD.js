@@ -259,23 +259,16 @@ let BOARD = {
             BOARD.unregister(stroke);
         else {
             BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
-            BOARD.XList.add(stroke);
-            BOARD.YList.add(stroke);
             BOARD.IGrid.add_stroke(stroke);
         }
     }
 
     ,unregister : function(stroke) { // ###
-        BOARD.XList.remove(stroke);
-        BOARD.YList.remove(stroke);
         BOARD.IGrid.remove_stroke(stroke);
     }
 
     ,get_global_rect : function() {
-        return [
-            Point.new(BOARD.XList.a[0], BOARD.YList.a[0]),
-            Point.new(BOARD.XList.a[BOARD.XList.a.length-1], BOARD.YList.a[BOARD.YList.a.length-1])
-        ];
+        return BOARD.IGrid.bounding_rect();
     }
 
     ,get_commits : function(commit_min='', commit_max=BOARD.commit_id) {
