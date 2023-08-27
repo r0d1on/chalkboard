@@ -100,6 +100,12 @@ def get_image_diff(test):
     img_out = iio.imread(f"{test['dir']}/.output/result.png")
     img_ref = iio.imread(f"{test['dir']}/result.png")
     diff = np.abs(img_out - img_ref)[:,:,0:3]
+
+    img_diff = diff.sum(axis=2)
+    max_diff = max(1, img_diff.max())
+    img_diff = ((img_diff / max_diff) * 255).astype(np.uint8)
+    iio.imwrite(f"{test['dir']}/.output/diff.png", np.stack([img_diff] * 3 , axis=-1))
+    
     return (diff.mean(), diff.std(), (diff>0).sum() / (diff>-1).sum())
 
 def difference_is_significant(diff):
@@ -141,9 +147,10 @@ def run_test(test, fast=True):
     say(2, "image diff: ", image_diff)
     if difference_is_significant(image_diff):
         fail_test(test, "reference and replay output images are different", image_diff)
-        return
+    else:
+        pass_test(test)
 
-    pass_test(test)
+    os.system(f"chown -R {SETTINGS['owner']} {test_dir}/.output")
 
 
 def get_report():
@@ -152,12 +159,16 @@ def get_report():
     say(0, COLORS.HEADER, "Tests summary:", COLORS.ENDC)
     say(0, COLORS.HEADER, ("=" * 80), COLORS.ENDC)
 
+    total_time = 0
+
     for test in TESTS.values():
         if test['passed']:
             say(0, f"{test['name']:<20} :", COLORS.OKGREEN, "passed", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC, f"diff = {test['diff']}")
         else:
             failed = True
             say(0, f"{test['name']:<20} :", COLORS.FAIL   ,"failed",  COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.WARNING, f" {test['error']}", COLORS.ENDC, f"diff = {test['diff']}")
+        total_time += test['time']
+    say(0, f" Total tests runtime: {total_time:>6.2f}s")
     return 0 if not failed else 1
 
 
