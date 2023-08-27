@@ -91,31 +91,24 @@ let BOARD = {
     }
 
 
-    ,flush : function(buffer, clear=true) {
+    ,add_strokes : function(buffer, clear=true, draw=true) {
         let ctx = UI.ctx['board'];
-        let maxw = -1e10;
+
+        if (buffer.length==0)
+            return [];
 
         let brect = UI.get_rect(buffer.reduce((a, stroke)=>{
-            stroke.draw(ctx);
+            if (draw)
+                stroke.draw(ctx);
 
             BOARD.commit_stroke(stroke);
 
-            maxw = Math.max(stroke.width, maxw) * UI.viewpoint.scale;
-
-            //a.push(lp0, lp1);
             stroke.rect().map((point)=>{
                 a.push(UI.global_to_local(point));
             });
 
             return a;
         }, []));
-
-        ctx = UI.ctx['buffer'];
-        ctx.clearRect(brect[0].x - maxw
-            , brect[0].y - maxw
-            , brect[1].x - brect[0].x + 2 * maxw
-            , brect[1].y - brect[0].y + 2 * maxw
-        );
 
         if (clear)
             buffer.splice(0, buffer.length);
@@ -128,7 +121,11 @@ let BOARD = {
             return false;
 
         BOARD.op_start();
-        BOARD.flush(BOARD.buffer);
+        let brect = BOARD.add_strokes(BOARD.buffer);
+        UI.ctx['buffer'].clearRect(
+            brect[0].x, brect[0].y,
+            brect[1].x - brect[0].x, brect[1].y - brect[0].y
+        );
         BOARD.op_commit();
 
         return true;

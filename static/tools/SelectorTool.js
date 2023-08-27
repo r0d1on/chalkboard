@@ -148,10 +148,10 @@ let SelectorBase = {
 
         let d = W * 2;
         let brackets = [ // selection box brackets
-            [Point.new(box[0].x  , box[0].y+d), box[0], Point.new(box[0].x+d, box[0].y  )]
-            ,[Point.new(box[1].x-d, box[1].y  ), box[1], Point.new(box[1].x  , box[1].y+d)]
-            ,[Point.new(box[2].x  , box[2].y-d), box[2], Point.new(box[2].x-d, box[2].y  )]
-            ,[Point.new(box[3].x+d, box[3].y  ), box[3], Point.new(box[3].x  , box[3].y-d)]
+            [Point.new(box[0].x  , box[0].y+d), box[0], Point.new(box[0].x+d, box[0].y  )],
+            [Point.new(box[1].x-d, box[1].y  ), box[1], Point.new(box[1].x  , box[1].y+d)],
+            [Point.new(box[2].x  , box[2].y-d), box[2], Point.new(box[2].x-d, box[2].y  )],
+            [Point.new(box[3].x+d, box[3].y  ), box[3], Point.new(box[3].x  , box[3].y-d)]
         ];
 
 
@@ -182,6 +182,7 @@ let SelectorBase = {
         });
 
         // draw selected center
+        // debugger;
         if (this.allowed_modes.has(SelectorBase.MODES.MOVING)) {
             lp = UI.global_to_local(this.selection_center);
             UI.draw_line(lp, lp, SelectorBase.COLOR_HOTPOINT_BG, W * 3, ctx);
@@ -501,10 +502,10 @@ let SelectorBase = {
         ErasureStroke.flip_strokes(old_strokes, BOARD.stroke_id, true);
 
         // add changed strokes
-        BOARD.flush(changed_strokes, false);
+        BOARD.add_strokes(changed_strokes, false);
 
         // add new strokes
-        BOARD.flush(this.extra_strokes, false);
+        BOARD.add_strokes(this.extra_strokes, false);
     }
 
     ,on_key_point_stop : function(mode) { // eslint-disable-line no-unused-vars
@@ -808,6 +809,7 @@ let SelectorTool = {
             r.push(stroke.get_point(1));
             return r;
         }, []));
+
 
         let figure_center = Point.new(
             (rect[0].x + rect[1].x) / 2.0

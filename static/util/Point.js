@@ -15,6 +15,16 @@ let Point = {
             this.pressure = pressure;
     }
 
+    ,eq : function(other) {
+        return (this.x==other.x) && (this.y==other.y);
+    }
+
+    ,sqd : function(other) {
+        let dx = this.x - other.x;
+        let dy = this.y - other.y;
+        return dx + dy;
+    }
+
     ,dst2 : function(other) {
         let dx = this.x - other.x;
         let dy = this.y - other.y;
@@ -51,6 +61,18 @@ let Point = {
 
     ,add : function(other, scale=1) {
         return this.sub(other, -scale);
+    }
+
+    ,shift : function(d) {
+        return Point.new(this.x - d, this.y - d);
+    }
+
+    ,floor : function() {
+        return Point.new(Math.floor(this.x), Math.floor(this.y));
+    }
+
+    ,ceil : function() {
+        return Point.new(Math.ceil(this.x), Math.ceil(this.y));
     }
 
     ,sub : function(other, scale=1) {

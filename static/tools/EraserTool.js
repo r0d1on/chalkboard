@@ -99,8 +99,19 @@ let EraserTool = {
             });
         }
 
-        if (this._buffer_strokes.length + erased.length > 0)
-            UI.redraw(undefined, true, this._buffer_strokes);
+        if (erased.length > 0) {
+            let rect = UI.get_rect(erased.reduce((r, stroke)=>{
+                stroke.rect().map((p)=>{r.push(p);});
+                return r;
+            }, []));
+
+            rect = UI.get_rect(this._buffer_strokes.reduce((r, stroke)=>{
+                stroke.rect().map((p)=>{r.push(p);});
+                return r;
+            }, rect));
+
+            UI.redraw(undefined, true, this._buffer_strokes, undefined, undefined, rect);
+        }
 
         UI.draw_overlay_stroke(lp, lp, {color : '#9335'}); // draw active eraser pointer
     }
@@ -128,26 +139,13 @@ let EraserTool = {
         }
 
         // properly "erase" them
-        if (erased.length > 0) {
+        if (erased.length > 0)
             ErasureStroke.flip_strokes(erased, undefined, true);
-        }
 
-        // add new strokes created to board buffer
-        this._buffer_strokes.map((stroke)=>{
-            BOARD.add_line(
-                UI.global_to_local(stroke.p0)
-                , UI.global_to_local(stroke.p1)
-                , {
-                    width : stroke.width * UI.viewpoint.scale
-                    ,color : stroke.color
-                    ,pressure : null
-                }
-            );
-        });
-        BOARD.flush(BOARD.buffer);
+        // add new strokes created
+        BOARD.add_strokes(this._buffer_strokes, false, false);
 
         BOARD.op_commit(); // finish board transaction opened in on_start()
-        UI.redraw();
 
         DrawToolBase.on_move.call(this, lp);
     }

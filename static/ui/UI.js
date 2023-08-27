@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepcopy, obj_type} from '../base/objects.js';
+import {deepcopy} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
 import {Toast} from '../util/Toast.js';
@@ -136,7 +136,7 @@ let UI = {
         UI.window_width = window.innerWidth;
         UI.window_height = window.innerHeight;
         UI.LAYERS.map((layer_name)=>{
-            if (for_redraw&&(layer_name=='debug'))
+            if (for_redraw && (layer_name=='debug'))
                 return;
             else
                 UI.reset_layer(layer_name);
@@ -475,7 +475,10 @@ let UI = {
         UI.ctx = {};
         UI.LAYERS.map((id)=>{
             UI.canvas[id] = document.getElementById('canvas_' + id);
-            UI.ctx[id] = UI.canvas[id].getContext('2d');
+            if (id=='buffer')
+                UI.ctx[id] = UI.canvas[id].getContext('2d', { willReadFrequently: true });
+            else
+                UI.ctx[id] = UI.canvas[id].getContext('2d');
         });
 
         UI.update_layers();
@@ -875,14 +878,14 @@ let UI = {
                 }
             });
         }
-        /**/
+        /* */
 
-        /**/
+        /* */
         let canvas = new OffscreenCanvas(
             (rect[1].x - rect[0].x) * scale,
             (rect[1].y - rect[0].y) * scale
         );
-        /**/
+        /* */
 
         let ctx = canvas.getContext('2d');
 
@@ -1013,11 +1016,18 @@ let UI = {
     }
 
     ,draw_line : function(lp0, lp1, color, width, ctx) {
+        const canvas_epsilon = 0.00005;
+        if (lp0.dst2(lp1) + width < canvas_epsilon)
+            return;
         ctx.beginPath();
         ctx.lineWidth = width;
         ctx.strokeStyle = color;
         ctx.lineCap = 'round';
         ctx.moveTo(lp0.x, lp0.y);
+        if (lp0.eq(lp1)) {
+            lp1.x += canvas_epsilon;
+            lp1.y += canvas_epsilon;
+        }
         ctx.lineTo(lp1.x, lp1.y);
         ctx.stroke();
         ctx.closePath();
@@ -1039,6 +1049,8 @@ let UI = {
             Point.new(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY),
             Point.new(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY)
         ];
+        if (points.length==0)
+            return [];
         points.map((point)=>{
             if (point!=null) {
                 rect[0].x = Math.min(rect[0].x, point.x);
@@ -1076,27 +1088,38 @@ let UI = {
         }
     }
 
-    ,_redraw : function(target_ctx, extra_strokes=[], transparent=false, draw_grid=UI.GRID_MODE.value) {
+    ,_redraw : function(target_ctx, extra_strokes=[], transparent=false, draw_grid=UI.GRID_MODE.value, rect) {
         let ctx = null;
         let ctx_back = null;
+        let global_viewrect = undefined;
 
         if (target_ctx === undefined) {
-            UI.update_layers(true);
-            ctx = UI.ctx['board'];
-            ctx_back = UI.ctx['background'];
+            if (rect!==undefined) {
+                global_viewrect = rect;
+                transparent = false;
+                UI.reset_layer('buffer');
+                ctx = UI.ctx['buffer'];
+                ctx_back = ctx;
+            } else {
+                UI.update_layers(true);
+                ctx = UI.ctx['board'];
+                ctx_back = UI.ctx['background'];
+            }
         } else {
+            rect = undefined;
             ctx = target_ctx;
             ctx_back = target_ctx;
         }
 
-        UI.redraw_background(ctx_back, transparent, draw_grid);
-
-        UI.on_before_redraw();
-
-        let global_viewrect = [
+        global_viewrect = global_viewrect||[
             UI.local_to_global(Point.new(0, 0)),
             UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
         ];
+
+        UI.redraw_background(ctx_back, transparent, draw_grid);
+        UI.on_before_redraw();
+
+        let redrawed = [];
 
         // last_cached_image.draw(ctx)
         {
@@ -1105,34 +1128,52 @@ let UI = {
                 //     continue;
                 for(let i in commit) {
                     let stroke = commit[i];
-                    stroke.draw(ctx, global_viewrect);
+                    if (stroke.draw(ctx, global_viewrect)) {
+                        stroke.rect().map((p)=>{redrawed.push(p);});
+                    }
                 }
             });
         }
 
-        extra_strokes.map((stroke)=>{
-            stroke.draw(ctx, global_viewrect);
-        });
+        redrawed = UI.get_rect(extra_strokes.reduce((r, stroke)=>{
+            if (stroke.draw(ctx, global_viewrect)) {
+                stroke.rect().map((p)=>{r.push(p);});
+            }
+            return r;
+        }, UI.get_rect(redrawed)));
+
+        if (rect!==undefined) {
+            let lp0 = UI.global_to_local(rect[0]).floor();
+            let lp1 = UI.global_to_local(rect[1]).ceil();
+            let patch = ctx.getImageData(lp0.x, lp0.y, lp1.x - lp0.x, lp1.y - lp0.y);
+
+            UI.reset_layer('buffer');
+            UI.ctx['board'].putImageData(patch, lp0.x, lp0.y);
+        }
 
         UI.on_after_redraw();
 
         BRUSH.update_size();
 
         UI._canvas_changed();
+
+        return redrawed;
     }
 
-    ,redraw : function(target_ctx, immediate, extra_strokes, transparent, draw_grid) {
+    ,redraw : function(target_ctx, immediate, extra_strokes, transparent, draw_grid, rect) {
+        let redrawed = undefined;
         if (immediate) {
-            UI._redraw(target_ctx, extra_strokes, transparent, draw_grid);
+            redrawed = UI._redraw(target_ctx, extra_strokes, transparent, draw_grid, rect);
         } else {
             if (!UI._redrawing) {
                 UI._redrawing = true;
                 window.requestAnimationFrame(()=>{
-                    UI._redraw(target_ctx, extra_strokes, transparent, draw_grid);
+                    UI._redraw(target_ctx, extra_strokes, transparent, draw_grid, rect);
                     UI._redrawing = false;
                 });
             }
         }
+        return redrawed;
     }
 
     ,redraw_background : function(ctx, transparent, draw_grid) {
@@ -1146,15 +1187,9 @@ let UI = {
             ['#CCC', '#222']
         ];
 
-        let ctx_type = obj_type(ctx);
-
         if (!transparent) {
-            if (ctx_type == 'OffscreenCanvasRenderingContext2D') {
-                ctx.fillStyle = UI.canvas['background'].style['background-color'];
-                ctx.fillRect(0, 0, width, height);
-            } else if (ctx_type == 'CanvasRenderingContext2D') {
-                ctx.canvas.style['background-color'] = background_colors[UI.THEME.value];
-            }
+            ctx.fillStyle = background_colors[UI.THEME.value];
+            ctx.fillRect(0, 0, width, height);
         }
 
         if (!draw_grid)
