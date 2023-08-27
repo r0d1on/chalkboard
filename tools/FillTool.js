@@ -42,8 +42,8 @@ let FillTool = {
         let strokes = {};
         BOARD.get_points(
             UI.get_rect([
-                Point.new(0,0)
-                ,Point.new(UI.window_width - UI.CANVAS_MARGIN * 2, UI.window_height- UI.CANVAS_MARGIN * 2)
+                Point.new(0,0),
+                Point.new(UI.window_width - UI.CANVAS_MARGIN * 2, UI.window_height- UI.CANVAS_MARGIN * 2)
             ]).map((p)=>{
                 return UI.local_to_global(p);
             })
@@ -62,21 +62,21 @@ let FillTool = {
 
         while ( (p0==null) || (p0.dst(lp) >= lw * 1.5) ) {
             p0 = Point.new(
-                (sp.x + dx * lw * s)
-                ,(sp.y + dy * lw * s)
+                (sp.x + dx * lw * s),
+                (sp.y + dy * lw * s)
             );
 
             let p1 = this.get_intersection(p0, lw, strokes,
                 Point.new(
-                    lw * (dx * Math.cos(Math.PI/2) - dy * Math.sin(Math.PI/2))
-                    ,lw * (dx * Math.sin(Math.PI/2) + dy * Math.cos(Math.PI/2))
+                    lw * (dx * Math.cos(Math.PI/2) - dy * Math.sin(Math.PI/2)),
+                    lw * (dx * Math.sin(Math.PI/2) + dy * Math.cos(Math.PI/2))
                 )
             );
 
             let p2 = this.get_intersection(p0, lw, strokes,
                 Point.new(
-                    lw * (dx * Math.cos(3*Math.PI/2) - dy * Math.sin(3*Math.PI/2))
-                    ,lw * (dx * Math.sin(3*Math.PI/2) + dy * Math.cos(3*Math.PI/2))
+                    lw * (dx * Math.cos(3*Math.PI/2) - dy * Math.sin(3*Math.PI/2)),
+                    lw * (dx * Math.sin(3*Math.PI/2) + dy * Math.cos(3*Math.PI/2))
                 )
             );
 

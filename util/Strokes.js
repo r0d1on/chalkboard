@@ -128,10 +128,11 @@ Stroke = _class('Stroke', Stroke);
 let RectableStroke = {
     super :  Stroke
 
-    ,RectableStroke : function(p0, p1) {
+    ,RectableStroke : function(p0, p1, width) {
         Stroke.__init__.call(this);
         this.p0 = p0;
         this.p1 = p1;
+        this.width = width;
     }
 
     ,draw : function(gr) {
@@ -142,10 +143,10 @@ let RectableStroke = {
             return true;
 
         if ( // if stroke is out of viewport bounds
-            ((this.p0.x < gr[0].x)&&(this.p1.x < gr[0].x))||
-            ((gr[1].x < this.p0.x)&&(gr[1].x < this.p1.x))||
-            ((this.p0.y < gr[0].y)&&(this.p1.y < gr[0].y))||
-            ((gr[1].y < this.p0.y)&&(gr[1].y < this.p1.y))
+            ((this.p0.x < gr[0].x) && (this.p1.x < gr[0].x))||
+            ((gr[1].x < this.p0.x) && (gr[1].x < this.p1.x))||
+            ((this.p0.y < gr[0].y) && (this.p1.y < gr[0].y))||
+            ((gr[1].y < this.p0.y) && (gr[1].y < this.p1.y))
         ) {
             return false;
         }
@@ -154,7 +155,12 @@ let RectableStroke = {
     }
 
     ,rect : function() {
-        return UI.get_rect([this.p0, this.p1]);
+        return UI.get_rect([
+            this.p0.shift(+this.width),
+            this.p0.shift(-this.width),
+            this.p1.shift(+this.width),
+            this.p1.shift(-this.width)
+        ]);
     }
 
     ,center : function() {
@@ -231,9 +237,8 @@ let LineStroke = {
     super :  RectableStroke
 
     ,LineStroke : function(p0, p1, color, width) {
-        RectableStroke.__init__.call(this, p0, p1);
+        RectableStroke.__init__.call(this, p0, p1, width);
         this.color = color;
-        this.width = width;
     }
 
     ,draw : function(ctx, gr) {
@@ -243,6 +248,7 @@ let LineStroke = {
         let lp0 = UI.global_to_local(this.p0);
         let lp1 = UI.global_to_local(this.p1);
         UI.draw_line(lp0, lp1, this.color, this.width * UI.viewpoint.scale, ctx);
+        return true;
     }
 
     ,touched_by : function(gp, diameter) {
@@ -444,7 +450,7 @@ let ImageStroke = {
     super :  RectableStroke
 
     ,ImageStroke : function(image, p0, p1) {
-        RectableStroke.__init__.call(this, p0, p1);
+        RectableStroke.__init__.call(this, p0, p1, 0);
         this.image = image;
     }
 
@@ -461,6 +467,7 @@ let ImageStroke = {
             ,lp1.y - lp0.y
         );
         UI._canvas_changed();
+        return true;
     }
 
     ,selection : function(rect) {
