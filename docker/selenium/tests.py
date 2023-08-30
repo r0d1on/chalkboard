@@ -162,12 +162,13 @@ def get_report():
     total_time = 0
 
     for test in TESTS.values():
+        test_time = test['time'] if test['time'] is not None else 0
         if test['passed']:
-            say(0, f"{test['name']:<20} :", COLORS.OKGREEN, "passed", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC, f"diff = {test['diff']}")
+            say(0, f"{test['name']:<20} :", COLORS.OKGREEN, "passed", COLORS.OKBLUE, f"({test_time:>6.2f}s)", COLORS.ENDC, f"diff = {test['diff']}")
         else:
             failed = True
-            say(0, f"{test['name']:<20} :", COLORS.FAIL   ,"failed",  COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.WARNING, f" {test['error']}", COLORS.ENDC, f"diff = {test['diff']}")
-        total_time += test['time']
+            say(0, f"{test['name']:<20} :", COLORS.FAIL   ,"failed",  COLORS.OKBLUE, f"({test_time:>6.2f}s)", COLORS.WARNING, f" {test['error']}", COLORS.ENDC, f"diff = {test['diff']}")
+        total_time += test_time
     say(0, f" Total tests runtime: {total_time:>6.2f}s")
     return 0 if not failed else 1
 
