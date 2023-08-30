@@ -1111,7 +1111,7 @@ let UI = {
             ctx_back = target_ctx;
         }
 
-        global_viewrect = global_viewrect||[
+        global_viewrect = global_viewrect || [
             UI.local_to_global(Point.new(0, 0)),
             UI.local_to_global(Point.new(ctx.canvas.width, ctx.canvas.height))
         ];
@@ -1119,28 +1119,16 @@ let UI = {
         UI.redraw_background(ctx_back, transparent, draw_grid);
         UI.on_before_redraw();
 
-        let redrawed = [];
-
         // last_cached_image.draw(ctx)
-        {
-            BOARD.get_commits().map((commit)=>{
-                // if commit_id < last_cached_image.commit_id
-                //     continue;
-                for(let i in commit) {
-                    let stroke = commit[i];
-                    if (stroke.draw(ctx, global_viewrect)) {
-                        stroke.rect().map((p)=>{redrawed.push(p);});
-                    }
-                }
-            });
-        }
+        BOARD.get_visible_strokes(global_viewrect).map((stroke)=>{
+            // if commit_id < last_cached_image.commit_id
+            //     continue;
+            stroke.draw(ctx);
+        });
 
-        redrawed = UI.get_rect(extra_strokes.reduce((r, stroke)=>{
-            if (stroke.draw(ctx, global_viewrect)) {
-                stroke.rect().map((p)=>{r.push(p);});
-            }
-            return r;
-        }, UI.get_rect(redrawed)));
+        extra_strokes.map((stroke)=>{
+            stroke.draw(ctx, global_viewrect);
+        });
 
         if (rect!==undefined) {
             let lp0 = UI.global_to_local(rect[0]).floor();
@@ -1156,14 +1144,11 @@ let UI = {
         BRUSH.update_size();
 
         UI._canvas_changed();
-
-        return redrawed;
     }
 
     ,redraw : function(target_ctx, immediate, extra_strokes, transparent, draw_grid, rect) {
-        let redrawed = undefined;
         if (immediate) {
-            redrawed = UI._redraw(target_ctx, extra_strokes, transparent, draw_grid, rect);
+            UI._redraw(target_ctx, extra_strokes, transparent, draw_grid, rect);
         } else {
             if (!UI._redrawing) {
                 UI._redrawing = true;
@@ -1173,7 +1158,6 @@ let UI = {
                 });
             }
         }
-        return redrawed;
     }
 
     ,redraw_background : function(ctx, transparent, draw_grid) {

@@ -155,12 +155,17 @@ let RectableStroke = {
     }
 
     ,rect : function() {
-        return UI.get_rect([
-            this.p0.shift(+this.width),
-            this.p0.shift(-this.width),
-            this.p1.shift(+this.width),
-            this.p1.shift(-this.width)
+        if  (this.__rect)
+            return this.__rect;
+
+        this.__rect = UI.get_rect([
+            this.p0.shift(+this.width / 2),
+            this.p0.shift(-this.width / 2),
+            this.p1.shift(+this.width / 2),
+            this.p1.shift(-this.width / 2)
         ]);
+
+        return this.__rect;
     }
 
     ,center : function() {
@@ -404,7 +409,7 @@ let ErasureStroke = {
 
     ,draw : function(){}
 
-    ,flip_strokes : function(strokes, eraser_id, finalize) { // ###
+    ,flip_strokes : function(strokes, eraser_id, finalize=false) { // ###
         let flipped = strokes.reduce((sub, stroke)=>{
             stroke.flip_by(eraser_id).map((flipped_stroke)=>{
                 sub.push(flipped_stroke);
