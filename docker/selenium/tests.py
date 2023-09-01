@@ -21,14 +21,14 @@ def get_tests(tests_mask):
     tests = dict([
         (name, 
         {
-            "dir": testdir
-            ,"name": name
-            ,"passed": False
-            ,"diff": None
-            ,"error": None
-            ,"time": None
-            ,"settings": {"speedup": 0.2}
-            ,"checked": False
+            "dir": testdir,
+            "name": name,
+            "passed": False,
+            "diff": None,
+            "error": None,
+            "time": None,
+            "settings": {"speedup": 0.2},
+            "checked": False
         })
         for testdir in sorted(glob.glob("/chalkboard/tests/selenium/" + tests_mask))
         for name in [testdir.split('/')[~0]]
@@ -64,20 +64,20 @@ def fail_test(test, reason, diff):
     test["error"] = reason
     test["passed"] = False
     test["checked"] = True
-    test["diff"] = diff
+    test["diff"] = "[" + ", ".join(f"{d:8.5f}" for d in diff) + "]"
     say(0, "")
-    say(0, f"{test['name']:<15}", COLORS.FAIL, "- failed: ", COLORS.WARNING, reason, COLORS.ENDC, "\t", diff)
+    say(0, "", COLORS.FAIL, "- failed: ", COLORS.WARNING, reason, COLORS.ENDC, "\t", test["diff"])
     with open(f"{test['dir']}/.output/.checked", "wt") as f:
         f.write("failed")
 
 
-def pass_test(test):
+def pass_test(test, diff):
     test["error"] = None
     test["passed"] = True
     test["checked"] = True
-    test["diff"] = "0"
+    test["diff"] = "[" + ", ".join(f"{d:8.5f}" for d in diff) + "]"
     say(0, "")
-    say(0, f"{test['name']:<15}", COLORS.OKGREEN, "- passed: ", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC)
+    say(0, "", COLORS.OKGREEN, "- passed: ", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC, test["diff"])
     with open(f"{test['dir']}/.output/.checked", "wt") as f:
         f.write("passed")
 
@@ -85,7 +85,7 @@ def pass_test(test):
 def skip_test(test):
     test["time"] = 0
     test["diff"] = "-"
-    say(0, f"{test['name']:<15}", COLORS.OKBLUE, "- skipped", COLORS.ENDC)
+    say(0, "", COLORS.OKBLUE, "- skipped", COLORS.ENDC)
 
 
 def get_image_diff(test):
@@ -110,8 +110,8 @@ def get_image_diff(test):
 
 def difference_is_significant(diff):
     return (
-        (diff[0] > 0.098)or
-        (diff[1] > 3.6)or
+        (diff[0] > 0.0980)or
+        (diff[1] > 3.6000)or
         (diff[2] > 0.0026)
     )
 
@@ -148,7 +148,7 @@ def run_test(test, fast=True):
     if difference_is_significant(image_diff):
         fail_test(test, "reference and replay output images are different", image_diff)
     else:
-        pass_test(test)
+        pass_test(test, image_diff)
 
     os.system(f"chown -R {SETTINGS['owner']} {test_dir}/.output")
 
