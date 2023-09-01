@@ -10,14 +10,14 @@ let IO = {
 
     ,type : 'recorder.proxy'
     ,EVENTS: {
-        'MouseEvent' : ['offsetX', 'offsetY', 'button']
-        ,'WheelEvent' : ['deltaY', 'deltaX']
-        ,'KeyboardEvent' : ['key']
-        ,'Event' : []
-        ,'PointerEvent' : ['offsetX', 'offsetY', 'button', 'pressure', 'pointerType']
-        ,'ClipboardEvent' : []
-        ,'HashChangeEvent' : []
-        ,'TouchEvent' : ['touches']
+        'MouseEvent' : ['offsetX', 'offsetY', 'button', 'buttons'],
+        'WheelEvent' : ['deltaY', 'deltaX', 'buttons'],
+        'KeyboardEvent' : ['key', 'buttons'],
+        'Event' : [],
+        'PointerEvent' : ['offsetX', 'offsetY', 'button', 'pressure', 'pointerType', 'buttons'],
+        'ClipboardEvent' : [],
+        'HashChangeEvent' : [],
+        'TouchEvent' : ['touches']
     }
     ,STATUSES : {
         PASS : 0

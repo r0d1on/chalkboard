@@ -24,8 +24,6 @@ let UndoTool = { // background tool
     ,on_activated : function() {
         let undone = BOARD.undo();
         undone.map((stroke)=>{
-            BOARD.unregister(stroke);
-            BOARD.version += 1;
             if (is_instance_of(stroke, ErasureStroke))
                 stroke.flip_by();
         });

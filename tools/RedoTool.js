@@ -24,8 +24,6 @@ let RedoTool = { // background tool
     ,on_activated : function() {
         let redone = BOARD.redo();
         redone.map((stroke)=>{
-            BOARD.version += 1;
-            BOARD.register(stroke);
             if (is_instance_of(stroke, ErasureStroke))
                 stroke.flip_by();
         });
