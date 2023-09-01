@@ -150,9 +150,14 @@ let BOARD = {
         BOARD.get_commits(commit_id_prev, commit_id_was).map((commit)=>{
             if (undone.length > 0)
                 UI.log(-1, 'undoing more than 1 commit');
-            for (let i in commit)
-                undone.push(commit[i]);
+            for (let i in commit) {
+                let stroke = commit[i];
+                undone.push(stroke);
+                BOARD.unregister(stroke);
+            }
         });
+
+        BOARD.version += 1;
 
         UI.is_dirty = true;
         return undone;
@@ -179,9 +184,14 @@ let BOARD = {
         BOARD.get_commits(commit_id_was, BOARD.commit_id).map((commit)=>{
             if (redone.length > 0)
                 UI.log(-1, 'redoing more than 1 commit');
-            for (let i in commit)
-                redone.push(commit[i]);
+            for (let i in commit) {
+                let stroke = commit[i];
+                redone.push(stroke);
+                BOARD.register(stroke);
+            }
         });
+
+        BOARD.version += 1;
 
         UI.is_dirty = true;
         return redone;
