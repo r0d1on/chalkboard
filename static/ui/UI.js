@@ -39,6 +39,7 @@ let UI = {
     ,_last_point : null
     ,_under_focus : false
     ,_last_button : 0
+    ,_started : false
 
     ,is_mobile : false
     ,is_dirty : false
@@ -59,17 +60,17 @@ let UI = {
 
 
     ,special_keys : {
-        'Control' : 'ctrlKey'
-        , 'Shift' : 'shiftKey'
-        , 'Alt' : 'altKey'
-        , 'Meta' : 'metaKey'
+        'Control' : 'ctrlKey',
+        'Shift' : 'shiftKey',
+        'Alt' : 'altKey',
+        'Meta' : 'metaKey'
     }
     ,keys : {
-        'Control' : false
-        , 'Shift' : false
-        , 'Alt' : false
-        , 'Meta' : false
-        , null : true
+        'Control' : false,
+        'Shift' : false,
+        'Alt' : false,
+        'Meta' : false,
+        null : true
     }
     ,special_active : 0
 
@@ -143,9 +144,13 @@ let UI = {
         });
     }
 
-    ,_check_specials : function(e) {
+    ,_check_specials : function(e, activate=true) {
         if (UI.is_mobile)
             return;
+
+        if (e && (e.key in UI.special_keys))
+            return;
+
         for(let key in UI.special_keys) {
             let key_field = UI.special_keys[key];
             if ((key_field in e)&&(e[key_field]!=UI.keys[key])) {
@@ -153,6 +158,14 @@ let UI = {
                     UI.on_key_down(key);
                 else
                     UI.on_key_up(key);
+            }
+        }
+
+        if (activate) {
+            if (e.buttons && (!UI._started)) {
+                UI.on_start(UI._last_point, e.button);
+            } else if (!e.buttons && (UI._started)) {
+                UI.on_stop(UI._last_point);
             }
         }
     }
@@ -168,7 +181,7 @@ let UI = {
         let buffer_canvas = UI.canvas['buffer'];
 
         UI.IO.add_event(buffer_canvas, 'mousedown', e => {
-            UI._check_specials(e);
+            UI._check_specials(e, false);
             UI.log(2, 'ui.mousedown', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
@@ -178,7 +191,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchstart', e => {
-            UI._check_specials(e);
+            UI._check_specials(e, false);
             UI.log(2, 'ui.touchstart', e);
             UI.is_mobile = true;
             let lp = UI.get_touch(UI.canvas['buffer'], e);
@@ -202,7 +215,7 @@ let UI = {
             e.preventDefault();
         });
         UI.IO.add_event(buffer_canvas, 'pointerdown', e => {
-            UI._check_specials(e);
+            UI._check_specials(e, false);
             UI.log(2, 'ui.pointerdown', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
             if (e.pointerType=='pen') { // only process start events from pen here
                 let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
@@ -264,7 +277,7 @@ let UI = {
 
         // tool usage stop events
         UI.IO.add_event(buffer_canvas, 'mouseup', e => {
-            UI._check_specials(e);
+            UI._check_specials(e, false);
             UI.log(2, 'ui.mouseup', e);
             let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
             UI._last_point = lp;
@@ -274,7 +287,7 @@ let UI = {
             }
         });
         UI.IO.add_event(buffer_canvas, 'touchend', e => {
-            UI._check_specials(e);
+            UI._check_specials(e, false);
             UI.log(2, 'ui.touchend', e);
             UI.is_mobile = true;
             let lp = UI._last_point;
@@ -296,7 +309,7 @@ let UI = {
             e.preventDefault();
         });
         UI.IO.add_event(buffer_canvas, 'pointerup', e => {
-            UI._check_specials(e);
+            UI._check_specials(e, false);
             UI.log(2, 'ui.pointerup', e, e.pointerId, '=>', e.pointerType,' | ',e.altitudeAngle,' | ',e.pressure,' | ',e.tangentialPressure,' | ', e.button);
             if (e.pointerType=='pen') {
                 let lp = Point.new(e.offsetX*1.0, e.offsetY*1.0);
@@ -321,15 +334,13 @@ let UI = {
 
         // keyboard listener
         UI.IO.add_event(document, 'keydown', e => {
-            if (!(e.key in UI.special_keys))
-                UI._check_specials(e);
+            UI._check_specials(e);
             const handled = UI.on_key_down(e.key);
             if ((handled)||(((e.key=='+')||(e.key=='-'))&&(UI.keys['Control'])))
                 e.preventDefault();
         });
         UI.IO.add_event(document, 'keyup', e => {
-            if (!(e.key in UI.special_keys))
-                UI._check_specials(e);
+            UI._check_specials(e);
             UI.on_key_up(e.key);
             if (((e.key=='+')||(e.key=='-'))&&(UI.keys['Control']))
                 e.preventDefault();
@@ -661,6 +672,7 @@ let UI = {
     ,on_start : function(lp, button) {
         let handled = UI._handle_event('on_start', [lp.copy(), button]);
         UI._last_button = button;
+        UI._started = true;
         return handled;
     }
 
@@ -669,7 +681,9 @@ let UI = {
     }
 
     ,on_stop : function(lp) {
-        return UI._handle_event('on_stop', [lp.copy()]);
+        let handled = UI._handle_event('on_stop', [lp.copy()]);
+        UI._started = false;
+        return handled;
     }
 
     ,_update_special : function() {
