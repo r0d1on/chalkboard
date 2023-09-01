@@ -161,7 +161,7 @@ let UI = {
             }
         }
 
-        if (activate) {
+        if ((activate)&&(e.buttons!==undefined)) {
             if (e.buttons && (!UI._started)) {
                 UI.on_start(UI._last_point, e.button);
             } else if (!e.buttons && (UI._started)) {
