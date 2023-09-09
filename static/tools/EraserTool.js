@@ -64,18 +64,21 @@ let EraserTool = {
         if (!BRUSH.SCALED.value)
             diameter /= UI.viewpoint.scale;
 
+        let hide = ((stroke)=>{
+            let clean_stroke = stroke.copy();
+            clean_stroke.erased = undefined;
+            // hide but do not unregister them yet
+            stroke.flip_by(BOARD.stroke_id, false);
+            return clean_stroke;
+        });
+
         // collect touched strokes on the board
         BOARD.get_visible_strokes([
             Point.new(gp.x - diameter, gp.y - diameter),
             Point.new(gp.x + diameter, gp.y + diameter)
         ]).map((stroke)=>{
-            if (stroke.touched_by(gp, diameter)) {
-                let clean_stroke = stroke.copy();
-                clean_stroke.erased=undefined;
-                erased.push(clean_stroke);
-                // hide but do not unregister them yet
-                stroke.flip_by(BOARD.stroke_id, false);
-            }
+            if (stroke.touched_by(gp, diameter))
+                erased.push(hide(stroke));
         });
 
         // check touched buffered strokes
