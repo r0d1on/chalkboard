@@ -247,14 +247,14 @@ let BOARD = {
 
     ,register : function(stroke, bulk=false) { // ###
         if (bulk) {
-            console.log(-1, 'bulk loading strokes');
+            UI.log(-1, 'bulk loading strokes');
             BOARD.init();
             for (const commit_id in stroke) {
                 BOARD.strokes[commit_id] = {};
                 for(const stroke_idx in stroke[commit_id])
                     BOARD.register(stroke[commit_id][stroke_idx]);
             }
-            console.log(-1, 'bulk loading strokes done');
+            UI.log(-1, 'bulk loading strokes done');
             return;
         }
 

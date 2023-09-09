@@ -107,6 +107,21 @@ let SAVE = {
         SAVE.MENU_main.hide('save_group');
     }
 
+    ,_fix_collisions : function(strokes) {
+        let seen_ids = {};
+        for (const commit_id in strokes) {
+            for(const stroke_idx in strokes[commit_id]) {
+                let s = strokes[commit_id][stroke_idx];
+                if (s.stroke_id in seen_ids) {
+                    UI.log(-2, 'stroke id collision detected');
+                    while (s.stroke_id in seen_ids)
+                        s.stroke_id = BOARD.id_next(s.stroke_id, 5);
+                }
+                seen_ids[s.stroke_id] = true;
+            }
+        }
+    }
+
     ,_unpersist_message : function(msg) {
 
         if (msg.PERSISTENCE_VERSION===undefined) {
@@ -211,8 +226,13 @@ let SAVE = {
         let msg = SAVE._unpersist_message(JSON.parse(json));
         UI.on_unpersist(msg);
 
+        SAVE._fix_collisions(msg.strokes);
+
         BOARD.register(msg.strokes, true);
         SAVE._update_ids();
+
+        BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
+        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
     }
 
     ,_update_ids : function() {
@@ -336,6 +356,9 @@ let SAVE = {
 
         msg = SAVE._unpersist_message(msg);
         UI.on_unpersist(msg, is_sync);
+
+        if (!is_sync)
+            SAVE._fix_collisions(msg.strokes);
 
         for(let in_commit in msg.strokes) {
             let in_strokes = msg.strokes[in_commit];
