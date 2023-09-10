@@ -33,7 +33,7 @@ def get_driver():
     )
 
     driver = webdriver.Chrome(options=options, service=service)
-    print("driver.caps", driver.capabilities)
+    # print("driver.caps", driver.capabilities)
 
     return driver
 
