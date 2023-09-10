@@ -3,10 +3,11 @@ import os
 import sys
 import traceback
 
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.common.exceptions import TimeoutException as SeleniumTimeoutException
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
+from selenium.common.exceptions import TimeoutException as SeleniumTimeoutException
 
 from common import COLORS, say
 
@@ -23,10 +24,18 @@ def get_driver():
 
     options.add_argument("--headless")
     options.add_argument("--log-level=1")
-    options.add_argument('--disable-dev-shm-usage')        
+    options.add_argument('--disable-dev-shm-usage')
 
-    service = ChromeService(executable_path=ChromeDriverManager().install())
-    return webdriver.Chrome(options=options, service=service)
+    service = ChromeService(
+        executable_path=ChromeDriverManager(
+            # driver_version="112.0.5615.49"
+        ).install()
+    )
+
+    driver = webdriver.Chrome(options=options, service=service)
+    print("driver.caps", driver.capabilities)
+
+    return driver
 
 def wait_for_scripts(driver):
     height = None
@@ -59,7 +68,7 @@ def take_screenshots(driver, output_dir):
             error = (ex, None)
         except Exception as ex:
             error = (ex, traceback.format_exc())
-        
+
         if (ts < 0):
             say(0, '+', end='')
             say(1, "")
@@ -81,11 +90,11 @@ def main(user, ip, uri, speedup, output_dir):
     ip = '172.17.0.2'
     uri = 'test-pen-1'
     speedup = '0.2'
-    output_dir = '/chalkboard/tmp'    
+    output_dir = '/chalkboard/tmp'
     """
-    speedup = float(speedup) 
+    speedup = float(speedup)
 
-    driver = get_driver() 
+    driver = get_driver()
     url = f'http://{ip}:5000/index.html#{uri}$play?speedup={speedup}'
 
     say(2, f"selenium fetching URL: {url} into {output_dir}")
