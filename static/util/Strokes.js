@@ -210,10 +210,9 @@ let RectableStroke = {
             );
             if (take)
                 s.push({
-                    commit_id : this.commit_id
-                    ,stroke_idx : this.stroke_idx
-                    ,stroke_id : this.stroke_id
-                    ,point_idx : point_idx
+                    commit_id : this.commit_id,
+                    stroke_id : this.stroke_id,
+                    point_idx : point_idx
                 });
             return s;
         }, []);
@@ -354,7 +353,6 @@ let LineStroke = {
         let stroke = LineStroke.new(this.p0.copy(), this.p1.copy(), this.color, this.width);
         stroke.commit_id = this.commit_id;
         stroke.stroke_id = this.stroke_id;
-        stroke.stroke_idx = this.stroke_idx;
         //version
         return stroke;
     }
@@ -383,10 +381,10 @@ let LineStroke = {
 
     ,_from_json : function(json) {
         let stroke = LineStroke.new(
-            Point.from_json(json.p[0])
-            ,Point.from_json(json.p[1])
-            ,json.c
-            ,json.w
+            Point.from_json(json.p[0]),
+            Point.from_json(json.p[1]),
+            json.c,
+            json.w
         );
         Stroke._from_json.call(stroke, json, ['p', 'c', 'w']);
         return stroke;
@@ -511,7 +509,6 @@ let ImageStroke = {
         let stroke = ImageStroke.new(this.image, this.p0.copy(), this.p1.copy());
         stroke.commit_id = this.commit_id;
         stroke.stroke_id = this.stroke_id;
-        stroke.stroke_idx = this.stroke_idx;
         //version
         return stroke;
     }
