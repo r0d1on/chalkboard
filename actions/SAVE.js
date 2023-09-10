@@ -12,7 +12,7 @@ import {BOARD} from '../ui/BOARD.js';
 
 // SAVE ITEMS
 let SAVE = {
-    PERSISTENCE_VERSION : 4
+    PERSISTENCE_VERSION : 5
 
     ,icon : [null,[8,7],[8,11],[8,13],[7,17],[8,19],[7,23],[8,25],[7,28],[8,30],[7,34],[8,36],[7,40],[8,42],[7,45],[8,47],[7,51],[8,53],[10,54],[14,53],[16,54],[19,53],[21,54],[25,53],[27,54],[31,53],[33,54],[36,53],[38,54],[42,53],[44,54],[48,53],[50,54],[53,53],[53,51],[53,48],[53,45],[54,42],[53,39],[53,36],[53,34],[53,30],[53,26],[53,22],[53,18],null,[44,8],[40,8],[36,7],[33,8],[30,8],[27,8],[25,8],[22,8],[19,7],[16,8],[13,8],[10,8],[8,7],null,[53,18],[44,8],[53,18],null,[15,10],[15,21],[37,21],[37,9],[37,21],[15,21],[15,10],null,[14,51],[14,31],[14,51],null,[14,31],[42,30],[42,51],[42,30],[14,31],null,[20,36],[35,36],null,[21,45],[35,45],null,[19,12],[33,12],null,[17,17],[33,16]]
     ,icon_save : [null,[16,12],[16,15],[16,19],[16,24],null,[16,34],[16,36],[16,41],[16,45],[18,47],[20,46],[25,46],[29,46],[33,47],[37,47],[41,47],[46,47],[49,46],[49,43],[50,40],[50,38],[49,36],[49,32],[49,29],[49,26],[49,23],[49,20],null,[43,13],[40,13],[37,12],[35,12],[31,13],[27,13],[24,12],[22,12],[16,12],null,[49,20],[43,13],[49,20],null,[22,12],[21,20],[37,20],[37,12],[37,20],[21,20],[22,12],null,[35,15],[24,15],[35,15],null,[25,35],[30,30],[25,25],null,[4,30],[30,30],[25,35],null,[25,25],[30,30],[4,30]]
@@ -33,8 +33,8 @@ let SAVE = {
         let out_strokes = {};
 
         BOARD.get_commits().map((commit)=>{
-            for(let stroke_idx in commit) {
-                let stroke = commit[stroke_idx];
+            for(let stroke_id in commit) {
+                let stroke = commit[stroke_id];
                 let commit_id = stroke.commit_id;
 
                 if (from_version === undefined) {
@@ -49,8 +49,6 @@ let SAVE = {
                         continue;
                 }
 
-                // stroke.commit_id = commit_id;
-                stroke.stroke_idx = stroke_idx;
                 if (stroke.version === undefined)
                     stroke.version = BOARD.version;
 
@@ -110,12 +108,14 @@ let SAVE = {
     ,_fix_collisions : function(strokes) {
         let seen_ids = {};
         for (const commit_id in strokes) {
-            for(const stroke_idx in strokes[commit_id]) {
-                let s = strokes[commit_id][stroke_idx];
+            for(const stroke_id in strokes[commit_id]) {
+                let s = strokes[commit_id][stroke_id];
                 if (s.stroke_id in seen_ids) {
                     UI.log(-2, 'stroke id collision detected');
                     while (s.stroke_id in seen_ids)
-                        s.stroke_id = BOARD.id_next(s.stroke_id, 5);
+                        s.stroke_id = BOARD.id_next(s.stroke_id);
+                    delete strokes[commit_id][stroke_id];
+                    strokes[commit_id][s.stroke_id] = s;
                 }
                 seen_ids[s.stroke_id] = true;
             }
@@ -125,8 +125,8 @@ let SAVE = {
     ,_unpersist_message : function(msg) {
 
         if (msg.PERSISTENCE_VERSION===undefined) {
-            let commit_id = BOARD.id_next('0');
-            let id = BOARD.id_next('0', 5);
+            let commit_id = BOARD.id_next('0000');
+            let id = BOARD.id_next('00000');
             let tmp_msg = deepcopy(msg);
             tmp_msg.strokes = {};
             tmp_msg.strokes[commit_id] = {};
@@ -136,14 +136,14 @@ let SAVE = {
                 stroke.stroke_idx = sizeof(tmp_msg.strokes[commit_id]);
                 stroke.stroke_id = id;
                 tmp_msg.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
-                id = BOARD.id_next(id, 5);
+                id = BOARD.id_next(id);
             }
             msg = tmp_msg;
             msg.PERSISTENCE_VERSION = 2;
 
         } else if (msg.PERSISTENCE_VERSION === 1) {
-            let commit_id = BOARD.id_next('0');
-            let id = BOARD.id_next('0', 5);
+            let commit_id = BOARD.id_next('0000');
+            let id = BOARD.id_next('00000');
             let tmp_msg = deepcopy(msg);
             tmp_msg.strokes = {};
             for(let commit in msg.strokes) {
@@ -155,7 +155,7 @@ let SAVE = {
                         stroke.stroke_id = id;
                         stroke.stroke_idx = sizeof(tmp_msg.strokes[commit_id]);
                         tmp_msg.strokes[commit_id][stroke.stroke_idx] = stroke;
-                        id = BOARD.id_next(id, 5);
+                        id = BOARD.id_next(id);
                     }
                 }
                 commit_id = BOARD.id_next(commit_id);
@@ -209,6 +209,22 @@ let SAVE = {
         }
 
         if (msg.PERSISTENCE_VERSION === 4) {
+            SAVE._fix_collisions(msg.strokes);
+
+            for(let commit in msg.strokes) {
+                Object.keys(msg.strokes[commit]).map((idx)=>{
+                    let stroke = msg.strokes[commit][idx];
+                    delete msg.strokes[commit][idx];
+                    msg.strokes[commit][stroke.stroke_id] = stroke;
+                    delete stroke.stroke_idx;
+                });
+            }
+
+            msg.PERSISTENCE_VERSION = 5;
+        }
+
+
+        if (msg.PERSISTENCE_VERSION === 5) {
             for(let commit in msg.strokes) {
                 for(let i in msg.strokes[commit]) {
                     msg.strokes[commit][i] = Stroke.from_json(msg.strokes[commit][i]);
@@ -232,15 +248,14 @@ let SAVE = {
         SAVE._update_ids();
 
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
-        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id, 5);
+        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id);
     }
 
     ,_update_ids : function() {
         for(let commit_id in BOARD.strokes) {
             BOARD.commit_id = (BOARD.commit_id > commit_id) ? BOARD.commit_id : commit_id;
-            for(let idx in BOARD.strokes[commit_id]) {
-                let stroke = BOARD.strokes[commit_id][idx];
-                stroke.stroke_idx = idx;
+            for(let id in BOARD.strokes[commit_id]) {
+                let stroke = BOARD.strokes[commit_id][id];
                 BOARD.stroke_id = (stroke.stroke_id===undefined)||(BOARD.stroke_id > stroke.stroke_id) ? BOARD.stroke_id : stroke.stroke_id;
                 let version = (stroke.version===undefined) ? 0 : stroke.version;
                 BOARD.version = (BOARD.version > version) ? BOARD.version : version;
@@ -391,7 +406,7 @@ let SAVE = {
             max_stroke_id = (BOARD.stroke_id.split('-')[0] > max_stroke_id)?BOARD.stroke_id.split('-')[0]:max_stroke_id;
 
             BOARD.commit_id = BOARD.id_next(max_commit);
-            BOARD.stroke_id = BOARD.id_next(max_stroke_id, 5);
+            BOARD.stroke_id = BOARD.id_next(max_stroke_id);
 
             UI.redraw();
 

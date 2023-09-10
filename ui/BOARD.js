@@ -1,6 +1,6 @@
 'use strict';
 
-import {sizeof, is_instance_of} from '../base/objects.js';
+import {is_instance_of} from '../base/objects.js';
 
 import {Point} from '../util/Point.js';
 import {LineStroke, ErasureStroke} from '../util/Strokes.js';
@@ -57,16 +57,16 @@ let BOARD = {
 
     ,version : 0
 
-    ,commit_id : '0'  // last commit id
-    ,max_commit_id : '0' // max commit id in the log
+    ,commit_id : '0000-00'  // last commit id
+    ,max_commit_id : '0000-00' // max commit id in the log
 
-    ,stroke_id : '0'
+    ,stroke_id : '00000-00'
     ,strokes : {} // globally positioned strokes on board layer (committed ones)
     ,locked : false
 
-    ,id_next : function(id, pad=4) {
+    ,id_next : function(id) {
         let iid = id.split('-')[0];
-        let vid = id.split('-')[1] || UI.view_id;
+        const pad = iid.length;
 
         iid = Number.parseInt(iid, 36) + 1;
         iid = Number(iid).toString(36);
@@ -74,22 +74,34 @@ let BOARD = {
         while (iid.length < pad)
             iid = '0' + iid;
 
-        return iid + '-' + vid;
+        return iid + '-' + UI.view_id;
     }
 
-    ,id_prev : function(id, pad=4) {
+    ,id_prev : function(id) {
         let iid = id.split('-')[0];
-        let vid = id.split('-')[1] || UI.view_id;
+        const pad = iid.length;
 
         iid = Number.parseInt(iid, 36) - 1;
-        iid = (iid>=0)?Number(iid).toString(36):id.split('-')[0];
+        iid = (iid>=0) ? Number(iid).toString(36) : id.split('-')[0];
 
         while (iid.length < pad)
             iid = '0' + iid;
 
-        return iid + '-' + vid;
+        return iid + '-' + UI.view_id;
     }
 
+    ,id_eq : function(id0, id1) {
+        return id0.split('-')[0] == id1.split('-')[0];
+    }
+
+    ,id_ge : function(id0, id1) {
+        return id0.split('-')[0] >= id1.split('-')[0];
+    }
+
+    ,id_bt : function(id, id0, id1) {
+        const iid = id.split('-')[0];
+        return ((id0.split('-')[0] < iid)&&(iid <= id1.split('-')[0]));
+    }
 
     ,add_strokes : function(buffer, clear=true, draw=true) {
         let ctx = UI.ctx['board'];
@@ -140,7 +152,7 @@ let BOARD = {
     ,undo : function() { // ###
         let commit_id_prev = BOARD.id_prev(BOARD.commit_id);
 
-        if (BOARD.commit_id == commit_id_prev)
+        if (BOARD.id_eq(BOARD.commit_id, commit_id_prev))
             return [];
 
         let commit_id_was = BOARD.commit_id;
@@ -174,7 +186,7 @@ let BOARD = {
     }
 
     ,redo : function() { // ###
-        if (BOARD.commit_id >= BOARD.max_commit_id)
+        if (BOARD.id_ge(BOARD.commit_id, BOARD.max_commit_id))
             return [];
 
         let commit_id_was = BOARD.commit_id;
@@ -224,18 +236,10 @@ let BOARD = {
 
     ,commit_stroke : function(stroke) {
         stroke.version = BOARD.version;
-
-        let id_next = BOARD.id_next(BOARD.stroke_id, 5);
-
-        if (BOARD.stroke_id == '0')
-            BOARD.id_prev(id_next, 5);
-
         stroke.stroke_id = BOARD.stroke_id;
-        BOARD.stroke_id = id_next;
-
-        let idx = sizeof(BOARD.strokes[BOARD.commit_id]);
-        stroke.stroke_idx = idx;
         stroke.commit_id = BOARD.commit_id;
+
+        BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id);
 
         BOARD.register(stroke);
     }
@@ -251,21 +255,21 @@ let BOARD = {
             BOARD.init();
             for (const commit_id in stroke) {
                 BOARD.strokes[commit_id] = {};
-                for(const stroke_idx in stroke[commit_id])
-                    BOARD.register(stroke[commit_id][stroke_idx]);
+                for(const stroke_id in stroke[commit_id])
+                    BOARD.register(stroke[commit_id][stroke_id]);
             }
             UI.log(-1, 'bulk loading strokes done');
             return;
         }
 
-        let old_stroke = BOARD.strokes[stroke.commit_id][stroke.stroke_idx];
+        let old_stroke = BOARD.strokes[stroke.commit_id][stroke.stroke_id];
         if ((old_stroke!==undefined)&&(!old_stroke.is_hidden())) {
             BOARD.unregister(old_stroke);
         }
         if (stroke.is_hidden())
             BOARD.unregister(stroke);
         else {
-            BOARD.strokes[stroke.commit_id][stroke.stroke_idx] = stroke;
+            BOARD.strokes[stroke.commit_id][stroke.stroke_id] = stroke;
             BOARD.IGrid.add_stroke(stroke);
         }
     }
@@ -281,7 +285,7 @@ let BOARD = {
     ,get_commits : function(commit_min='', commit_max=BOARD.commit_id) {
         let commits = [];
         for(let commit_id in BOARD.strokes) {
-            if ((commit_min < commit_id)&&(commit_id <= commit_max))
+            if (BOARD.id_bt(commit_id, commit_min, commit_max))
                 commits.push(BOARD.strokes[commit_id]);
         }
         return commits;
@@ -301,8 +305,8 @@ let BOARD = {
         let ret = [];
 
         BOARD.get_commits().map((commit)=>{
-            for(let stroke_idx in commit) {
-                let stroke = commit[stroke_idx];
+            for(let stroke_id in commit) {
+                let stroke = commit[stroke_id];
 
                 if ((!stroke.is_drawable())||(stroke.is_hidden()))
                     continue;
@@ -394,7 +398,7 @@ let BOARD = {
 
             glyph = glyph.map((gs)=>{
                 return [0,1].map((point_idx)=>{
-                    return BOARD.strokes[gs.commit_id][gs.stroke_idx].get_point(point_idx).sub(Point.new(col*ddx, row*ddy));
+                    return BOARD.strokes[gs.commit_id][gs.stroke_id].get_point(point_idx).sub(Point.new(col*ddx, row*ddy));
                 });
             });
 

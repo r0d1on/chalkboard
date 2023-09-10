@@ -32,8 +32,8 @@ let FillTool = {
         let p1 = p0.add(dp.mul(q));
 
         for(let commit_id in strokes)
-            for(let stroke_idx in strokes[commit_id])
-                p1 = BOARD.strokes[commit_id][stroke_idx].intersection(p0, p1, lw)[0] || p1;
+            for(let stroke_id in strokes[commit_id])
+                p1 = BOARD.strokes[commit_id][stroke_id].intersection(p0, p1, lw)[0] || p1;
 
         return p1;
     }
@@ -49,7 +49,7 @@ let FillTool = {
             })
         ).map((s)=>{
             strokes[s.commit_id] = strokes[s.commit_id] || {};
-            strokes[s.commit_id][s.stroke_idx] = 1;
+            strokes[s.commit_id][s.stroke_id] = 1;
         });
 
         let v = lp.sub(sp);

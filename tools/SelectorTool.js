@@ -54,14 +54,14 @@ let SelectorBase = {
         if (reset)
             this._selection_reset();
 
-        for(let stroke_idx in BOARD.strokes[commit_id]) {
-            let stroke = BOARD.strokes[commit_id][stroke_idx];
+        for(let stroke_id in BOARD.strokes[commit_id]) {
+            let stroke = BOARD.strokes[commit_id][stroke_id];
 
             if ((!stroke.is_drawable())||(stroke.is_hidden()))
                 continue;
 
             stroke.selection().map((sel)=>{
-                this._add_selected_point(sel.commit_id, sel.stroke_idx, sel.point_idx);
+                this._add_selected_point(sel.commit_id, sel.stroke_id, sel.point_idx);
             });
         }
 
@@ -80,7 +80,7 @@ let SelectorBase = {
         let selected_strokes = [];
         this.selection.map((sel)=>{
             if (!was.has(sel.stroke_id)) {
-                let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
+                let stroke = BOARD.strokes[sel.commit_id][sel.stroke_id];
                 if ( (types===undefined) || (is_instance_of(stroke, types)) ) {
                     selected_strokes.push(stroke);
                     was.add(sel.stroke_id);
@@ -93,7 +93,7 @@ let SelectorBase = {
     ,_get_selection_rect : function() {
         return UI.get_rect(
             this.selection.reduce((a, sel)=>{
-                let o = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
+                let o = BOARD.strokes[sel.commit_id][sel.stroke_id].get_point(sel.point_idx);
                 if (Array.isArray(o)) {
                     o.map((p)=>{o.push(p);});
                 } else {
@@ -111,13 +111,12 @@ let SelectorBase = {
         this.selection_center.y = ( this.selection_rect[1].y + this.selection_rect[0].y ) / 2;
     }
 
-    ,_add_selected_point : function(commit_id, stroke_idx, point_idx) {
-        let stroke_id = BOARD.strokes[commit_id][stroke_idx].stroke_id;
+    ,_add_selected_point : function(commit_id, stroke_id, point_idx) {
+        /// let stroke_id = BOARD.strokes[commit_id][stroke_id].stroke_id;
         let sel_key = '' + commit_id + '/' + stroke_id + '/' + point_idx;
         if (!(sel_key in this.selection_keys)) {
             this.selection.push({
                 commit_id : commit_id
-                ,stroke_idx : stroke_idx
                 ,stroke_id : stroke_id
                 ,point_idx : point_idx
             });
@@ -273,7 +272,7 @@ let SelectorBase = {
 
     ,_scale_selection : function(lpc, cx, cy) { // ###
         this.selection.map((sel)=>{
-            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
+            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_id].get_point(sel.point_idx);
             pnt.x -= this.selection_center.x;
             pnt.y -= this.selection_center.y;
 
@@ -299,7 +298,7 @@ let SelectorBase = {
     ,_repaint_selection : function(color) { // ###
         console.log(color);
         this.selection.map((sel)=>{
-            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
+            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_id];
             if (is_instance_of(stroke, LineStroke)) {
                 stroke.color = color;
             }
@@ -309,7 +308,7 @@ let SelectorBase = {
 
     ,_move_selection : function(dx, dy) { // ###
         this.selection.map((sel)=>{
-            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
+            let pnt = BOARD.strokes[sel.commit_id][sel.stroke_id].get_point(sel.point_idx);
             pnt.x += dx;
             pnt.y += dy;
         });
@@ -343,7 +342,7 @@ let SelectorBase = {
             if (Math.abs(a) > 1) a = 0;
 
             this.selection.map((sel)=>{
-                let pnt = BOARD.strokes[sel.commit_id][sel.stroke_idx].get_point(sel.point_idx);
+                let pnt = BOARD.strokes[sel.commit_id][sel.stroke_id].get_point(sel.point_idx);
                 pnt.x -= this.selection_center.x;
                 pnt.y -= this.selection_center.y;
 
@@ -409,7 +408,7 @@ let SelectorBase = {
         let points = this._get_selection_points(grect);
 
         points.map((pnt)=>{
-            this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
+            this._add_selected_point(pnt.commit_id, pnt.stroke_id, pnt.point_idx);
         });
 
 
@@ -423,7 +422,7 @@ let SelectorBase = {
                     lbox.map((seg)=>{
                         let itu = stroke.intersection(seg[0], seg[1], 1 / UI.viewpoint.scale);
                         if (itu[0]!=null) {
-                            this._add_selected_point(stroke.commit_id, stroke.stroke_idx, 0);
+                            this._add_selected_point(stroke.commit_id, stroke.stroke_id, 0);
                             cutted = true;
                         }
                     });
@@ -473,8 +472,8 @@ let SelectorBase = {
 
                 this._selection_reset();
                 new_selection.map((stroke)=>{
-                    this._add_selected_point(stroke.commit_id, stroke.stroke_idx, 0);
-                    this._add_selected_point(stroke.commit_id, stroke.stroke_idx, 1);
+                    this._add_selected_point(stroke.commit_id, stroke.stroke_id, 0);
+                    this._add_selected_point(stroke.commit_id, stroke.stroke_id, 1);
                 });
 
             }
@@ -489,12 +488,12 @@ let SelectorBase = {
         let old_strokes = [];
         for(let id in this.original_strokes) {
             let old_stroke = this.original_strokes[id];
-            let new_stroke = BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx];
+            let new_stroke = BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_id];
             // capture changed strokes
             if (!new_stroke.is_hidden())
                 changed_strokes.push(new_stroke.copy());
             // return original strokes back
-            BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_idx] = old_stroke;
+            BOARD.strokes[old_stroke.commit_id][old_stroke.stroke_id] = old_stroke;
             old_strokes.push(old_stroke);
         }
 
@@ -534,11 +533,11 @@ let SelectorBase = {
         this.extra_strokes = [];
 
         this.selection.map((sel)=>{
-            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
+            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_id];
             if (!(stroke.stroke_id in this.original_strokes)) {
                 this.original_strokes[sel.stroke_id] = stroke.copy();
                 this.original_strokes[sel.stroke_id].commit_id = sel.commit_id;
-                this.original_strokes[sel.stroke_id].stroke_idx = sel.stroke_idx;
+                this.original_strokes[sel.stroke_id].stroke_id = sel.stroke_id;
             }
         });
     }
@@ -736,7 +735,7 @@ let SelectorTool = {
                     return UI.local_to_global(p);
                 })
             ).map((pnt)=>{
-                if (BOARD.strokes[pnt.commit_id][pnt.stroke_idx].touched_by(UI.local_to_global(lp))) {
+                if (BOARD.strokes[pnt.commit_id][pnt.stroke_id].touched_by(UI.local_to_global(lp))) {
                     points.push(pnt);
                 }
             });
@@ -750,7 +749,7 @@ let SelectorTool = {
             }
 
             points.map((pnt)=>{
-                this._add_selected_point(pnt.commit_id, pnt.stroke_idx, pnt.point_idx);
+                this._add_selected_point(pnt.commit_id, pnt.stroke_id, pnt.point_idx);
             });
 
             if (this.selection.length > 0) {
@@ -774,7 +773,7 @@ let SelectorTool = {
     ,copy : function() {
         let copied = new Set();
         this.clipboard = this.selection.reduce((clipboard, sel)=>{
-            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_idx];
+            let stroke = BOARD.strokes[sel.commit_id][sel.stroke_id];
             if (!copied.has(stroke.stroke_id)) {
                 copied.add(stroke.stroke_id);
                 clipboard.push(stroke.copy().to_local().to_json());
@@ -840,17 +839,17 @@ let SelectorTool = {
         let squeezed = 0;
         for(let i=0; i<this.selection.length; i++) {
             let s0 = this.selection[i];
-            let p0 = BOARD.strokes[s0.commit_id][s0.stroke_idx].get_point(s0.point_idx);
+            let p0 = BOARD.strokes[s0.commit_id][s0.stroke_id].get_point(s0.point_idx);
             let lp0 = UI.global_to_local(p0);
 
             // TODO: n**2 -> O(logN) with kd
             for(let j=i+1; j<this.selection.length; j++) {
                 let s1 = this.selection[j];
-                let lp1 = UI.global_to_local(BOARD.strokes[s1.commit_id][s1.stroke_idx].get_point(s1.point_idx));
-                let to = (BOARD.strokes[s0.commit_id][s0.stroke_idx].width + BOARD.strokes[s1.commit_id][s1.stroke_idx].width)/2.0;
+                let lp1 = UI.global_to_local(BOARD.strokes[s1.commit_id][s1.stroke_id].get_point(s1.point_idx));
+                let to = (BOARD.strokes[s0.commit_id][s0.stroke_id].width + BOARD.strokes[s1.commit_id][s1.stroke_id].width)/2.0;
                 let d = lp0.dst2(lp1);
                 if (( d < to ) && ( d > 0 )) {
-                    BOARD.strokes[s1.commit_id][s1.stroke_idx].set_point(s1.point_idx, p0.copy());
+                    BOARD.strokes[s1.commit_id][s1.stroke_id].set_point(s1.point_idx, p0.copy());
                     squeezed += 1;
                 }
             }
@@ -859,7 +858,7 @@ let SelectorTool = {
 
         // delete dots - strokes of length 0
         let deleted = this.selection.reduce((a, s0)=>{
-            let ix = s0.stroke_idx;
+            let ix = s0.stroke_id;
             let stroke = BOARD.strokes[s0.commit_id][ix];
             let d = stroke.get_point(0).dst2(stroke.get_point(1));
             if ((d==0)&&(!stroke.is_hidden())) {
@@ -880,7 +879,7 @@ let SelectorTool = {
         if (UI.keys['Shift']) { // round up opt
             let rounded = 0;
             this.selection.map((s0)=>{
-                let stroke = BOARD.strokes[s0.commit_id][s0.stroke_idx];
+                let stroke = BOARD.strokes[s0.commit_id][s0.stroke_id];
                 if (stroke.is_hidden())
                     return;
 
