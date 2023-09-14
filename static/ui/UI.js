@@ -53,9 +53,9 @@ let UI = {
     ,canvas : null
     ,ctx : null
     ,viewpoint : {
-        dx : 0.0
-        ,dy : 0.0
-        ,scale : 1.0
+        dx : 0.0,
+        dy : 0.0,
+        scale : 1.0
     }
 
 
@@ -605,12 +605,17 @@ let UI = {
     ,on_wheel_default : function(delta, deltaX) {
         deltaX = deltaX || 0;
         if (UI.keys['Shift']) {
+            delta = delta / 10.0;
+            deltaX = deltaX / 10.0;
+        }
+        if (UI.keys['Alt']) {
             UI.viewpoint_shift(delta / UI.viewpoint.scale, 0);
             UI.viewpoint_shift(0, deltaX / UI.viewpoint.scale);
         } else {
             UI.viewpoint_shift(0, delta / UI.viewpoint.scale);
             UI.viewpoint_shift(deltaX / UI.viewpoint.scale, 0);
         }
+
     }
 
     ,on_file_default : function(file) {
@@ -1175,6 +1180,25 @@ let UI = {
     }
 
     ,redraw_background : function(ctx, transparent, draw_grid) {
+        function _draw(shift, max, line_fn) {
+            let grid_num = 0;
+            let p = - (shift % (UI.GRID * grid_scale)) * UI.viewpoint.scale;
+            while (p < max) {
+                let normal_axis = (Math.abs(p / UI.viewpoint.scale + shift) > eps) * 1;
+                let axis_color = grid_colors[UI.THEME.value][normal_axis];
+
+                if (normal_axis && (grid_num & 1)) {
+                    axis_color = axis_color + (
+                        Math.floor(((grid_scale * UI.viewpoint.scale) - 1) * 15)
+                    ).toString(16).toUpperCase();
+                }
+
+                line_fn(p, axis_color);
+                p += UI.GRID * UI.viewpoint.scale * grid_scale / 2;
+                grid_num += 1;
+            }
+        }
+
         const width = ctx.canvas.width;
         const height = ctx.canvas.height;
 
@@ -1193,31 +1217,19 @@ let UI = {
         if (!draw_grid)
             return;
 
-        //h
-        let y = - (UI.viewpoint.dy % UI.GRID) * UI.viewpoint.scale;
-        while (y < height) {
-            UI.draw_line(
-                Point.new(0, y)
-                ,Point.new(width, y)
-                ,grid_colors[UI.THEME.value][(Math.abs(y / UI.viewpoint.scale + UI.viewpoint.dy)>0.1)*1]
-                ,1
-                ,ctx
-            );
-            y += UI.GRID * UI.viewpoint.scale;
-        }
+        let grid_scale = Math.pow(2, -Math.floor(Math.log2(UI.viewpoint.scale)));
 
-        //w
-        let x = - (UI.viewpoint.dx % UI.GRID) * UI.viewpoint.scale;
-        while (x < width) {
-            UI.draw_line(
-                Point.new(x, 0)
-                ,Point.new(x, height)
-                ,grid_colors[UI.THEME.value][(Math.abs(x / UI.viewpoint.scale + UI.viewpoint.dx)>0.1)*1]
-                ,1
-                ,ctx
-            );
-            x += UI.GRID * UI.viewpoint.scale;
-        }
+        const eps = Math.min(1, (UI.GRID * grid_scale / UI.viewpoint.scale) / 10);
+
+        //h
+        _draw(UI.viewpoint.dy, height, (y, color)=>{
+            UI.draw_line(Point.new(0, y), Point.new(width, y), color, 1, ctx);
+        });
+
+        //v
+        _draw(UI.viewpoint.dx, width, (x, color)=>{
+            UI.draw_line(Point.new(x, 0), Point.new(x, height), color, 1, ctx);
+        });
 
     }
 
