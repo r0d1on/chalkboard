@@ -53,6 +53,9 @@ let PanZoomTool = { // background tool
     }
 
     ,on_wheel : function(delta) {
+        if (UI.keys['Shift'])
+            delta = delta / 10.0;
+
         let scale = 1.2 ** (Math.abs(delta) / 60);
 
         if (delta > 0)
