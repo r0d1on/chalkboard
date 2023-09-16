@@ -45,13 +45,13 @@ start_backend: backend_image
 	scripts/redirect_logs.sh $(CURDIR)
 
 test: lint selenium_image start_backend
-	scripts/start_selenium_tests.sh $(CURDIR) 0 "*"
+	scripts/start_selenium_tests.sh $(CURDIR) 0 "*" || { echo "tests failed!"; scripts/stop_backend.sh $(CURDIR); exit 1; }
 	scripts/stop_backend.sh $(CURDIR)
 
 quicktest: lint selenium_image start_backend
-	scripts/start_selenium_tests.sh $(CURDIR) 1 "*"
+	scripts/start_selenium_tests.sh $(CURDIR) 1 "*" || { echo "tests failed!"; scripts/stop_backend.sh $(CURDIR); exit 1; }
 	scripts/stop_backend.sh $(CURDIR)
 
 runtest: lint selenium_image start_backend
-	scripts/start_selenium_tests.sh $(CURDIR) 0 ${test}
+	scripts/start_selenium_tests.sh $(CURDIR) 0 ${test} || { echo "test failed!"; scripts/stop_backend.sh $(CURDIR); exit 1; }
 	scripts/stop_backend.sh $(CURDIR)

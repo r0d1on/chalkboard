@@ -49,7 +49,7 @@ def get_tests(tests_mask):
 
 def playback_test(test):
     if (not os.path.isfile(f"{test['dir']}/test.json.gzip")):
-        fail_test(test, "test recording is not found", "?")
+        fail_test(test, "test recording is not found")
         return 1
     else:
         shutil.copyfile(f"{test['dir']}/test.json.gzip", f"/chalkboard/records/brd_test-selenium-ui.json.gzip")
@@ -60,11 +60,14 @@ def playback_test(test):
     return result
 
 
-def fail_test(test, reason, diff):
-    test["error"] = reason
+def fail_test(test, reason, diff=None):
+    test["error"] = reason if test["error"] is None else test["error"]
     test["passed"] = False
     test["checked"] = True
-    test["diff"] = "[" + ", ".join(f"{d:8.5f}" for d in diff) + "]"
+    if diff is not None:
+        test["diff"] = "[" + ", ".join(f"{d:8.5f}" for d in diff) + "]"
+    else:
+        test["diff"] = "?"
     say(0, "")
     say(0, "", COLORS.FAIL, "- failed: ", COLORS.WARNING, reason, COLORS.ENDC, "\t", test["diff"])
     with open(f"{test['dir']}/.output/.checked", "wt") as f:
@@ -90,11 +93,11 @@ def skip_test(test):
 
 def get_image_diff(test):
     if (not os.path.isfile(f"{test['dir']}/.output/result.png")):
-        fail_test(test, "test replay output image is not found", "?")
+        fail_test(test, "test replay output image is not found")
         return None
 
     if (not os.path.isfile(f"{test['dir']}/result.png")):
-        fail_test(test, "test reference output image is not found", "?")
+        fail_test(test, "test reference output image is not found")
         return None
 
     img_out = iio.imread(f"{test['dir']}/.output/result.png")
@@ -136,19 +139,17 @@ def run_test(test, fast=True):
         raise KeyboardInterrupt
 
     if (play_result!=0):
-        fail_test(test, f"test replay failed [{play_result}]", "?")
+        fail_test(test, f"test replay failed [{play_result}]")
         return
 
 
     image_diff = get_image_diff(test)
-    if image_diff is None:
-        return
-
-    say(2, "image diff: ", image_diff)
-    if difference_is_significant(image_diff):
-        fail_test(test, "reference and replay output images are different", image_diff)
-    else:
-        pass_test(test, image_diff)
+    if image_diff is not None:
+        say(2, "image diff: ", image_diff)
+        if difference_is_significant(image_diff):
+            fail_test(test, "reference and replay output images are different", image_diff)
+        else:
+            pass_test(test, image_diff)
 
     os.system(f"chown -R {SETTINGS['owner']} {test_dir}/.output")
 
