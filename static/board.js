@@ -118,6 +118,8 @@ function init(IO) {
     // IO-owned menu items
     IO.init(MENU_main);
 
+    BRUSH.post_init();
+
 
     UI.redraw();
 

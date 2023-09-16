@@ -167,6 +167,8 @@ let TOOLS = {
         TOOLS.EVENTS.map((event)=>{
             TOOLS._event_handlers[event] = [];
         });
+
+        TOOLS._event_handlers[''] = [];
     }
 
     ,_tool_selected : function(tool_name) {
@@ -242,8 +244,10 @@ let TOOLS = {
         if (TOOLS._handled(TOOLS.current, event, args))
             return true;
 
-        for(const tool in  TOOLS._event_handlers[event + '_resident'])
-            TOOLS._handled(tool, event + '_resident', args);
+        if (event!='cancel')
+            TOOLS._event_handlers[event + '_resident'].map((tool)=>{
+                TOOLS._handled(tool, event + '_resident', args);
+            });
 
         return false;
     }
@@ -267,9 +271,8 @@ let TOOLS = {
             }
         }
 
-        if (key=='Escape') {
+        if (key=='Escape')
             TOOLS._tools_handle('cancel', []);
-        }
 
         return false;
     }
