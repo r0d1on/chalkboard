@@ -9,6 +9,16 @@ let TOOLS = {
     canvas : null
     ,div : null
 
+    ,EVENTS : [
+        'on_key_down','on_key_up','on_wheel',
+        'on_start','on_move','on_stop',
+        'on_paste_strokes','on_paste_text',
+        'on_blur','on_focus',
+        'on_file',
+        'on_before_redraw','on_after_redraw'
+    ]
+    ,_event_handlers : {}
+
     ,tools : {}
 
     ,previous : []
@@ -149,20 +159,14 @@ let TOOLS = {
         // shows current tool (pen / eraser / texter).
         [TOOLS.div, TOOLS.canvas] = this.MENU_main.add('root', 'tools', null, 'canvas');
 
-        UI.addEventListener('on_key_down', TOOLS.on_key_down);
-        UI.addEventListener('on_key_up', TOOLS.on_key_up);
-        UI.addEventListener('on_wheel', TOOLS.on_wheel);
-        UI.addEventListener('on_start', TOOLS.on_start);
-        UI.addEventListener('on_move', TOOLS.on_move);
-        UI.addEventListener('on_stop', TOOLS.on_stop);
-        UI.addEventListener('on_paste_strokes', TOOLS.on_paste_strokes);
-        UI.addEventListener('on_paste_text', TOOLS.on_paste_text);
-        UI.addEventListener('on_blur', TOOLS.on_blur);
-        UI.addEventListener('on_focus', TOOLS.on_focus);
-        UI.addEventListener('on_file', TOOLS.on_file);
+        TOOLS.EVENTS.map((event)=>{
+            UI.addEventListener(event, TOOLS[event]);
+            TOOLS.EVENTS.push(event + '_resident');
+        });
 
-        UI.addEventListener('on_before_redraw', TOOLS.on_before_redraw);
-        UI.addEventListener('on_after_redraw', TOOLS.on_after_redraw);
+        TOOLS.EVENTS.map((event)=>{
+            TOOLS._event_handlers[event] = [];
+        });
     }
 
     ,_tool_selected : function(tool_name) {
@@ -187,6 +191,11 @@ let TOOLS = {
 
     ,add_tool : function(tool, visible=true, title) {
         TOOLS.tools[tool.name] = tool;
+
+        TOOLS.EVENTS.map((event)=>{
+            if (event in tool)
+                TOOLS._event_handlers[event].push(tool);
+        });
 
         if (visible) {
             [tool.div, tool.canvas] = this.MENU_main.add(
@@ -233,8 +242,8 @@ let TOOLS = {
         if (TOOLS._handled(TOOLS.current, event, args))
             return true;
 
-        for(let tool_name in  TOOLS.tools)
-            TOOLS._handled(TOOLS.tools[tool_name], event + '_resident', args);
+        for(const tool in  TOOLS._event_handlers[event + '_resident'])
+            TOOLS._handled(tool, event + '_resident', args);
 
         return false;
     }

@@ -537,6 +537,8 @@ let UI = {
     }
 
     ,addEventListener : function(event_type, event_handler) {
+        if (event_handler === undefined)
+            throw ('Attempt to register empty event handler for event type: ' + event_type);
         if (event_type in UI._event_handlers) {
             UI._event_handlers[event_type].push(event_handler);
         } else {
