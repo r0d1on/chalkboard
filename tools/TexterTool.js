@@ -181,6 +181,14 @@ let TexterTool = {
         return true;
     }
 
+    ,on_key_down_resident : function(key) {
+        if ((!((key == '-') || (key == '+'))) && (key in ALPHABET) && (UI.special_active==0) ) {
+            TOOLS.activate('texter');
+            this.on_start(UI._last_point);
+            this.on_key_down(key);
+        }
+    }
+
     ,on_key_up : function(key) {
         if (key=='Control') {
             return false;

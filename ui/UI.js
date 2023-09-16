@@ -115,6 +115,7 @@ let UI = {
         let dy = (p0.y - p1.y);
 
         UI.viewpoint_shift(dx, dy, false);
+        UI.on_after_zoom();
     }
 
     ,viewpoint_rect: function() {
@@ -527,6 +528,7 @@ let UI = {
 
         ,'on_after_redraw' : []
         ,'on_before_redraw' : []
+        ,'on_after_zoom' : []
 
         ,'on_persist' : []
         ,'on_unpersist' : []
@@ -537,6 +539,8 @@ let UI = {
     }
 
     ,addEventListener : function(event_type, event_handler) {
+        if (event_handler === undefined)
+            throw ('Attempt to register empty event handler for event type: ' + event_type);
         if (event_type in UI._event_handlers) {
             UI._event_handlers[event_type].push(event_handler);
         } else {
@@ -583,15 +587,6 @@ let UI = {
 
     ,on_key_down_default : function(key) {
         UI.log(1, 'key_down:', key);
-
-        if (key == '+') {
-            BRUSH.update_size(+5);
-        } else if (key == '-') {
-            BRUSH.update_size(-5);
-        } else if (key == 'Tab') {
-            BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS[BRUSH.current_palette].length, UI._last_button);
-            return true;
-        }
     }
 
     ,on_key_up_default : function(key) {
@@ -857,12 +852,14 @@ let UI = {
 
     ,on_after_redraw : function() {
         let handled = UI._handle_event('on_after_redraw', []);
-        if (!handled)
-            handled = UI.on_after_redraw_default();
+        UI.on_after_redraw_default();
         return handled;
 
     }
 
+    ,on_after_zoom : function() {
+        UI._handle_event('on_after_zoom', []);
+    }
 
     ,on_persist : function(json, partial) {
         return UI._handle_event('on_persist', [json, partial]);
@@ -1159,8 +1156,6 @@ let UI = {
         }
 
         UI.on_after_redraw();
-
-        BRUSH.update_size();
 
         UI._canvas_changed();
     }

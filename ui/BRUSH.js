@@ -236,6 +236,25 @@ let BRUSH = {
         UI.draw_glyph(BRUSH.icon_size_dec, ctx, undefined, undefined);
     }
 
+    ,post_init : function() {
+        UI.addEventListener('on_key_down', (key)=>{
+            if (key == '+') {
+                BRUSH.update_size(+5);
+                return true;
+            } else if (key == '-') {
+                BRUSH.update_size(-5);
+                return true;
+            } else if (key == 'Tab') {
+                BRUSH.attach_color((BRUSH.color_id + 1) % BRUSH.COLORS[BRUSH.current_palette].length, UI._last_button);
+                return true;
+            }
+        });
+
+        UI.addEventListener('on_after_zoom', ()=>{
+            BRUSH.update_size();
+        });
+    }
+
     ,SCALED : Settings.new('brush_scaled', 1
         ,[[null,[28,37],[28,31],[28,25],null,[6,25],[6,31],[6,37],null,[6,31],[28,31],null,[53,37],[53,31],[53,25],null,[32,25],[32,31],[32,37],null,[32,31],[53,31]]
             ,[null,[22,36],[27,31],[22,26],null,[11,26],[6,31],[11,36],null,[6,31],[27,31],null,[48,36],[53,31],[48,26],null,[37,26],[31,31],[36,36],null,[31,31],[53,31]]
