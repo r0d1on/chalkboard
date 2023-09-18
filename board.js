@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     setTimeout(()=>{
         console.log('init()');
+        UI.set_busy('UI', true);
 
         io_module.then((module)=>{
             let IO = module.IO.new();
@@ -165,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 });
 
             }
+
+            UI.set_busy('UI', false);
 
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
