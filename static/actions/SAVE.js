@@ -404,6 +404,8 @@ let SAVE = {
         UI.addEventListener('on_file', SAVE.on_file);
 
         document.getElementById('file-input').addEventListener('change', SAVE.handleFiles);
+
+        SAVE.load();
     }
 
 };
