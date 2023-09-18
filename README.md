@@ -1,14 +1,12 @@
 # chalkboard
------------------
 
 Mobile touch friendly lightweight chalkboard.
 Should work just fine in both desktop and mobile Chrome..
 
 ![ChalkBoard Demo](demo/demo.gif)
 
-
-## features:
--------------------
+---
+# features:
 
 * basic figures available: lines, arrows, boxes, ellipses..
 * drawing modes: solid, dashed, dotted, "distorted" (supposed to mimic real world whiteboard drawings)
@@ -25,13 +23,13 @@ Should work just fine in both desktop and mobile Chrome..
 * session record / play mode (with backend also supports record save and load operations)
 * whiteboard (bright) / blackboard (dark) / greenboard themes
 
-### hosted on github pages:
-----------------------------
+---
+# hosted on github pages:
 
  * https://r0d1on.github.io/chalkboard/
 
-### running locally:
------------------------
+---
+# running locally:
 
 **you'll need to have docker installed.**
 
