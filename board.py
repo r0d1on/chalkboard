@@ -47,7 +47,7 @@ def http_record_load():
             "name": msg['name']
             ,"log": log
         }))
-        print('sending json record:', len(content))
+        print('sending json record:', len(content), content)
 
     return flask.Response(content, headers={
         'Content-Type': 'application/octet-stream'
@@ -68,7 +68,7 @@ def http_record_save():
     else:
         print("Unsupported content type: ", content_type)
         raise(Exception("unsupported content type: " + content_type))
-        
+
     print("<= rec:", msg['name'], len(msg['log']))
     print("content:", type(content), len(content))
 
@@ -77,7 +77,7 @@ def http_record_save():
 
     with open(bfile, 'wb') as f:
         f.write(content)
-    
+
     return json.dumps([])
 
 if __name__ == '__main__':
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         debug = ('--debug' in sys.argv)
         if '--port' in sys.argv:
             port = sys.argv[sys.argv.index('--port') + 1]
-        
+
         if '--bind' in sys.argv:
             bind_ip = sys.argv[sys.argv.index('--bind') + 1]
 

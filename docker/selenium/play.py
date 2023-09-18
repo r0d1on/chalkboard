@@ -69,12 +69,6 @@ def take_screenshots(driver, output_dir):
         except Exception as ex:
             error = (ex, traceback.format_exc())
 
-        if (ts < 0):
-            say(0, '+', end='')
-            say(1, "")
-            say(1, "received stop signal")
-            break
-
         if (error is not None):
             if (error[1] is None):
                 break
@@ -82,6 +76,13 @@ def take_screenshots(driver, output_dir):
             say(0, "received error:", type(error[0]), error[0])
             say(0, "trace: ", error[1])
             break
+
+        if (ts < 0):
+            say(0, '+', end='')
+            say(1, "")
+            say(1, "received stop signal")
+            break
+
 
     return screenshots, error
 
