@@ -11,5 +11,13 @@ class COLORS:
 
 def say(level, *args, end='\n', flush=False):
     if say.__level >= level:
-        print(" ".join(map(str,args)), end=end, flush=flush)
-    
+        print(" ".join(map(str, args)), end=end, flush=flush)
+
+ROLL = {
+    "states" : "/-\\|",
+    "state" : 0
+}
+def roll():
+    ROLL["state"] = (ROLL["state"] + 1) % len(ROLL["states"])
+    print('\b', end='', flush=True)
+    print(ROLL["states"][ROLL["state"]], end='', flush=True)

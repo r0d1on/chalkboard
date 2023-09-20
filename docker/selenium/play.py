@@ -9,7 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from selenium.common.exceptions import TimeoutException as SeleniumTimeoutException
 
-from common import COLORS, say
+from common import COLORS, say, roll
 
 def get_driver():
     options = webdriver.ChromeOptions()
@@ -41,8 +41,8 @@ def wait_for_scripts(driver):
     height = None
     while (height is None):
         height = driver.execute_script("return UI;")['window_height'];
-        say(0, '~', end='', flush=True)
-    say(1, '+')
+        roll()
+    say(0, '+', end="")
 
 def take_screenshots(driver, output_dir):
     screenshots = []
@@ -52,7 +52,7 @@ def take_screenshots(driver, output_dir):
             ts  = driver.execute_async_script("UI._set_redraw_hook(arguments[arguments.length-1]);")
             delta = abs(ts) - screenshots[~0]["ts"] if len(screenshots)>0 else 0
             #print('received pingback:', ts, ' +', delta)
-            say(0, '.', end='', flush=True)
+            roll()
             file_name = f"{output_dir}/grab_{len(screenshots):03g}_{delta}.png"
             driver.save_screenshot(file_name)
             screenshots.append({
@@ -101,48 +101,52 @@ def main(user, ip, uri, speedup, output_dir):
     say(2, f"selenium fetching URL: {url} into {output_dir}")
     driver.get(url)
 
-    say(2, "selenium waiting for scripts")
+    say(0, COLORS.OKBLUE, " * waiting for browser  : ", COLORS.ENDC, " ", end="")
     wait_for_scripts(driver)
+    print('\b\b', end="")
+    say(0, "+ ")
 
-    say(2, "capturing screenshots")
+    say(0, COLORS.OKBLUE, " * capturing screenshots: ", COLORS.ENDC, " ", end="")
     screenshots, error = take_screenshots(driver, output_dir)
+    print('\b\b', end="")
+    say(0, "+ ")
 
     if (error is not None)and(error[1] is not None):
         pass
     else:
-        say(0, "[s]", end='')
+        say(1, "[s]", end='')
         say(2, "waiting for settlement")
         time.sleep(3)
 
-    say(0, "[c]", end='')
+    say(1, "[c]", end='')
     say(2, "taking final screenshot")
     driver.save_screenshot(f"{output_dir}/result.png")
 
-    say(0, "[l]", end='')
+    say(1, "[l]", end='')
     say(2, "saving js logs")
     logs = driver.execute_script("return UI.logger.logs")
     with open(f"{output_dir}/js_log.txt", "wt") as f:
         f.write("\n".join(map(lambda l:str(l[1]) + '::' + str(l[0]), logs[::-1])))
 
-    say(0, "[d]", end='')
+    say(1, "[d]", end='')
     say(2, "closing selenium driver")
     driver.quit()
 
-    say(0, "[g]", end='')
+    say(1, "[g]", end='')
     say(2, "converting screenshots into gif")
     convert_cmd = ("convert " + " ".join([
         f"-delay {int(f['delta'] * speedup / 10)} {f['name']}" for f in screenshots
     ]) + f" -loop 0  -layers Optimize {output_dir}/result.gif")
     os.system(convert_cmd)
 
-    say(0, "[x]", end='')
+    say(1, "[x]", end='')
     say(2, "cleaning up screenshots")
     for f in screenshots:
         say(2, '.', end='', flush=True)
         os.remove(f["name"])
     say(2, '')
 
-    say(0, "[o]", end='')
+    say(1, "[o]", end='')
     say(2, "switching ownership")
     os.system(f"chown -R {user} {output_dir}/*")
 
