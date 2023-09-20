@@ -171,7 +171,7 @@ let BOARD = {
 
         BOARD.version += 1;
 
-        UI.is_dirty = true;
+        UI.on_board_changed();
         return undone;
     }
 
@@ -205,7 +205,7 @@ let BOARD = {
 
         BOARD.version += 1;
 
-        UI.is_dirty = true;
+        UI.on_board_changed();
         return redone;
     }
 
@@ -246,7 +246,7 @@ let BOARD = {
 
     ,op_commit : function() {
         BOARD.unlock();
-        UI.is_dirty = true;
+        UI.on_board_changed();
     }
 
     ,register : function(stroke, bulk=false) { // ###

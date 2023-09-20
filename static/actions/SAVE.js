@@ -84,7 +84,6 @@ let SAVE = {
 
                 db_set('local_board_' + BOARD.board_name, board_data)
                     .then(()=>{
-                        SAVE.sent_version = null; // reset remote watermark to update the whole board
                         UI.is_dirty = false;
                         UI.toast('local.saving', 'saved to local storage', 2000);
                     }).catch((error)=>{
@@ -243,6 +242,8 @@ let SAVE = {
 
         BOARD.commit_id = BOARD.id_next(BOARD.commit_id);
         BOARD.stroke_id = BOARD.id_next(BOARD.stroke_id);
+        UI.on_board_changed();
+        UI.is_dirty = false;
     }
 
     ,_update_ids : function() {
@@ -266,8 +267,6 @@ let SAVE = {
                     return;
                 }
                 SAVE._unpersist_board(board_data);
-                UI.is_dirty = false;
-                SAVE.sent_version = null; // reset remote watermark to update the whole board
                 UI.on_key_down('Escape'); // force cancel active tool if any
                 UI.redraw();
                 UI.toast('local.loading', 'loaded from local storage', 2000);
@@ -289,7 +288,6 @@ let SAVE = {
             a.download = BOARD.board_name + '.board.json.gzip';
             a.click();
             URL.revokeObjectURL(exportUrl);
-            SAVE.sent_version = null; // reset remote watermark to update the whole board
         });
 
         SAVE.MENU_main.hide('save_group');

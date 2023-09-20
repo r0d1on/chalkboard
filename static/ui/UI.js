@@ -536,6 +536,7 @@ let UI = {
         ,'on_color' : []
         ,'on_setting_changed' : []
         ,'on_stale' : []
+        ,'on_board_changed' : []
     }
 
     ,addEventListener : function(event_type, event_handler) {
@@ -585,18 +586,6 @@ let UI = {
     }
 
 
-    ,on_key_down_default : function(key) {
-        UI.log(1, 'key_down:', key);
-    }
-
-    ,on_key_up_default : function(key) {
-        UI.log(1, 'key_up:', key);
-    }
-
-    ,on_paste_strokes_default : function(strokes) {
-        UI.log(0, 'received strokes:', strokes);
-    }
-
     ,on_wheel_default : function(delta, deltaX) {
         deltaX = deltaX || 0;
         if (UI.keys['Shift']) {
@@ -637,25 +626,23 @@ let UI = {
         return false;
     }
 
-    ,on_after_redraw_default : function() {
-        if (UI.view_mode=='debug') {
-            // FPS rate
-            let now = (new Date()).valueOf();
-            UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
-            UI.__tl.push(now - UI.__ts);
-            let fps = 1000 * UI.__tl.length / (UI.__tl.reduce((a,v)=>{return a + (v||1);}, 0));
-            UI.toast('fps', 'FPS: ' + Math.ceil(fps*10)/10, -1, 1);
-            UI.__ts = now;
-            if (UI.__tl.length > 20)
-                UI.__tl = UI.__tl.slice(1);
+    ,_track_fps : function() {
+        // FPS rate
+        let now = (new Date()).valueOf();
+        UI.__tl = (UI.__tl===undefined)?[]:UI.__tl;
+        UI.__tl.push(now - UI.__ts);
+        let fps = 1000 * UI.__tl.length / (UI.__tl.reduce((a,v)=>{return a + (v||1);}, 0));
+        UI.toast('fps', 'FPS: ' + Math.ceil(fps*10)/10, -1, 1);
+        UI.__ts = now;
+        if (UI.__tl.length > 20)
+            UI.__tl = UI.__tl.slice(1);
 
-            // board rect boundaries
-            let p = BOARD.get_global_rect().map((point)=>{return UI.global_to_local(point);});
-            UI.draw_overlay_stroke(p[0], Point.new(p[0].x, p[1].y), {color:'555',width:1});
-            UI.draw_overlay_stroke(Point.new(p[0].x, p[1].y), p[1], {color:'555',width:1});
-            UI.draw_overlay_stroke(p[1], Point.new(p[1].x, p[0].y), {color:'555',width:1});
-            UI.draw_overlay_stroke(Point.new(p[1].x, p[0].y), p[0], {color:'555',width:1});
-        }
+        // board rect boundaries
+        let p = BOARD.get_global_rect().map((point)=>{return UI.global_to_local(point);});
+        UI.draw_overlay_stroke(p[0], Point.new(p[0].x, p[1].y), {color:'555',width:1});
+        UI.draw_overlay_stroke(Point.new(p[0].x, p[1].y), p[1], {color:'555',width:1});
+        UI.draw_overlay_stroke(p[1], Point.new(p[1].x, p[0].y), {color:'555',width:1});
+        UI.draw_overlay_stroke(Point.new(p[1].x, p[0].y), p[0], {color:'555',width:1});
     }
 
     ,_handle_event : function(event, data) {
@@ -716,7 +703,7 @@ let UI = {
 
         let handled = UI._handle_event('on_key_down', [key]);
         if (!handled)
-            handled = UI.on_key_down_default(key);
+            UI.log(1, 'key_down:', key);
 
         return handled;
     }
@@ -726,7 +713,7 @@ let UI = {
 
         let handled = UI._handle_event('on_key_up', [key]);
         if (!handled)
-            UI.on_key_up_default(key);
+            UI.log(1, 'key_up:', key);
 
         if (key in UI.keys) {
             UI.keys[key] = false;
@@ -804,7 +791,7 @@ let UI = {
     ,on_paste_strokes : function(strokes) {
         let handled = UI._handle_event('on_paste_strokes', [strokes]);
         if (!handled)
-            UI.on_paste_strokes_default(strokes);
+            UI.log(0, 'received strokes:', strokes);
     }
 
     ,on_file : function(file) {
@@ -852,7 +839,8 @@ let UI = {
 
     ,on_after_redraw : function() {
         let handled = UI._handle_event('on_after_redraw', []);
-        UI.on_after_redraw_default();
+        if (UI.view_mode=='debug')
+            UI._track_fps();
         return handled;
 
     }
@@ -925,6 +913,12 @@ let UI = {
     ,on_stale : function() {
         UI.log(1, 'ui.on_stale');
         return UI._handle_event('on_stale', []);
+    }
+
+    ,on_board_changed : function() {
+        UI.log(1, 'ui.on_board_changed');
+        UI.is_dirty = true;
+        return UI._handle_event('on_board_changed', []);
     }
 
 
