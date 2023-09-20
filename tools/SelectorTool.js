@@ -39,6 +39,11 @@ let SelectorBase = {
         this.is_capturing = true;
         this.original_strokes = {};
         this.extra_strokes = [];
+
+        const that = this;
+        UI.addEventListener('on_board_changed', ()=>{
+            that._selection_reset();
+        });
     }
 
 
@@ -181,7 +186,6 @@ let SelectorBase = {
         });
 
         // draw selected center
-        // debugger;
         if (this.allowed_modes.has(SelectorBase.MODES.MOVING)) {
             lp = UI.global_to_local(this.selection_center);
             UI.draw_line(lp, lp, SelectorBase.COLOR_HOTPOINT_BG, W * 3, ctx);
@@ -989,9 +993,6 @@ let SelectorTool = {
             let that = SelectorTool.DELETE.selector;
             if (that.mode==SelectorBase.MODES.SELECTED) {
                 BOARD.hide_commit(that._selected_strokes());
-
-                SelectorTool.DELETE.selector._selection_reset();
-
                 UI.redraw();
             }
         }
