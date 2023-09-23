@@ -68,7 +68,6 @@ def fail_test(test, reason, diff=None):
         test["diff"] = "[" + ", ".join(f"{d:8.5f}" for d in diff) + "]"
     else:
         test["diff"] = "?"
-    say(0, "")
     say(0, "", COLORS.FAIL, "- failed: ", COLORS.WARNING, reason, COLORS.ENDC, "\t", test["diff"])
     with open(f"{test['dir']}/.output/.checked", "wt") as f:
         f.write("failed")
@@ -79,7 +78,6 @@ def pass_test(test, diff):
     test["passed"] = True
     test["checked"] = True
     test["diff"] = "[" + ", ".join(f"{d:8.5f}" for d in diff) + "]"
-    say(0, "")
     say(0, "", COLORS.OKGREEN, "- passed: ", COLORS.OKBLUE, f"({test['time']:>6.2f}s)", COLORS.ENDC, test["diff"])
     with open(f"{test['dir']}/.output/.checked", "wt") as f:
         f.write("passed")
@@ -120,9 +118,8 @@ def difference_is_significant(diff):
 
 def run_test(test, fast=True):
     test_dir = test['dir']
-    say(1, COLORS.HEADER, ("=" * 80), COLORS.ENDC)
+    say(0, "")
     say(0, COLORS.HEADER, f"{test['name']:<15}", test['settings'], COLORS.ENDC)
-    say(1, COLORS.HEADER, ("=" * 80), COLORS.ENDC)
 
     if test['checked'] and test['passed'] and fast:
         skip_test(test)
