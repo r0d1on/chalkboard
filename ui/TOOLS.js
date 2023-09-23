@@ -38,7 +38,7 @@ let TOOLS = {
         let icon_idx = (option.type=='binary')?0:option_value;
         let icon = option.icon[icon_idx]||tool.icon;
         option.ctx.canvas.width = option.ctx.canvas.width+1-1;
-        UI.draw_glyph(icon, option.ctx, undefined, icon_color);
+        UI.draw_glyph(icon, option.ctx, icon_color);
     }
 
     ,option_get_click_handler : function(tool, option_name) {
@@ -200,14 +200,11 @@ let TOOLS = {
         });
 
         if (visible) {
-            [tool.div, tool.canvas] = this.MENU_main.add(
-                'tools'
-                , tool.name
-                , TOOLS._tool_selected(tool.name)
-                , 'canvas', title
+            this.MENU_main.add_icon(
+                'tools', tool.name,
+                tool.icon, title,
+                TOOLS._tool_selected(tool.name)
             );
-
-            UI.draw_glyph(tool.icon, tool.canvas.getContext('2d'));
         }
     }
 

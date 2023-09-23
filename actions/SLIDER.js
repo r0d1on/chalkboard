@@ -48,12 +48,17 @@ let SLIDER = {
         let label = current_slide[0];
 
         if (label) {
-            let bx = 5 + (33 - 7 * label.length);
+            let len = 0;
+            for(let ci=0; ci<label.length; ci++)
+                len += TexterTool.put_char(label[ci], 0, 0, 0.6, ()=>{}) + 5;
+
+            let bx = (w - len) / 2 + 3;
+            let by = (h +  36) / 2 - 3;
             for(let ci=0; ci<label.length; ci++) {
-                TexterTool.put_char(label[ci], bx, h - 15, 0.6, (p0, p1)=>{
+                TexterTool.put_char(label[ci], bx, by, 0.6, (p0, p1)=>{
                     UI.draw_line(p0, p1, 'black', 7, ctx);
                 });
-                bx += TexterTool.put_char(label[ci], bx, h - 15, 0.6, (p0, p1)=>{
+                bx += TexterTool.put_char(label[ci], bx, by, 0.6, (p0, p1)=>{
                     UI.draw_line(p0, p1, 'green', 5, ctx);
                 }) + 5;
             }
@@ -260,7 +265,7 @@ let SLIDER = {
 
         MENU_main.add_icon('root', 'slide_prev', SLIDER.icon_prev, 'goto previous slide', SLIDER.slide_prev);
 
-        SLIDER.canvas_current = MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', 'current slide / slide operations', SLIDER.LABEL_DX)[1];
+        SLIDER.canvas_current = MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', 'current slide / slide operations', Math.max(SLIDER.LABEL_DX, MENU_main.dx))[1];
 
         MENU_main.add_icon('root', 'slide_next', SLIDER.icon_next, 'goto next slide', SLIDER.slide_next);
 
