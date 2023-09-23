@@ -59,8 +59,7 @@ let Settings = {
 
     ,init : function(MENU_main) { // class function
         Settings.MENU_main = MENU_main;
-        let ctx = MENU_main.add('root', 'settings', null, 'canvas')[1].getContext('2d');
-        UI.draw_glyph(Settings.icon, ctx);
+        MENU_main.add_icon('root', 'settings', Settings.icon);
         Settings.load_values();
 
         UI.addEventListener('on_persist', Settings.on_persist);

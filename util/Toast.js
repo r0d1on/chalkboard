@@ -5,7 +5,6 @@ import {_class} from '../base/objects.js';
 import {add_class, remove_class} from './html.js';
 
 import {UI} from '../ui/UI.js';
-import {Menu} from '../ui/Menu.js';
 
 
 let Toast = {
@@ -110,7 +109,7 @@ let Toast = {
             top_origin = UI.CANVAS_MARGIN;
             dir = +1;
         } else if (this.align==Toast.ALIGN.BOTTOM_LEFT) {
-            top_origin = top_origin - UI.CANVAS_MARGIN - Menu.SIZEY;
+            top_origin = top_origin - UI.CANVAS_MARGIN - Toast.DY;
             left = UI.CANVAS_MARGIN;
             dir = -1;
         }

@@ -375,29 +375,16 @@ let SAVE = {
     ,init : function(MENU_main) {
         SAVE.MENU_main = MENU_main;
 
-        let ctx = MENU_main.add('root', 'save_group', null, 'canvas', '')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon, ctx);
+        MENU_main.add_icon('root', 'save_group', SAVE.icon);
+        MENU_main.add_icon('save_group', 'save', SAVE.icon_save, 'save locally', SAVE.save);
+        MENU_main.add_icon('save_group', 'load', SAVE.icon_load, 'load locally', SAVE.load);
 
-        ctx = MENU_main.add('save_group', 'save', SAVE.save, 'canvas', 'save locally')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_save, ctx);
+        MENU_main.add_icon('save_group', 'download_group'  , SAVE.icon_download_group, 'download...');
+        MENU_main.add_icon('download_group', 'download'      , SAVE.icon_download, 'download board', SAVE.download);
+        MENU_main.add_icon('download_group', 'download_png_view', SAVE.icon_download_png_view, 'download view as png', SAVE.download_png_view);
+        MENU_main.add_icon('download_group', 'download_png_all', SAVE.icon_download_png_board, 'download board as png', SAVE.download_png_board);
 
-        ctx = MENU_main.add('save_group', 'load', SAVE.load, 'canvas', 'load locally')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_load, ctx);
-
-        ctx = MENU_main.add('save_group', 'download_group', null, 'canvas', 'download...')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_download_group, ctx);
-
-        ctx = MENU_main.add('download_group', 'download', SAVE.download, 'canvas', 'download board')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_download, ctx);
-
-        ctx = MENU_main.add('download_group', 'download_png_view', SAVE.download_png_view, 'canvas', 'download view as png')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_download_png_view, ctx);
-
-        ctx = MENU_main.add('download_group', 'download_png_all', SAVE.download_png_board, 'canvas', 'download board as png')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_download_png_board, ctx);
-
-        ctx = MENU_main.add('save_group', 'upload', SAVE.upload, 'canvas', 'upload board / image')[1].getContext('2d');
-        UI.draw_glyph(SAVE.icon_upload, ctx);
+        MENU_main.add_icon('save_group', 'upload', SAVE.icon_upload, 'upload board / image', SAVE.upload);
 
         UI.addEventListener('on_file', SAVE.on_file);
 

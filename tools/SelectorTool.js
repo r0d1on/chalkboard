@@ -656,8 +656,7 @@ let SelectorTool = {
 
 
     ,init : function(MENU_main) {
-        let ctx = MENU_main.add('root', 'delete', SelectorTool.DELETE.on_activated, 'canvas', 'delete selected[del]')[1].getContext('2d');
-        UI.draw_glyph(SelectorTool.DELETE.icon, ctx);
+        MENU_main.add_icon('root', 'delete', SelectorTool.DELETE.icon, 'delete selected[del]', SelectorTool.DELETE.on_activated);
 
         SelectorTool.DELETE.selector = this;
 

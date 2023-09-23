@@ -53,8 +53,8 @@ function get_io_type() {
 function init(IO) {
     UI.init(IO);
 
-    MENU_main = Menu.new('root', 'menu', true);
-    MENU_options = Menu.new('root', 'options', false);
+    MENU_main = Menu.new('menu', true);
+    MENU_options = Menu.new('options', false);
 
     // brush color/size menu item
     BRUSH.init(MENU_main, MENU_options);
@@ -96,12 +96,10 @@ function init(IO) {
     Settings.add_item(UI.THEME, 'board theme: whiteboard / blackboard / greenboard');
 
     // undo menu item
-    let ctx = MENU_main.add('root', 'undo', undo.on_activated, 'canvas', 'undo [backspace]')[1].getContext('2d');
-    UI.draw_glyph(undo.icon, ctx);
+    MENU_main.add_icon('root', 'undo', undo.icon, 'undo [backspace]', undo.on_activated);
 
     // redo menu item
-    ctx = MENU_main.add('root', 'redo', redo.on_activated, 'canvas', 'redo [shift+backspace]')[1].getContext('2d');
-    UI.draw_glyph(redo.icon, ctx);
+    MENU_main.add_icon('root', 'redo', redo.icon, 'redo [shift+backspace]', redo.on_activated);
 
     // delete menu item (selector.DELETE + default paste)
     selector.init(MENU_main);
