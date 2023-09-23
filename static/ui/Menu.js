@@ -119,8 +119,8 @@ let Menu = {
     }
 
     ,add_icon : function(pid, id, icon, title, onclick) {
-        let ctx = this.add(pid, id, onclick, 'canvas', title)[1].getContext('2d');
-        UI.draw_glyph(icon, ctx);
+        let canvas = this.add(pid, id, onclick, 'canvas', title)[1];
+        UI.draw_glyph(icon, canvas.getContext('2d'));
     }
 
     ,add : function(pid, id, onclick, inner_type, title, dx, dy) {

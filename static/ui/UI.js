@@ -992,10 +992,12 @@ let UI = {
         return ret;
     }
 
-    ,draw_glyph : function(glyph, ctx, viewpoint, color) {
+    ,draw_glyph : function(glyph, ctx, color='#0095') {
+        let viewpoint = {dx:0, dy:0, scale:1.0};
+        if (ctx.canvas.width!=60)
+            viewpoint.scale = ctx.canvas.width / 60;
+
         let a,b,p = null;
-        color = (color===undefined) ? '#0095' : color;
-        viewpoint = (viewpoint===undefined) ? {dx:0, dy:0, scale:1.0} : viewpoint;
 
         for(let i=0; i<glyph.length; i++) {
             a = p;
@@ -1004,11 +1006,11 @@ let UI = {
                 a = b;
 
             if ((a!=null)&&(b!=null)) {
-                let pa = Point.new(a[0], a[1]);
-                let pb = Point.new(b[0], b[1]);
-                UI.draw_gstroke(pa, pb, color, 4, ctx, viewpoint);
+                UI.draw_gstroke(
+                    Point.new(a[0], a[1]), Point.new(b[0], b[1]),
+                    color, 4, ctx, viewpoint
+                );
             }
-
             p = glyph[i];
         }
     }
@@ -1017,11 +1019,9 @@ let UI = {
         let lp0 = UI.global_to_local(gp0, viewpoint);
         let lp1 = UI.global_to_local(gp1, viewpoint);
         UI.draw_line(
-            lp0
-            ,lp1
-            ,color
-            ,width * viewpoint.scale
-            ,ctx
+            lp0, lp1, color,
+            width * viewpoint.scale,
+            ctx
         );
     }
 
