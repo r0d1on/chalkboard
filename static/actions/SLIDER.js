@@ -4,8 +4,6 @@ import {Point} from '../util/Point.js';
 
 import {UI} from '../ui/UI.js';
 
-import {Menu} from '../ui/Menu.js';
-
 import {TexterTool} from '../tools/TexterTool.js';
 
 
@@ -37,7 +35,10 @@ let SLIDER = {
     }
 
     ,update : function(refocus=true) {
-        SLIDER.canvas_current.width = SLIDER.canvas_current.width + 1 - 1;
+        const w = SLIDER.canvas_current.width;
+        const h = SLIDER.canvas_current.height;
+
+        SLIDER.canvas_current.width = w;
         if (SLIDER.current_ix==null)
             return;
 
@@ -49,10 +50,10 @@ let SLIDER = {
         if (label) {
             let bx = 5 + (33 - 7 * label.length);
             for(let ci=0; ci<label.length; ci++) {
-                TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
+                TexterTool.put_char(label[ci], bx, h - 15, 0.6, (p0, p1)=>{
                     UI.draw_line(p0, p1, 'black', 7, ctx);
                 });
-                bx += TexterTool.put_char(label[ci], bx, Menu.SIZEX - 15, 0.6, (p0, p1)=>{
+                bx += TexterTool.put_char(label[ci], bx, h - 15, 0.6, (p0, p1)=>{
                     UI.draw_line(p0, p1, 'green', 5, ctx);
                 }) + 5;
             }
@@ -257,28 +258,19 @@ let SLIDER = {
         let div = MENU_main.add('root', 'slide_separator_0', null, 'div', '', 5)[0];
         div.style['background-color'] = '#555';
 
-        let ctx = MENU_main.add('root', 'slide_prev', SLIDER.slide_prev, 'canvas', 'goto previous slide')[1].getContext('2d');
-        UI.draw_glyph(SLIDER.icon_prev, ctx);
+        MENU_main.add_icon('root', 'slide_prev', SLIDER.icon_prev, 'goto previous slide', SLIDER.slide_prev);
 
         SLIDER.canvas_current = MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', 'current slide / slide operations', SLIDER.LABEL_DX)[1];
 
-        ctx = MENU_main.add('root', 'slide_next', SLIDER.slide_next, 'canvas', 'goto next slide')[1].getContext('2d');
-        UI.draw_glyph(SLIDER.icon_next, ctx);
+        MENU_main.add_icon('root', 'slide_next', SLIDER.icon_next, 'goto next slide', SLIDER.slide_next);
 
         div = MENU_main.add('root', 'slide_separator_1', null, 'div', '', 5)[0];
         div.style['background-color'] = '#555';
 
-        ctx = MENU_main.add('slide_curr', 'slide_add', SLIDER.slide_add, 'canvas', 'insert new slide after current')[1].getContext('2d');
-        UI.draw_glyph(SLIDER.icon_add, ctx);
-
-        ctx = MENU_main.add('slide_curr', 'slide_del', SLIDER.slide_del, 'canvas', 'delete current slide')[1].getContext('2d');
-        UI.draw_glyph(SLIDER.icon_del, ctx);
-
-        ctx = MENU_main.add('slide_curr', 'slide_focus', SLIDER.slide_focus, 'canvas', 'focus on current slide')[1].getContext('2d');
-        UI.draw_glyph(SLIDER.icon_focus, ctx);
-
-        ctx = MENU_main.add('slide_curr', 'slide_home', SLIDER.slide_home, 'canvas', 'focus on default viewpoint')[1].getContext('2d');
-        UI.draw_glyph(SLIDER.icon_home, ctx);
+        MENU_main.add_icon('slide_curr', 'slide_add', SLIDER.icon_add, 'insert new slide after current', SLIDER.slide_add);
+        MENU_main.add_icon('slide_curr', 'slide_del', SLIDER.icon_del, 'delete current slide', SLIDER.slide_del);
+        MENU_main.add_icon('slide_curr', 'slide_focus', SLIDER.icon_focus, 'focus on current slide', SLIDER.slide_focus);
+        MENU_main.add_icon('slide_curr', 'slide_home', SLIDER.icon_home, 'focus on default viewpoint', SLIDER.slide_home);
 
         UI.addEventListener('on_key_down', SLIDER.on_key_down);
 

@@ -47,10 +47,12 @@ let IO = {
 
     ,init : function(MENU_main) {
         IO.super.init.call(this, MENU_main);
-        let ctx = MENU_main.add('download_group', 'download_rec', ()=>{
-            this.download_rec();
-        }, 'canvas', 'download recording')[1].getContext('2d');
-        this.UI.draw_glyph(IO.icon, ctx);
+        MENU_main.add_icon(
+            'download_group', 'download_rec', IO.icon, 'download recording',
+            ()=>{
+                this.download_rec();
+            }
+        );
         this.UI.addEventListener('on_file', (file)=>{
             this.on_file(file);
         });
@@ -96,9 +98,9 @@ let IO = {
 
     ,unmap_event : function(cls, type, props) {
         let event = {
-            preventDefault : function(){}
-            ,stopPropagation : function(){}
-            ,stopImmediatePropagation : function(){}
+            preventDefault : function(){},
+            stopPropagation : function(){},
+            stopImmediatePropagation : function(){}
         };
         for(let key in props)
             event[key] = props[key];
@@ -112,12 +114,13 @@ let IO = {
             if (index < that.events_log.length) {
                 let event = that.events_log[index];
                 that.timer = setTimeout(()=>{
-                    const handler = that.handlers[event['t']][event['k']];
                     try {
+                        const handler = that.handlers[event['t']][event['k']];
                         handler(that.unmap_event(event['c'], event['k'], event['p']));
                     } catch (error) {
                         that.UI.log(-2, 'Caught error while playing:', error.message);
-                        that.UI.log(-2, 'Stacktrace', error.stack);
+                        that.UI.log(-2, 'Event:', JSON.stringify(event));
+                        that.UI.log(-2, 'Stacktrace: ', error.stack);
                         throw error;
                     }
                     that.position = index + 1;
@@ -168,11 +171,11 @@ let IO = {
 
         const ts = (+new Date());
         this.events_log.push({
-            't' : target_id
-            ,'k' : event_type
-            ,'c' : c
-            ,'p' : p
-            ,'-' : ts - this.ts
+            't' : target_id,
+            'k' : event_type,
+            'c' : c,
+            'p' : p,
+            '-' : ts - this.ts
         });
         this.ts = ts;
     }

@@ -1,7 +1,6 @@
 'use strict';
 
 import {UI} from './UI.js';
-import {Menu} from './Menu.js';
 
 import {Settings} from '../actions/Settings.js';
 
@@ -132,8 +131,8 @@ let BRUSH = {
 
         let wdiv = BRUSH.wdiv;
         let size = BRUSH.get_local_width() - 3;
-        wdiv.style['left']   = ((Menu.SIZEY - size)>>1) - 2 + 'px';
-        wdiv.style['top']    = ((Menu.SIZEY - size)>>1) - 2 + 'px';
+        wdiv.style['left']   = ((BRUSH.MENU_main.dx - size)>>1) - 2 + 'px';
+        wdiv.style['top']    = ((BRUSH.MENU_main.dy - size)>>1) - 2 + 'px';
         wdiv.style['width']  = ((size)>>0) + 'px';
         wdiv.style['height'] = ((size)>>0) + 'px';
         wdiv.style['borderRadius'] = ((size)>>0) + 'px';
@@ -217,23 +216,19 @@ let BRUSH = {
         BRUSH.update_size();
 
         // brush size changer options menu items
-        let ctx = this.MENU_options.add('root'
-            , 'brush_size_inc'
-            , ()=>{
+        this.MENU_options.add_icon(
+            'root', 'brush_size_inc', BRUSH.icon_size_inc, 'increase brush size',
+            ()=>{
                 BRUSH.update_size(+5);
             }
-            , 'canvas'
-            , 'increase brush size')[1].getContext('2d');
-        UI.draw_glyph(BRUSH.icon_size_inc, ctx, undefined, undefined);
+        );
 
-        ctx = this.MENU_options.add('root'
-            , 'brush_size_dec'
-            , ()=>{
+        this.MENU_options.add_icon(
+            'root', 'brush_size_dec', BRUSH.icon_size_dec, 'decrease brush size',
+            ()=>{
                 BRUSH.update_size(-5);
             }
-            , 'canvas'
-            , 'decrease brush size')[1].getContext('2d');
-        UI.draw_glyph(BRUSH.icon_size_dec, ctx, undefined, undefined);
+        );
     }
 
     ,post_init : function() {

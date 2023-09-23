@@ -7,14 +7,13 @@ import {UI} from './UI.js';
 
 let Menu = {
 
-    SIZEX : 60
-    ,SIZEY : 60
-    ,LONG_CLICK_DELAY : 1000
+    LONG_CLICK_DELAY : 1000
 
-    ,Menu : function(root_name, root_div_id, top=true) {
-        this.id = root_div_id;
+    ,Menu : function(container_id, top=true, dx=60, dy=60) {
         this.top = top;
-        this.container = document.getElementById(this.id);
+        this.dx = dx;
+        this.dy = dy;
+        this.container = document.getElementById(container_id);
 
         if (this.top) {
             this.container.style['top'] = '0px';
@@ -25,7 +24,7 @@ let Menu = {
         }
 
         this.items = {};
-        this.items[root_name] = this._new_item(null, this.container, null, 0, 0);
+        this.items['root'] = this._new_item(null, this.container, null, 0, 0);
     }
 
     ,_new_item : function(dom, dom_row, pid, top, left, dx, dy) {
@@ -119,11 +118,16 @@ let Menu = {
         return elem;
     }
 
+    ,add_icon : function(pid, id, icon, title, onclick) {
+        let ctx = this.add(pid, id, onclick, 'canvas', title)[1].getContext('2d');
+        UI.draw_glyph(icon, ctx);
+    }
+
     ,add : function(pid, id, onclick, inner_type, title, dx, dy) {
         let parent = this.items[pid];
 
-        dx = (dx===undefined) ? Menu.SIZEX : dx;
-        dy = (dy===undefined) ? Menu.SIZEY : dy;
+        dx = (dx===undefined) ? this.dx : dx;
+        dy = (dy===undefined) ? this.dy : dy;
 
         // create dom node for the item
         let dom_elem = document.createElement('div');

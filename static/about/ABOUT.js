@@ -2,8 +2,6 @@
 
 import {deploy_info} from './deploy_info.js';
 
-import {UI} from '../ui/UI.js';
-
 
 let ABOUT = {
 
@@ -12,8 +10,7 @@ let ABOUT = {
     ,init : function(MENU_main) {
         ABOUT.MENU_main = MENU_main;
 
-        let ctx = MENU_main.add('root', 'about_group', null, 'canvas', '')[1].getContext('2d');
-        UI.draw_glyph(ABOUT.icon, ctx);
+        MENU_main.add_icon('root', 'about_group', ABOUT.icon);
 
         let div = MENU_main.add('about_group', 'about_version', null, 'div', 'version', 140, 40)[0];
         div.innerHTML = deploy_info.version;
