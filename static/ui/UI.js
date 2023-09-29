@@ -194,7 +194,6 @@ let UI = {
         UI.IO.add_event(buffer_canvas, 'touchstart', e => {
             UI._check_specials(e, false);
             UI.log(2, 'ui.touchstart', e);
-            UI.is_mobile = true;
             let lp = UI.get_touch(UI.canvas['buffer'], e);
 
             /*
@@ -260,7 +259,6 @@ let UI = {
         UI.IO.add_event(buffer_canvas, 'touchmove', e => {
             UI._check_specials(e);
             UI.log(3, 'ui.touchmove', e, e.pointerId, '=>', e.pointerType,' | ',e.bubbles,' | ',e.cancelable);
-            UI.is_mobile = true;
             let lp = UI.get_touch(UI.canvas['buffer'], e);
 
             /*
@@ -290,7 +288,6 @@ let UI = {
         UI.IO.add_event(buffer_canvas, 'touchend', e => {
             UI._check_specials(e, false);
             UI.log(2, 'ui.touchend', e);
-            UI.is_mobile = true;
             let lp = UI._last_point;
 
             /*
@@ -467,7 +464,13 @@ let UI = {
         try {
             return navigator.userAgentData.mobile;
         } catch(e) {
-            return /ip(hone|ad|od)|android/i.test((navigator.userAgent+'').toLowerCase());
+            return (
+                (
+                    /ip(hone|ad|od)|android/i.test((navigator.userAgent+'').toLowerCase())
+                ) || (
+                    (navigator.maxTouchPoints > 0) && (navigator.platform.indexOf('arm') >= 0)
+                )
+            );
         }
     }
 
@@ -1252,6 +1255,21 @@ let UI = {
     Logger.js:20 avg: 477.8
     */
 
+    ,env_info: function() {
+        ['hardwareConcurrency', 'userAgent', 'maxTouchPoints',
+            'gpu', 'onLine', 'platform', '.vibrate', 'virtualKeyboard'].map((feature)=>{
+            try {
+                if (feature[0]=='.') {
+                    UI.log(-1, feature, '::', navigator[feature.substring(1)](1));
+                } else {
+                    UI.log(-1, feature, '::', navigator[feature]);
+                }
+            } catch(ex) {
+                UI.log(-1, feature, '::', ex);
+            }
+        });
+        UI.log(-1, 'is_mobile', '::', UI._is_mobile_browser());
+    }
 
 };
 

@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             UI.set_busy('UI', false);
 
+            UI.env_info();
         }).catch((error)=>{
             console.log('Error while loading IO module', error);
         });
