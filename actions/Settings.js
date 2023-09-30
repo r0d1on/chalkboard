@@ -64,6 +64,11 @@ let Settings = {
 
         UI.addEventListener('on_persist', Settings.on_persist);
         UI.addEventListener('on_unpersist', Settings.on_unpersist);
+        UI.addEventListener('on_resize', ()=>{
+            Object.keys(Settings.ITEMS).map((setting_name)=>{
+                Settings.ITEMS[setting_name].redraw_icon();
+            });
+        });
     }
 
     ,add_item : function(item, title) { // class function
@@ -98,9 +103,9 @@ let Settings = {
     }
 
     ,redraw_icon : function() {
-        this.canvas.width = this.canvas.width + 1 - 1;
-        let ctx = this.canvas.getContext('2d');
-        UI.draw_glyph(this.icons[this.value], ctx);
+        let canvas = Settings.MENU_main.items[this.name].dom.children[0];
+        canvas.width = canvas.width + 1 - 1;
+        UI.draw_glyph(this.icons[this.value], canvas.getContext('2d'));
     }
 
     ,on_item_click : function() {

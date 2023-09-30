@@ -174,8 +174,7 @@ let UI = {
     ,_setup_event_listeners : function() {
         // window size change listener
         UI.IO.add_event(window, 'resize', ()=>{
-            UI.update_layers();
-            UI.redraw();
+            UI.on_resize();
         });
 
         // tool usage start events
@@ -526,6 +525,7 @@ let UI = {
 
         ,'on_focus' : []
         ,'on_blur' : []
+        ,'on_resize' : []
 
         ,'on_file' : []
 
@@ -835,6 +835,11 @@ let UI = {
         }
     }
 
+    ,on_resize : function() {
+        UI.update_layers();
+        UI.redraw();
+        return UI._handle_event('on_resize', []);
+    }
 
     ,on_before_redraw : function() {
         return UI._handle_event('on_before_redraw', []);

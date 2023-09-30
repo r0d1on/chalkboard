@@ -56,6 +56,10 @@ function init(IO) {
     MENU_main = Menu.new('menu', true);
     MENU_options = Menu.new('options', false);
 
+    UI.addEventListener('on_resize', ()=>{
+        MENU_main.on_resize();
+    });
+
     // brush color/size menu item
     BRUSH.init(MENU_main, MENU_options);
     BRUSH.select_color(0);
@@ -129,12 +133,15 @@ function init(IO) {
 
     UI._sel_loglevel();
 
+    UI.MENU_main = MENU_main;
+    UI.MENU_options = MENU_options;
+
     UI.log(0, 'board.js initialised', BOARD.board_name);
 }
 
 console.log('loaded board.js');
 
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM ready');
 
     setTimeout(()=>{
@@ -152,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function(){
             window.timeit = (...args)=>{UI.IO.timeit(...args);};
 
             if (UI.view_mode=='play') {
-
                 if (BOARD.board_name.startsWith('test'))
                     Toast.ignore_topic('recorder');
 
@@ -162,7 +168,8 @@ document.addEventListener('DOMContentLoaded', function(){
                     });
                     UI.dropEventListener(); // ensure it's called only once
                 });
-
+            } else {
+                UI.on_resize();
             }
 
             UI.set_busy('UI', false);
