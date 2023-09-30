@@ -5,11 +5,13 @@ import {add_class} from '../util/html.js';
 
 import {UI} from './UI.js';
 
+
 let Menu = {
 
-    LONG_CLICK_DELAY : 1000
+    LONG_CLICK_DELAY : 1000,
+    DEFAULT_ITEM_WIDTH : 60,
 
-    ,Menu : function(container_id, top=true, dx=60, dy=60) {
+    Menu : function(container_id, top=true, dx=Menu.DEFAULT_ITEM_WIDTH, dy=Menu.DEFAULT_ITEM_WIDTH) {
         this.top = top;
         this.dx = dx;
         this.dy = dy;
@@ -27,17 +29,20 @@ let Menu = {
         this.items['root'] = this._new_item(null, this.container, null, 0, 0);
     }
 
-    ,_new_item : function(dom, dom_row, pid, top, left, dx, dy) {
+    ,_new_item : function(dom, dom_row, pid, top, left, dx, dy, onclick, inner_type, title) {
         return {
-            dom : dom // item dom node
-            ,dom_row : dom_row // item container dom node
-            ,sub : [] // item's sub-items
-            ,pid : pid // parent node id
-            ,horizontal : (pid==null) || (!this.items[pid].horizontal)
-            ,top : top // top index
-            ,left : left // bottom index
-            ,dx : dx
-            ,dy : dy
+            dom : dom, // item dom node
+            dom_row : dom_row, // item container dom node
+            sub : [], // item's sub-items
+            pid : pid, // parent node id
+            horizontal : (pid==null) || (!this.items[pid].horizontal),
+            top : top, // top index
+            left : left, // bottom index
+            dx : dx,
+            dy : dy,
+            onclick: onclick,
+            inner_type: inner_type,
+            title: title
         };
     }
 
@@ -121,13 +126,17 @@ let Menu = {
     ,add_icon : function(pid, id, icon, title, onclick) {
         let canvas = this.add(pid, id, onclick, 'canvas', title)[1];
         UI.draw_glyph(icon, canvas.getContext('2d'));
+        this.items[id].icon = icon;
     }
 
     ,add : function(pid, id, onclick, inner_type, title, dx, dy) {
         let parent = this.items[pid];
 
-        dx = (dx===undefined) ? this.dx : dx;
-        dy = (dy===undefined) ? this.dy : dy;
+        let dx_default = (dx===undefined);
+        dx = dx_default?this.dx:dx;
+
+        let dy_default = (dy===undefined);
+        dy = dy_default?this.dy:dy;
 
         // create dom node for the item
         let dom_elem = document.createElement('div');
@@ -145,7 +154,7 @@ let Menu = {
             return false;
         });
 
-        dom_elem.title = title||'';
+        dom_elem.title = title || '';
 
         // create inner element if requested
         let sub_dom_elem = null;
@@ -163,12 +172,12 @@ let Menu = {
         let top = parent.top;
         let left = parent.left;
 
-        let top_prop = (this.top)?'top':'bottom';
+        let top_prop = (this.top) ? 'top' : 'bottom';
 
         if (parent.horizontal) {
             // adding into a vertical stack of subitems
             left = this.items[parent.sub.at(-1)];
-            left = left ? (left.left + left.dx) : (parent.left + parent.dx)||0;
+            left = left ? (left.left + left.dx) : (parent.left + parent.dx) || 0;
 
             dom_elem.style[top_prop] = parent.top + 'px';
             dom_elem.style['left'] = left + 'px';
@@ -178,7 +187,7 @@ let Menu = {
         } else {
             // adding into a horisontal stack of subitems
             top = this.items[parent.sub.at(-1)];
-            top = top ? (top.top + top.dy) : (parent.top + parent.dy)||0;
+            top = top ? (top.top + top.dy) : (parent.top + parent.dy) || 0;
 
             dom_elem.style[top_prop] = top + 'px';
             dom_elem.style['left'] = parent.left + 'px';
@@ -188,7 +197,9 @@ let Menu = {
         }
 
         // 1. inject item descriptor to the global menu items list
-        this.items[id] = this._new_item(dom_elem, dom_row, pid, top, left, dx, dy);
+        this.items[id] = this._new_item(dom_elem, dom_row, pid, top, left, dx, dy, onclick, inner_type, title);
+        this.items[id].dx_default = dx_default;
+        this.items[id].dy_default = dy_default;
 
         // 2. inject item to parent sub-items list
         parent.sub.push(id);
@@ -197,7 +208,7 @@ let Menu = {
         parent.dom_row.appendChild(dom_elem);
         if (parent.dom != null) {
             add_class(parent.dom, 'menu_chldrn');
-            add_class(parent.dom, 'menu_chldrn_'+(this.top?'t':'b')+'_'+(parent.horizontal?'h':'v'));
+            add_class(parent.dom, 'menu_chldrn_' + (this.top ? 't' : 'b') + '_' + (parent.horizontal? 'h' : 'v'));
         }
 
         // 4. add item's container to menu container
@@ -233,8 +244,60 @@ let Menu = {
 
     }
 
-};
+    ,on_resize : function() {
+        function recreate(menu, pid, items) {
+            items[pid].sub.map((id)=>{
+                let item = items[id];
+                if (item.icon===undefined) {
+                    let dx = (item.dx_default) ? undefined : item.dx;
+                    let dy = (item.dy_default) ? undefined : item.dy;
+                    menu.add(pid, id, item.onclick, item.inner_type, item.title, dx, dy);
+                } else {
+                    menu.add_icon(pid, id, item.icon, item.title, item.onclick);
+                }
+                recreate(menu, id, items);
+            });
+        }
 
+        let w_window = UI.window_width;
+        let m_info = this.items['root'].sub.reduce((s, item_name)=>{
+            const item = this.items[item_name];
+            if (item.dx_default) {
+                s[0] += 1;
+            } else {
+                s[1] += (item.dx || 0);
+            }
+            return s;
+        }, [0, 0]);
+
+        if (UI.is_mobile || (w_window < m_info[1] + m_info[0]*this.dx) || (this.dx < Menu.DEFAULT_ITEM_WIDTH)) {
+            let dd = (w_window - m_info[1]) / m_info[0];
+            this.dx = dd;
+            this.dy = dd;
+        }
+
+        const old_items = this.items;
+
+        const old_elem = document.getElementById(this.container.id);
+        this.container = document.createElement(old_elem.tagName);
+        this.container.id = old_elem.id;
+        old_elem.replaceWith(this.container);
+
+        if (this.top) {
+            this.container.style['top'] = '0px';
+            this.container.style['bottom'] = undefined;
+        } else {
+            this.container.style['top'] = undefined;
+            this.container.style['bottom'] = '0px';
+        }
+
+        this.items = {};
+        this.items['root'] = this._new_item(null, this.container, null, 0, 0);
+
+        recreate(this, 'root', old_items);
+    }
+
+};
 Menu = _class('Menu', Menu);
 
 export {Menu};

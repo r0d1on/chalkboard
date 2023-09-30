@@ -13,7 +13,7 @@ let TOOLS = {
         'on_key_down','on_key_up','on_wheel',
         'on_start','on_move','on_stop',
         'on_paste_strokes','on_paste_text',
-        'on_blur','on_focus',
+        'on_blur','on_focus','on_resize',
         'on_file',
         'on_before_redraw','on_after_redraw'
     ]
@@ -85,8 +85,9 @@ let TOOLS = {
 
 
     ,show : function(tool) {
-        let ctx = TOOLS.canvas.getContext('2d');
-        ctx.clearRect(0, 0, TOOLS.canvas.width, TOOLS.canvas.height);
+        const canvas = TOOLS.MENU_main.items['tools'].dom.children['tools_g'];
+        let ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         UI.draw_glyph(tool.icon, ctx);
     }
 
@@ -156,8 +157,7 @@ let TOOLS = {
         this.MENU_main = MENU_main;
         this.MENU_options = MENU_options;
 
-        // shows current tool (pen / eraser / texter).
-        [TOOLS.div, TOOLS.canvas] = this.MENU_main.add('root', 'tools', null, 'canvas');
+        this.MENU_main.add('root', 'tools', null, 'canvas');
 
         TOOLS.EVENTS.map((event)=>{
             UI.addEventListener(event, TOOLS[event]);
@@ -357,6 +357,14 @@ let TOOLS = {
             return;
 
         TOOLS.current.on_activated();
+    }
+
+    ,on_resize : function() {
+        TOOLS.show(TOOLS.current);
+
+        if (TOOLS._tools_handle('on_resize', []))
+            return true;
+        return false;
     }
 
     ,on_after_redraw : function() {
