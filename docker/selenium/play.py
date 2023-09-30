@@ -28,7 +28,7 @@ def get_driver():
 
     service = ChromeService(
         executable_path=ChromeDriverManager(
-            # driver_version="112.0.5615.49"
+             # driver_version="112.0.5615.49"
         ).install()
     )
 
@@ -40,7 +40,7 @@ def get_driver():
 def wait_for_scripts(driver):
     height = None
     while (height is None):
-        height = driver.execute_script("return UI;")['window_height'];
+        height = driver.execute_script("return UI.window_height;");
         roll()
     say(0, '+', end="")
 
@@ -56,9 +56,9 @@ def take_screenshots(driver, output_dir):
             file_name = f"{output_dir}/grab_{len(screenshots):03g}_{delta}.png"
             driver.save_screenshot(file_name)
             screenshots.append({
-                "name": file_name
-                ,"delta": delta
-                ,"ts" : ts
+                "name" : file_name,
+                "delta" : delta,
+                "ts" : ts
             })
         except SeleniumTimeoutException as ex:
             say(0, '?', end='')
