@@ -1,3 +1,7 @@
+* {
+    touch-action: manipulation;
+}
+  
 body {
     margin : 0px;
     padding : 0px;
@@ -27,7 +31,6 @@ canvas.layer {
     padding: 0px;
     margin: 0px;
 }
-
 
 
 .menu_item {
