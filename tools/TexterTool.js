@@ -200,6 +200,8 @@ let TexterTool = {
         if (!UI.is_mobile)
             return;
 
+        Menu.RESIZEABLE = false;
+
         UI.log(1, 'texter additional input activation');
 
         let inp = this.MENU_main.add('root', 'input', null, 'input')[1];
@@ -232,6 +234,8 @@ let TexterTool = {
 
         if (!UI.is_mobile)
             return;
+
+        Menu.RESIZEABLE = true;
 
         UI.log(1, 'texter additional input deactivation');
 

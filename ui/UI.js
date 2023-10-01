@@ -1261,14 +1261,19 @@ let UI = {
     */
 
     ,env_info: function() {
-        ['hardwareConcurrency', 'userAgent', 'maxTouchPoints',
-            'gpu', 'onLine', 'platform', '.vibrate', 'virtualKeyboard'].map((feature)=>{
+        [
+            'hardwareConcurrency', 'userAgent', 'maxTouchPoints',
+            'gpu', 'onLine', 'platform', '*vibrate',
+            'virtualKeyboard.overlaysContent'
+        ].map((feature)=>{
             try {
-                if (feature[0]=='.') {
-                    UI.log(-1, feature, '::', navigator[feature.substring(1)](1));
-                } else {
-                    UI.log(-1, feature, '::', navigator[feature]);
-                }
+                let v = navigator;
+                let n = 'n';
+                feature.split(/\./g).map((f)=>{
+                    v = (f[0] == '*') ? v[f.substring(1)](1) : v[f];
+                    n = n + '.' + f;
+                    UI.log(-1, n, '::', v);
+                });
             } catch(ex) {
                 UI.log(-1, feature, '::', ex);
             }

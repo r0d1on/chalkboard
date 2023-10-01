@@ -10,6 +10,7 @@ let Menu = {
 
     LONG_CLICK_DELAY : 1000,
     DEFAULT_ITEM_WIDTH : 60,
+    RESIZEABLE : true,
 
     Menu : function(container_id, top=true, dx=Menu.DEFAULT_ITEM_WIDTH, dy=Menu.DEFAULT_ITEM_WIDTH) {
         this.top = top;
@@ -258,6 +259,9 @@ let Menu = {
                 recreate(menu, id, items);
             });
         }
+
+        if (!this.RESIZEABLE)
+            return;
 
         let w_window = UI.window_width;
         let m_info = this.items['root'].sub.reduce((s, item_name)=>{
