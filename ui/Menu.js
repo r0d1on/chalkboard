@@ -248,7 +248,7 @@ let Menu = {
         function recreate(menu, pid, items) {
             items[pid].sub.map((id)=>{
                 let item = items[id];
-                if (item.icon===undefined) {
+                if (item.icon === undefined) {
                     let dx = (item.dx_default) ? undefined : item.dx;
                     let dy = (item.dy_default) ? undefined : item.dy;
                     menu.add(pid, id, item.onclick, item.inner_type, item.title, dx, dy);

@@ -10,8 +10,7 @@ import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
 
-function figure_distort(figure, mode, cyclic) { // eslint-disable-line no-unused-vars
-    mode = (mode===undefined) ? 1 : mode;
+function figure_distort(figure, mode=1, cyclic) { // eslint-disable-line no-unused-vars
     //cyclic = (cyclic===undefined) ? true : cyclic;
 
     let w = BRUSH.get_local_width();

@@ -218,10 +218,10 @@ let RectableStroke = {
         }, []);
     }
 
-    ,touched_by : function(gp) {
+    ,touched_by : function(gp, diameter=0) {
         return (
-            (this.p0.y <= gp.y)&&(gp.y <= this.p1.y)&&
-            (this.p0.x <= gp.x)&&(gp.x <= this.p1.x)
+            (this.p0.y - diameter / 2 <= gp.y)&&(gp.y <= this.p1.y + diameter / 2)&&
+            (this.p0.x - diameter / 2 <= gp.x)&&(gp.x <= this.p1.x + diameter / 2)
         );
     }
 
@@ -255,15 +255,12 @@ let LineStroke = {
         return true;
     }
 
-    ,touched_by : function(gp, diameter) {
-        diameter = (diameter===undefined) ? 0 : diameter;
+    ,touched_by : function(gp, diameter=0) {
         let dst = gp.dst2seg(this.p0, this.p1);
         return dst < (this.width + diameter) / 2.0;
     }
 
-    ,split_by : function(gp, trim) {
-        trim = (trim===undefined) ? 0 : trim;
-
+    ,split_by : function(gp, trim=0) {
         let [, t] = gp.prj2seg(this.p0, this.p1);
 
         const d = this.p1.sub(this.p0);
@@ -473,6 +470,20 @@ let ImageStroke = {
         return true;
     }
 
+    ,touched_by : function(gp, diameter=0, by_borders=true) {
+        if (by_borders) {
+            let box = [
+                this.p0, Point.new(this.p0.x, this.p1.y),
+                this.p1, Point.new(this.p1.x, this.p0.y)];
+            return box.map((p, i)=>{
+                let dst = gp.dst2seg(p, box[(i+1)%4]);
+                return dst < diameter / 2.0;
+            }).reduce((s, v)=>{return s||v;}, false);
+        } else {
+            return RectableStroke.touched_by.apply(this, [gp, diameter]);
+        }
+    }
+
     ,selection : function(rect) {
         if (this.is_hidden())
             return [];
@@ -483,7 +494,7 @@ let ImageStroke = {
         let selected = (rect===undefined);
 
         // "point" picked
-        selected = selected || ((this.touched_by(rect[0])) && (rect[0].dst2(rect[1]) < W));
+        selected = selected || ((this.touched_by(rect[0], 0, false)) && (rect[0].dst2(rect[1]) < W));
 
         /*
         selected = selected || (this.touched_by(rect[0]))||this.touched_by(rect[1]);

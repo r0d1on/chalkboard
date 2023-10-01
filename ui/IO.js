@@ -89,8 +89,7 @@ let IO = {
         console.log(...args);
     }
 
-    ,request : function(api_endpoint, message, {timeout, compress}) {
-        timeout = (timeout===undefined) ? 10*1000 : timeout;
+    ,request : function(api_endpoint, message, {timeout=10*1000, compress}) {
         let that = this;
 
         return new Promise((resolve, reject) => {
