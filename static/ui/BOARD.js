@@ -14,11 +14,8 @@ let BOARD = {
     board_name : null
 
     ,buffer : [] // globally positioned strokes in buffer layer
-    ,add_line : function(lp0, lp1, params) {
+    ,add_line : function(lp0, lp1, params={}) {
         let ctx = UI.ctx['buffer'];
-
-        params = params || {};
-
         let alpha = undefined;
         let width = params.width || BRUSH.get_local_width();
         let color = params.color;

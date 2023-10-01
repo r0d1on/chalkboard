@@ -158,8 +158,7 @@ let BRUSH = {
         return BRUSH.SCALED.value ? BRUSH.size * UI.viewpoint.scale : BRUSH.size;
     }
 
-    ,get_color : function(alpha, color_id) {
-        color_id = (color_id===undefined) ? BRUSH.color_id : color_id;
+    ,get_color : function(alpha, color_id=BRUSH.color_id) {
         let color = BRUSH.COLORS[BRUSH.current_palette][color_id][0];
         let ctype = color.length / 4; // 1 for short 2 for long
 
