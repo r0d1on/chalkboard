@@ -134,10 +134,10 @@ let Menu = {
         let parent = this.items[pid];
 
         let dx_default = (dx===undefined);
-        dx = dx_default?this.dx:dx;
+        dx = dx_default ? this.dx : dx;
 
         let dy_default = (dy===undefined);
-        dy = dy_default?this.dy:dy;
+        dy = dy_default ? this.dy : dy;
 
         // create dom node for the item
         let dom_elem = document.createElement('div');
@@ -170,6 +170,7 @@ let Menu = {
         dom_row.style['position'] = 'fixed';
         dom_row.style['display'] = 'none';
 
+        let sibling = this.items[parent.sub.at(-1)];
         let top = parent.top;
         let left = parent.left;
 
@@ -177,24 +178,29 @@ let Menu = {
 
         if (parent.horizontal) {
             // adding into a vertical stack of subitems
-            left = this.items[parent.sub.at(-1)];
-            left = left ? (left.left + left.dx) : (parent.left + parent.dx) || 0;
+            top = sibling ? sibling.top : parent.top || 0;
+            left = sibling ? (sibling.left + sibling.dx) : (parent.left + parent.dx) || 0;
 
-            dom_elem.style[top_prop] = parent.top + 'px';
+            dom_elem.style[top_prop] = top + 'px';
             dom_elem.style['left'] = left + 'px';
 
-            dom_row.style[top_prop] = parent.top + dy + 'px';
+            dom_row.style[top_prop] = top + dy + 'px';
             dom_row.style['left'] = left + 'px';
         } else {
             // adding into a horisontal stack of subitems
-            top = this.items[parent.sub.at(-1)];
-            top = top ? (top.top + top.dy) : (parent.top + parent.dy) || 0;
+            top = sibling ? (sibling.top + sibling.dy) : (parent.top + parent.dy) || 0;
+            left = sibling ? sibling.left : parent.left;
+
+            if (UI.window_height <= top + dy) {
+                top = (parent.top + parent.dy) || 0;
+                left = (sibling.left + sibling.dx) || 0;
+            }
 
             dom_elem.style[top_prop] = top + 'px';
-            dom_elem.style['left'] = parent.left + 'px';
+            dom_elem.style['left'] = left + 'px';
 
             dom_row.style[top_prop] = top + 'px';
-            dom_row.style['left'] = parent.left + dx + 'px';
+            dom_row.style['left'] = left + dx + 'px';
         }
 
         // 1. inject item descriptor to the global menu items list
