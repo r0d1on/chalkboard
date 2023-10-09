@@ -608,6 +608,9 @@ let UI = {
     ,on_file_default : function(file) {
         if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
             UI.IO.read_file(file, 'image').then((data_url)=>{
+                let img_origin_point = UI._last_point || (
+                    Point.new(UI.window_width/2, UI.window_height/2)
+                );
                 const image = new Image();
                 image.title = file.name;
                 image.src = data_url;
@@ -615,14 +618,14 @@ let UI = {
                     return ()=>{
                         BOARD.op_start();
                         BOARD.commit_stroke(ImageStroke.new(
-                            image
-                            ,UI.local_to_global(p0)
-                            ,UI.local_to_global(p0.add(Point.new(image.width, image.height)))
+                            image,
+                            UI.local_to_global(p0),
+                            UI.local_to_global(p0.add(Point.new(image.width, image.height)))
                         ));
                         BOARD.op_commit();
                         UI.redraw();
                     };
-                })(image, UI._last_point), 10);
+                })(image, img_origin_point), 10);
             });
             return true;
         }
