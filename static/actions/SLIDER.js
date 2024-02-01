@@ -259,18 +259,26 @@ let SLIDER = {
         }
     }
 
+    ,on_resize : function() {
+        SLIDER.canvas_current = SLIDER.MENU_main.items['slide_curr'].dom.children[0];
+        SLIDER.update(false);
+    }
+
     ,init : function(MENU_main) {
-        let div = MENU_main.add('root', 'slide_separator_0', null, 'div', '', 5)[0];
-        div.style['background-color'] = '#555';
+        SLIDER.MENU_main = MENU_main;
 
+        (
+            MENU_main.add('root', 'slide_separator_0', null, 'div', '', 5)[0]
+                .style['background-color'] = '#555'
+        );
         MENU_main.add_icon('root', 'slide_prev', SLIDER.icon_prev, 'goto previous slide', SLIDER.slide_prev);
-
-        SLIDER.canvas_current = MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', 'current slide / slide operations', Math.max(SLIDER.LABEL_DX, MENU_main.dx))[1];
-
+        MENU_main.add('root', 'slide_curr', SLIDER.slide_curr, 'canvas', 'current slide / slide operations', Math.max(SLIDER.LABEL_DX, MENU_main.dx));
         MENU_main.add_icon('root', 'slide_next', SLIDER.icon_next, 'goto next slide', SLIDER.slide_next);
-
-        div = MENU_main.add('root', 'slide_separator_1', null, 'div', '', 5)[0];
-        div.style['background-color'] = '#555';
+        (
+            MENU_main.add('root', 'slide_separator_1', null, 'div', '', 5)[0]
+                .style['background-color'] = '#555'
+        );
+        SLIDER.on_resize();
 
         MENU_main.add_icon('slide_curr', 'slide_add', SLIDER.icon_add, 'insert new slide after current', SLIDER.slide_add);
         MENU_main.add_icon('slide_curr', 'slide_del', SLIDER.icon_del, 'delete current slide', SLIDER.slide_del);
@@ -278,9 +286,9 @@ let SLIDER = {
         MENU_main.add_icon('slide_curr', 'slide_home', SLIDER.icon_home, 'focus on default viewpoint', SLIDER.slide_home);
 
         UI.addEventListener('on_key_down', SLIDER.on_key_down);
-
         UI.addEventListener('on_persist', SLIDER.on_persist);
         UI.addEventListener('on_unpersist', SLIDER.on_unpersist);
+        UI.addEventListener('on_resize', SLIDER.on_resize);
     }
 
 };
