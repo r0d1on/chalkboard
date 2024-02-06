@@ -1239,6 +1239,10 @@ let UI = {
         return Toast.new(topic, text, lifespan, align, reset);
     }
 
+    ,prompt : function(text='') {
+        return UI.IO.prompt(text);
+    }
+
     ,log : function(...args) {
         UI.logger.log(...args);
     }

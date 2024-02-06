@@ -172,7 +172,7 @@ let IO = {
     }
 
     ,add_event : function(target, event_type, event_handler) {
-        let target_name = (target.tagName||(typeof(target)+':'+target)) + '.' + (target.id||'');
+        let target_name = (target.tagName || (typeof(target) + ':' + target)) + '.' + (target.id || '');
         this.UI.log(2, '+listener:', target_name, ' :: ', event_type);
         const proxy = this.handler_proxy(target, event_type, event_handler);
 
@@ -197,6 +197,9 @@ let IO = {
         this.log(0, 'avg:', times.reduce((a, v)=>a + v, 0) / rounds);
     }
 
+    ,prompt : function(text='') {
+        return prompt(text);
+    }
 
 };
 

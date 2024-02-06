@@ -5,6 +5,15 @@ import {_class} from '../base/objects.js';
 import {IO as BaseIO} from './IO.js';
 
 
+let RecordedPromptEvent = {
+    RecordedPromptEvent : function(prompt, response) {
+        this.prompt = prompt;
+        this.response = response;
+    },
+};
+RecordedPromptEvent = _class('RecordedPromptEvent', RecordedPromptEvent);
+
+
 let IO = {
     super: BaseIO
 
@@ -17,7 +26,8 @@ let IO = {
         'PointerEvent' : ['offsetX', 'offsetY', 'button', 'pressure', 'pointerType', 'buttons'],
         'ClipboardEvent' : [],
         'HashChangeEvent' : [],
-        'TouchEvent' : ['touches']
+        'TouchEvent' : ['touches'],
+        'RecordedPromptEvent' : ['prompt', 'response']
     }
     ,STATUSES : {
         PASS : 0
@@ -115,8 +125,12 @@ let IO = {
                 let event = that.events_log[index];
                 that.timer = setTimeout(()=>{
                     try {
-                        const handler = that.handlers[event['t']][event['k']];
-                        handler(that.unmap_event(event['c'], event['k'], event['p']));
+                        const event_type = event['k'];
+                        if (event_type!=null) {
+                            const target = event['t'];
+                            const handler = that.handlers[target][event_type];
+                            handler(that.unmap_event(event['c'], event['k'], event['p']));
+                        }
                     } catch (error) {
                         that.UI.log(-2, 'Caught error while playing:', error.message);
                         that.UI.log(-2, 'Event:', JSON.stringify(event));
@@ -329,6 +343,39 @@ let IO = {
                 event_handler(...args);
         }
         return proxy;
+    }
+
+    ,prompt : function(text='') {
+        if (this.status == IO.STATUSES.PLAYING) {
+            const next_event = this.events_log[this.position + 1];
+
+            if (next_event['t'] != 'RecordedPromptEvent') {
+                next_event['k'] = null; // force the player to skip it
+
+                if (next_event['p']['prompt'] != text)
+                    this.UI.log(-1, 'Requested prompt string does match with recorded one', next_event['p']['prompt'], text);
+
+                this.UI.toast(
+                    'recorder.prompts',
+                    'prompt(\''+next_event['p']['prompt']+'\') -> '+next_event['p']['response']+'',
+                    3000
+                ).set_bg_color('#0F0');
+
+                return next_event['p']['response'];
+            } else {
+                throw 'IO.recorder : requested input is not recorded. Prompt:' + text;
+            }
+        } else {
+            let response = IO.super.prompt.call(this, text);
+
+            if (this.status == IO.STATUSES.RECORDING) {
+                let event = RecordedPromptEvent.RecordedPromptEvent(text, response);
+                this.record_event(event, 'on_prompt', event);
+                return response;
+            }
+
+            return response;
+        }
     }
 
 };
