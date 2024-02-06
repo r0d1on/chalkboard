@@ -145,7 +145,7 @@ let SLIDER = {
     ,slide_add : function() {
         let frame_rect = SLIDER.get_current_frame();
 
-        let code = prompt('Slide name:');
+        let code = UI.prompt('Slide name:');
         if ((code!='')&&(code!=null)) {
             if (SLIDER.current_ix==null) {
                 SLIDER.slides.push([code, frame_rect]);
