@@ -20,7 +20,7 @@ def get_driver():
     options.add_argument("--disable-infobars")
 
     options.add_argument("--start-maximized")
-    options.add_argument('--window-size=1000,700')
+    options.add_argument(f"--window-size=1000,{700+87}")
 
     options.add_argument("--headless")
     options.add_argument("--log-level=1")

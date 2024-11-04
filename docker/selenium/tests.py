@@ -99,14 +99,16 @@ def get_image_diff(test):
         return None
 
     img_out = iio.imread(f"{test['dir']}/.output/result.png")
+    #print("out:",img_out.shape)
     img_ref = iio.imread(f"{test['dir']}/result.png")
-    diff = np.abs(img_out - img_ref)[:,:,0:3]
+    #print("ref:",img_ref.shape)
+    diff = np.abs(img_out[:,:,0:3] - img_ref[:,:,0:3])
 
     img_diff = diff.sum(axis=2)
     max_diff = max(1, img_diff.max())
     img_diff = ((img_diff / max_diff) * 255).astype(np.uint8)
     iio.imwrite(f"{test['dir']}/.output/diff.png", np.stack([img_diff] * 3 , axis=-1))
-    
+
     return (diff.mean(), diff.std(), (diff>0).sum() / (diff>-1).sum())
 
 def difference_is_significant(diff):
