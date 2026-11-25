@@ -13,6 +13,11 @@ import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 import {TOOLS} from '../ui/TOOLS.js';
 
+/**
+ * Shared implementation for selection state and transforms.
+ * Manages the selection box, moving, scaling, rotation, selection brackets,
+ * and optimization operations used by the public selector tool.
+ */
 let SelectorBase = {
     super : DrawToolBase
 
@@ -561,12 +566,12 @@ let SelectorBase = {
 
             let rect = this.selection_rect.map((p)=>{return UI.global_to_local(p);});
             let key_points = [
-                [UI.global_to_local(this.selection_center), SelectorBase.MODES.MOVING],
-                [Point.new(rect[1].x+W+S, rect[0].y-W-S), SelectorBase.MODES.ROTATING],
-                [Point.new(rect[1].x+W+S, rect[1].y+W+S), SelectorBase.MODES.SCALING],
-                [Point.new(rect[0].x-W-S, rect[0].y-W-S), SelectorBase.MODES.COPY], // copy
-                [Point.new(rect[0].x-W-S, rect[1].y+W+S),-SelectorBase.MODES.COPY], // paste
-                [Point.new(rect[1].x+W+S, (rect[0].y+rect[1].y)/2), SelectorBase.MODES.OPTIMIZE]
+                [UI.global_to_local(this.selection_center), SelectorBase.MODES.MOVING], // senter
+                [Point.new(rect[1].x+W+S, rect[0].y-W-S), SelectorBase.MODES.ROTATING], // top-right
+                [Point.new(rect[1].x+W+S, rect[1].y+W+S), SelectorBase.MODES.SCALING], // bottom-right
+                [Point.new(rect[0].x-W-S, rect[0].y-W-S), SelectorBase.MODES.COPY], // top-left
+                [Point.new(rect[0].x-W-S, rect[1].y+W+S),-SelectorBase.MODES.COPY], // bottom-left
+                [Point.new(rect[1].x+W+S, (rect[0].y+rect[1].y)/2), SelectorBase.MODES.OPTIMIZE] // right-center
             ];
 
             let anchor_i = null;
@@ -618,6 +623,15 @@ let SelectorBase = {
 SelectorBase = _class('SelectorBase', SelectorBase);
 
 
+/**
+ * Selects, cuts, copies, pastes, moves, scales, rotates, and optimizes strokes.
+ * Drag to select; Shift or Alt modifies nearby/whole-stroke selection.
+ * Hotkeys: Control/Meta+A selects all, Control/Meta+C copies,
+ * Control/Meta+X cuts, Control/Meta+V pastes, Escape cancels,
+ * Delete removes the selection, and arrow keys move it. Hold Shift for
+ * 30-unit arrow moves; Control/Meta/Alt use 1-unit moves.
+ * Activation shortcuts: Control+S, Control+A, or Meta+A.
+ */
 let SelectorTool = {
     super : SelectorBase
 

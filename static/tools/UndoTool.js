@@ -11,6 +11,10 @@ import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
 
 
+/**
+ * Background history tool that undones the last board operation.
+ * Hotkeys: Backspace, Control+Z, or Meta+Z.
+ */
 let UndoTool = { // background tool
     super : ToolBase
 

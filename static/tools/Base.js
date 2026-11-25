@@ -10,7 +10,7 @@ import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
 
-function figure_distort(figure, mode=1, cyclic) { // eslint-disable-line no-unused-vars
+function figure_distort(figure, mode=1, cyclic) {
     //cyclic = (cyclic===undefined) ? true : cyclic;
 
     let w = BRUSH.get_local_width();
@@ -73,17 +73,29 @@ function figure_distort(figure, mode=1, cyclic) { // eslint-disable-line no-unus
 }
 
 let ToolBase = {
+    // Abstract/base tool lifecycle and shortcut selection behavior.
+    // Concrete tools activate with a shortcut or the Tools menu and may
+    // optionally capture control after fast activation.
 
     ToolBase : function(name) {
         this.name = name;
-        this.is_capturing = false; // once fast-activated the tool will release the control by itself
+
+        // by default this prevents switching back to original tool
+        // if this tool was actiavted by a shortcut,
+        // "fast-actiavted" not manually picked from "Tools" UI menu
+        // so that by default once fast-activated the tool will release the control by itself
+        // after the tool's work is done
+        this.is_capturing = false;
     }
 
     ,on_activated : function() {
+        // called when the tool get's selected in the menu
+        // or gets activated directly from a shortcut
         UI.log(1, this.name, ' - activated');
     }
 
     ,on_deactivated : function() {
+        // called when some another tool gets selected
         UI.log(1, this.name, ' - deactivated');
     }
 
@@ -99,34 +111,52 @@ ToolBase = _class('ToolBase', ToolBase);
 
 
 let DrawToolBase = {
+    // Base class for pointer-driven drawing tools.
+    // Draw while pressed, preview on the overlay while dragging, and commit
+    // to the board on release. Escape/cancel clears an in-progress drawing.
+    // `shortcut` is a key or key combination used to activate the tool.
     super : ToolBase
 
     ,DrawToolBase : function(name, cyclic, shortcut) {
         ToolBase.__init__.call(this, name);
 
+        // cyclic tools will have a last "linking" stroke like squares, ellipses, ...
         this.cyclic = cyclic;
+
+        // shortcut is a key value or an array of key values if
+        // combo is needed for shortcut activation
         this.shortcut = shortcut;
 
-        this.activated = false;
-        this.start_point = null;
-        this.last_point = null;
+        this.activated = false; // whether the tool is active or not
+        this.start_point = null; // start point where the tool was activated
+        this.last_point = null; // last point where activated tool was observed
     }
 
     ,on_start : function(lp) {
+        // gets called when the tool gets actiavted
+        // for drawing tools that means that drawing has started
         this.activated = true;
         this.start_point = lp;
         this.last_point = lp;
         return true;
     }
 
-    ,draw : function(){throw 'DrawToolBase.draw should be defined';}
+    ,draw : function(sp, lp, draw_line_fun) { // eslint-disable-line no-unused-vars
+        // in implementations this menthod should handle the drawing of the
+        // outcome of the tool either on the final board layer or on the "draft" overlay
+        throw 'DrawToolBase.draw should be defined';
+    }
 
     ,on_move : function(lp) {
+        // called when pointer position changed
+        // either in actiavted or deactivated tool states
         if (this.activated) {
             UI.reset_layer('overlay');
             this.draw(this.start_point, lp, UI.draw_overlay_stroke);
             this.last_point = lp;
         } else {
+            // if tool is not actiavted
+            // draws a "pointer"
             UI.reset_layer('overlay');
             UI.draw_overlay_stroke(lp, lp, {
                 color : BRUSH.get_color('2')
@@ -135,8 +165,11 @@ let DrawToolBase = {
     }
 
     ,on_stop : function(lp) {
+        // if tool gets deactivated
+        // in most cases that means that drawing has stopped - mouse button was unpressed
         let handled = false;
         if (this.activated) {
+            // commits the drawrn figure to the board
             UI.reset_layer('overlay');
             this.draw(this.start_point, lp, BOARD.add_line);
             BOARD.flush_commit();
@@ -148,12 +181,14 @@ let DrawToolBase = {
     }
 
     ,cancel : function() {
+        // if drawing was cancelled in-flight (by "Escape" for example)
         UI.reset_layer('overlay');
         this.activated = false;
         UI.redraw();
     }
 
     ,on_deactivated : function() {
+        // if tool unselected
         let lp = UI._last_point;
         this.on_stop(lp);
         ToolBase.on_deactivated.call(this);
@@ -165,6 +200,9 @@ DrawToolBase = _class('DrawToolBase', DrawToolBase);
 
 
 let DistortableDrawTool = {
+    // Base class for line-like tools that support solid/dashed/dotted
+    // rendering and hand-like distortion. While active, Shift cycles
+    // distortion, and Control cycles line style.
     super : DrawToolBase
 
     ,DistortableDrawTool : function(name, cyclic, shortcut) {
@@ -259,6 +297,9 @@ DistortableDrawTool = _class('DistortableDrawTool', DistortableDrawTool);
 
 
 let SwitchableOrigin = {
+    // Mixin-style origin behavior for rectangle and ellipse tools.
+    // While active, Alt cycles the origin between the starting/click point
+    // and the center (midpoint of the drag).
     SwitchableOrigin : function() {
         this.origin = 0;
         this.options =  extend(this.options, {
@@ -274,6 +315,15 @@ let SwitchableOrigin = {
                 ,'tooltip' : 'origin mode'
             }
         });
+    },
+
+    on_key_down : function(key) {
+        if (key=='Alt') {
+            this.options.origin.handler();
+            this.on_move(this.last_point);
+            return true;
+        }
+        return false;
     }
 };
 

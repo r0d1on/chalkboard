@@ -11,6 +11,10 @@ import {UI} from '../ui/UI.js';
 import {BOARD} from '../ui/BOARD.js';
 
 
+/**
+ * Background history tool that reapplies the next undone board operation.
+ * Hotkeys: Shift+Backspace, Control+Y, or Meta+Y.
+ */
 let RedoTool = { // background tool
     super : ToolBase
 

@@ -7,6 +7,12 @@ import {ToolBase, DrawToolBase} from './Base.js';
 import {UI} from '../ui/UI.js';
 
 
+/**
+ * Background viewport navigation tool.
+ * Hold/activate with Control, drag to pan, pinch or drag to zoom on touch
+ * devices, and use the mouse wheel to zoom. Hold Shift while wheeling to reduce
+ * zoom sensitivity.
+ */
 let PanZoomTool = { // background tool
     super : DrawToolBase
 

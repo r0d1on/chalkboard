@@ -12,7 +12,10 @@ import {BOARD} from '../ui/BOARD.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
 /**
- * Eraser tool erases either full strokes or only the touched area of the stroke depending on the operation mode
+ * Erases strokes or portions of strokes touched by the eraser pointer.
+ * The eraser has two modes: split/trim intersected strokes or hide touched
+ * strokes. Switch modes from the eraser options.
+ * Hotkey: Control+E.
  *
  * @tool.name Eraser
  * @tool.demo demo-eraser

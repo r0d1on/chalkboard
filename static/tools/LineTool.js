@@ -11,6 +11,13 @@ import {UI} from '../ui/UI.js';
 import {BRUSH} from '../ui/BRUSH.js';
 
 
+/**
+ * Draws straight, optionally distorted lines with solid/dashed/dotted styles.
+ * Drag from start to end; one or both arrowheads can be selected from the
+ * line options. Hotkeys while drawing: Shift cycles distortion, Control cycles
+ * line style, and Alt cycles line/one-arrow/double-arrow.
+ * Activation: Control+L.
+ */
 let LineTool = {
     super : DistortableDrawTool
 
