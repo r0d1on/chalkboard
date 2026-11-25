@@ -54,7 +54,7 @@ def playback_test(test):
     else:
         shutil.copyfile(f"{test['dir']}/test.json.gzip", f"/chalkboard/records/brd_test-selenium-ui.json.gzip")
     test['time'] = time.time()
-    result = os.system(f"python3.8 play.py {SETTINGS['owner']} {SETTINGS['ip']} test-selenium-ui {test['settings']['speedup']} {test['dir']}/.output {say.__level}")
+    result = os.system(f"{sys.executable} play.py {SETTINGS['owner']} {SETTINGS['ip']} test-selenium-ui {test['settings']['speedup']} {test['dir']}/.output {say.__level}")
     test['time'] = time.time() - test['time']
 
     return result

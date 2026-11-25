@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.11
 COPY ./requirements.txt /opt/app/requirements.txt
 
 WORKDIR /opt/app
