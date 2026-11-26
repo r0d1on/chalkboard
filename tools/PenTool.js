@@ -7,8 +7,10 @@ import {DrawToolBase} from './Base.js';
 import {BOARD} from '../ui/BOARD.js';
 
 /**
- * Pen tool draws a line following the mouse or pointer movement after the tool was activated
- * either with touch / mouse or pen event.
+ * Freestyle pen drawing tool.
+ * Drag with a mouse, touch, or pen to add a continuous brush stroke.
+ * Hotkey: Control+P (Command+P on platforms using Meta is not configured).
+ * The active brush color and width determine the resulting stroke.
  *
  * @tool.name Pen
  * @tool.demo demo-pen

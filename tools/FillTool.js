@@ -11,6 +11,13 @@ import {BRUSH} from '../ui/BRUSH.js';
 import {BOARD} from '../ui/BOARD.js';
 
 
+/**
+ * Draws parallel hatched strokes across the visible board.
+ * Click/drag along the desired hatching direction; the line between the drag
+ * start and current point defines spacing and direction, with intersections
+ * clipped by existing strokes.
+ * Activation: Control+F.
+ */
 let FillTool = {
     super : DrawToolBase
 

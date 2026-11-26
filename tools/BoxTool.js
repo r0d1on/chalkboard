@@ -9,6 +9,13 @@ import {DistortableDrawTool, SwitchableOrigin} from './Base.js';
 import {UI} from '../ui/UI.js';
 
 
+/**
+ * Draws rectangles between the drag start and current pointer positions.
+ * The origin can be the start/click point or the rectangle center.
+ * Hotkeys while drawing: Shift cycles distortion, Control cycles line style,
+ * and Alt cycles origin mode.
+ * Activation: Control+B.
+ */
 let BoxTool = {
     super : DistortableDrawTool
     ,mixins : [SwitchableOrigin]
@@ -52,9 +59,7 @@ let BoxTool = {
             return true;
         }
 
-        if (key=='Alt') {
-            this.options.origin.handler();
-            this.on_move(this.last_point);
+        if (SwitchableOrigin.on_key_down.apply(this, [key])) {
             return true;
         }
 
